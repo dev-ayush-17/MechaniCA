@@ -1,0 +1,115 @@
+# ────────────────────────────────────────────
+#  mechanica_api — Python / FastAPI .gitignore
+# ────────────────────────────────────────────
+
+# ── Python ────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual Environments ──────────────────
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+virtualenv/
+.virtualenv/
+Pipenv/
+
+# ── Package & Build ───────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+*.whl
+*.tar.gz
+site/
+
+# ── Environment & Secrets ─────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
+secrets.json
+secret.yaml
+config/local.py
+local_settings.py
+
+# ── Database ──────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+dump.sql
+*.sql.gz
+
+# ── Logs & Coverage ───────────────────────
+*.log
+logs/
+*.coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ── Testing ───────────────────────────────
+.tox/
+.nox/
+nosetests.xml
+test-results/
+junit.xml
+
+# ── Jupyter ───────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Type Checking ─────────────────────────
+.pytype/
+pyrightconfig.json
+
+# ── FastAPI / Uvicorn ─────────────────────
+*.pid
+uvicorn.log
+
+# ── Docker ────────────────────────────────
+docker-compose.override.yml
+.docker/
+*.dockerfile.local
+
+# ── Celery ────────────────────────────────
+celerybeat-schedule
+celerybeat.pid
+
+# ── Static / Media ────────────────────────
+static/
+media/
+uploads/
+/public/
+
+# ── IDE ───────────────────────────────────
+.vscode/
+.idea/
+*.iml
+
+# ── OS ────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

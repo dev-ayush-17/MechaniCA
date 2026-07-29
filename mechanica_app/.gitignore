@@ -1,0 +1,114 @@
+# ────────────────────────────────────────────
+#  mechanica_app — Flutter .gitignore
+# ────────────────────────────────────────────
+
+# ── Flutter / Dart ────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.snapshot
+
+# ── Generated Files ───────────────────────
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.mocks.dart
+*.config.dart
+lib/generated/
+lib/gen/
+
+# ── Android ───────────────────────────────
+**/android/**/gradle-wrapper.jar
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/**/GeneratedPluginRegistrant.kt
+**/android/key.properties
+**/*.keystore
+**/*.jks
+**/android/app/google-services.json
+**/android/.idea/
+
+# ── iOS ───────────────────────────────────
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/Flutter/.last_build_id
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Runner.xcworkspace/xcuserdata/
+**/ios/Runner.xcodeproj/xcuserdata/
+**/ios/Runner.xcodeproj/project.xcworkspace/
+**/ios/GoogleService-Info.plist
+
+# ── macOS ─────────────────────────────────
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# ── Linux ─────────────────────────────────
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# ── Windows ───────────────────────────────
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# ── Web ───────────────────────────────────
+lib/generated_plugin_registrant.dart
+
+# ── Secrets & Config ──────────────────────
+.env
+.env.*
+!.env.example
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+*.keystore
+*.jks
+key.properties
+**/secrets/
+**/*secret*
+
+# ── Logs & Coverage ───────────────────────
+*.log
+coverage/
+.dart_tool/build/
+
+# ── IDEs ──────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.cursor/
+
+# ── OS ────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Test Output ───────────────────────────
+test/reports/
+*.lcov
