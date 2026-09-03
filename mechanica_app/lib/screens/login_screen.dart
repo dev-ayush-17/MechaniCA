@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Icon(Icons.build_circle, size: 80, color: AppTheme.primaryRed),
               const SizedBox(height: 16),
               Text(
-                'MechaniCA',
+                'MechUpp',
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

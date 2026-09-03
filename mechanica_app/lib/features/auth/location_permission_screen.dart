@@ -29,7 +29,7 @@ class LocationPermissionScreen extends StatelessWidget {
               const Text('Enable Location', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
               const SizedBox(height: 12),
               const Text(
-                'Allow MechaniCA to access your location to find nearby workshops and mechanics.',
+                'Allow MechUpp to access your location to find nearby workshops and mechanics.',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.6),
                 textAlign: TextAlign.center,
               ),

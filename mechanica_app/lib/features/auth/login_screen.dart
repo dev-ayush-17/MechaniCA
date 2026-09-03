@@ -81,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('MechaniCA', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                            Text('MechUpp', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
                             Text('Your Bike. Our Responsibility.', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                           ],
                         ),

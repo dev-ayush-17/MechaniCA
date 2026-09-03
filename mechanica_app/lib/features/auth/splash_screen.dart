@@ -105,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'MechaniCA',
+                      'MechUpp',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
