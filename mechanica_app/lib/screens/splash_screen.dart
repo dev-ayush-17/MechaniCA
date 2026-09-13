@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Icon(Icons.build_circle, size: 100, color: AppTheme.primaryRed),
             const SizedBox(height: 24),
             Text(
-              'MechaniCA',
+              'MechUpp',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
