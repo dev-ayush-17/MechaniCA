@@ -1,0 +1,19 @@
+---
+description: How to change the existing Flutter demo without breaking it
+alwaysApply: true
+---
+
+# Refactoring
+
+- You may rename, move, split, and delete existing Flutter code to match the target architecture.
+- Before refactoring a screen, add a characterization or widget test for the visible behavior when that is practical. Then refactor. Then confirm the test still passes.
+- The app builds and runs after every commit. Do not leave `main` or the milestone branch unable to launch the demo.
+- Separate `refactor(...)` commits from `feat(...)` and `fix(...)` commits.
+- No big-bang rewrite. The milestone cleans the features it touches.
+- Preserve the look and the copy unless the spec says the behavior is wrong (workshop statuses, fake payment success, swallowed errors).
+- Remove dead code, unused assets, unused packages, and commented-out blocks in the milestone that owns that area.
+- Record a structural change (state management, routing, package replacement, folder migration) as an ADR.
+- Fix analyzer issues at the cause. Do not add `// ignore` without a reason on that line.
+- Keep Riverpod and go_router. Do not introduce GetX, Bloc, or get_it.
+
+Detail: `docs/prd/03-frontend-audit.md`.

@@ -1,0 +1,19 @@
+---
+description: Secrets, rules, webhooks, and PII limits
+globs: "{firebase,backend,mechanica_api,app,mechanica_app}/**/*"
+alwaysApply: false
+---
+
+# Security
+
+- Do not weaken Security Rules so a demo or a test can write status or payments.
+- Do not log secrets, OTP, bearer tokens, signed URLs, or webhook bodies.
+- Do not put card numbers, CVV, or UPI PIN in our widgets, models, or logs.
+- Do not show one user's raw phone number to the other party. Masked calling or chat only.
+- Authorization is checked on the server for every command, even if the button is hidden.
+- Rate-limit auth, booking create, payments, and public tracking as in `docs/prd/16-security-and-privacy.md`.
+- Analytics properties must stay on the allow-list in `docs/prd/18-analytics.md`.
+- If a task seems to need a production deploy, a key rotation, or a rules deploy to a live project, stop and ask the owner.
+- Treat a leaked key as stop-the-line. Do not commit a "temporary" key to get a build green.
+
+Detail: `docs/prd/16-security-and-privacy.md`.

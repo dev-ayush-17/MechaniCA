@@ -1,0 +1,23 @@
+---
+description: Flutter feature layout, Riverpod, and adapter imports
+globs: "{app,mechanica_app}/**/*.dart"
+alwaysApply: false
+---
+
+# Flutter
+
+- Feature-first: `features/<name>/{presentation,domain,data}`.
+- Widgets do not call Firestore, RTDB, Cashfree, or Google Maps. Adapters do.
+- Notifiers and use cases take ports through constructors. Register them in the composition root.
+- Keep go_router. Add routes in the router module, not with ad-hoc `Navigator.push` for new flows.
+- Models touched by the milestone become immutable (`freezed`). No mutable fields on entities.
+- User-visible strings added or edited in a touched screen go in ARB files.
+- Load, empty, error, and offline states are explicit when the screen can fail or be empty.
+- Use the shared buttons and empty/error widgets. Do not copy them.
+- Money displayed with `intl` and `en_IN`. Logic uses paise.
+- `print` is not a logger. Use the `Logger` port.
+- Tests live in `test/` mirroring the feature. Pump fakes, not the network.
+
+The package still lives in `mechanica_app/` until M00 moves it to `app/`. Follow the milestone's paths.
+
+Detail: `docs/prd/07-system-architecture.md`, `docs/prd/22-coding-standards.md`.

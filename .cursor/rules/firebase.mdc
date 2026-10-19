@@ -1,0 +1,19 @@
+---
+description: Firebase rules, emulators, and who may write
+globs: "{firebase/**,**/adapters/**}"
+alwaysApply: false
+---
+
+# Firebase
+
+- Use the emulator for local work. Do not deploy rules or indexes to a live project from an agent session.
+- Firestore holds documents. Realtime Database holds live location and presence only. Do not put prices in RTDB.
+- Client writes to booking, payment, wallet, coupon, review aggregate, and verification fields are denied.
+- Location writes: own node, own booking, gate open. The API maintains the gate.
+- Chat messages are written by the API. Clients listen.
+- Storage paths come from the server. Reject `..` and user-chosen absolute paths.
+- Admin SDK is used only in the FastAPI adapter, never in Flutter.
+- Every new collection needs a rules test and an index note in `docs/prd/09-domain-and-data-model.md` if the query is new.
+- Map Firestore documents to domain entities inside the adapter. Widgets never see a `DocumentSnapshot`.
+
+Detail: `docs/prd/09-domain-and-data-model.md`, `docs/prd/10-hybrid-backend.md`.
