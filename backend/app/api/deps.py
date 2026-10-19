@@ -13,6 +13,7 @@ from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
+from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -23,6 +24,7 @@ from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
+from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.set_mechanic_availability import SetMechanicAvailability
@@ -45,6 +47,7 @@ from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
+from app.ports.notification_repository import NotificationRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -385,3 +388,25 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+@lru_cache
+def _notifications() -> NotificationRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.notification_repository import FirestoreNotificationRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreNotificationRepository(settings.firebase_project_id)
+    return FakeNotificationRepository()
+
+
+def notification_repository_dep() -> NotificationRepository:
+    return _notifications()
+
+
+def manage_notifications_dep(
+    notifications: Annotated[NotificationRepository, Depends(notification_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ManageNotifications:
+    return ManageNotifications(notifications=notifications, clock=clock)

@@ -11,6 +11,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isSelf(uid);
       allow write: if false;
+      match /notifications/{id} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
       match /{sub=**} {
         allow read: if isSelf(uid);
         allow write: if false;
