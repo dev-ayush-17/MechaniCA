@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 import '../../models/booking_model.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'presentation/cancel_booking_sheet.dart';
 
 class BookingDetailsScreen extends ConsumerWidget {
   final String bookingId;
@@ -134,56 +135,29 @@ class BookingDetailsScreen extends ConsumerWidget {
   }
 
   void _showCancelSheet(BuildContext context, WidgetRef ref, BookingModel booking) {
-    String? reason;
-    showModalBottomSheet(
+    showCancelBookingSheet(
       context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Cancel Booking', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              const Text('Are you sure you want to cancel?', style: TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(height: 16),
-              ...['Changed my plans', 'Found better price', 'Emergency', 'Other'].map((r) =>
-                GestureDetector(
-                  onTap: () => setState(() => reason = r),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: reason == r ? AppColors.primaryRed.withValues(alpha: 0.1) : AppColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: reason == r ? AppColors.primaryRed : AppColors.divider),
-                    ),
-                    child: Row(children: [
-                      Icon(reason == r ? Icons.radio_button_checked : Icons.radio_button_off, color: reason == r ? AppColors.primaryRed : AppColors.textTertiary, size: 18),
-                      const SizedBox(width: 10),
-                      Text(r, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                    ]),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              AppButton(
-                label: 'Confirm Cancel',
-                color: AppColors.error,
-                onPressed: reason == null ? null : () {
-                  ref.read(bookingProvider.notifier).cancelBooking(booking.id, reason!);
-                  Navigator.pop(ctx);
-                  context.pop();
-                  showAppSnackbar(context, 'Booking cancelled successfully');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+      status: booking.status,
+      onCancel: (reason) async {
+        final result = await ref.read(bookingApiProvider).cancel(
+              booking.id,
+              reason: reason,
+            );
+        result.when(
+          onOk: (_) {
+            ref.read(bookingProvider.notifier).cancelBooking(booking.id, reason);
+            if (context.mounted) {
+              context.pop();
+              showAppSnackbar(context, 'Booking cancelled successfully');
+            }
+          },
+          onErr: (failure) {
+            if (context.mounted) {
+              showAppSnackbar(context, failure.message, isError: true);
+            }
+          },
+        );
+      },
     );
   }
 
