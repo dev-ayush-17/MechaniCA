@@ -1,5 +1,7 @@
 """Minimal geohash for service-area indexing (dispatch uses this in M07)."""
 
+import math
+
 
 def geohash_encode(lat: float, lng: float, precision: int = 6) -> str:
     base32 = "0123456789bcdefghjkmnpqrstuvwxyz"
@@ -34,3 +36,14 @@ def geohash_encode(lat: float, lng: float, precision: int = 6) -> str:
             bit = 0
             ch = 0
     return "".join(geohash)
+
+
+def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Great-circle distance in kilometres. Used to check the service-area radius."""
+    radius_km = 6371.0
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    d_phi = math.radians(lat2 - lat1)
+    d_lambda = math.radians(lng2 - lng1)
+    a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
+    return radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
