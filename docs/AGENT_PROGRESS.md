@@ -68,3 +68,36 @@ Follow-ups, not done here (scope):
 ## Next session
 
 M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.
+
+## M10 notes
+
+Split: API + tests this PR (`feat/m10-payments`). UI (wallet/offers/pay step, mechanic earnings screen, wizard coupon checks) is a second PR against the same spec. Handwritten backend already exceeded ~1,500 lines.
+
+Done:
+
+- Ports: `PaymentGateway`, `PaymentRepository`, `WalletService`, `CouponService`. Fake gateway signs with `mechupp_test_webhook_secret`. Cashfree adapter refuses sandbox keys when `APP_ENV=prod`.
+- Webhook verify on the raw body, replay by event id, amount/order mismatch leaves `pending` and writes `payment_mismatch`.
+- Wallet ledger (debits cannot go negative except cancel-fee debt), top-up, coupon validate/redeem once, admin refund once, mechanic earnings list from paid shares.
+- Cash: mechanic mark + customer confirm, or staff confirm with a note.
+- Reconciler: pending Cashfree rows older than 5 minutes go through the same apply path.
+- Recording notifier until M09. No invoice PDFs. No PAN/CVV/UPI PIN fields.
+- Named tests pass: `webhook_bad_signature_does_not_pay`, `webhook_replay_is_noop`, `webhook_amount_mismatch_does_not_pay`, `wallet_debit_cannot_go_negative`, `coupon_redeem_once`, `cash_requires_both_marks`, `client_sdk_success_is_not_paid`.
+
+Left for PR 2 (same spec, `--base main`):
+
+- Wire `wallet_screen`, `offers_screen`, booking pay step ("Waiting for confirmation").
+- Characterization tests then delete wizard-local coupon checks.
+- Mechanic earnings screen copy: "Recorded earnings. Bank payout is not live yet."
+- Dart `FakeQuoteApi` still returns "Coupons arrive in M10." for nonempty codes; quotes API already applies `FLAT50`.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
+- Cashfree sandbox (no live keys). Fake gateway is the default.
+- Flutter UI of this milestone (deferred to PR 2). `flutter analyze` / `flutter test` still run against generated client + existing screens.
+
+Follow-ups:
+
+- Firestore adapters for payments/wallet/coupons (in-memory fakes are the default, matching other M10 ports).
+- M09 NotificationSender swap in `deps.py` when that PR merges.
+- Invoice PDF is M11.
