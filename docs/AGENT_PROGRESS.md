@@ -7,11 +7,11 @@ Living log. Update this at the end of every session.
 | Field | Value |
 | --- | --- |
 | Phase | Implementation |
-| Branch | `feat/m05-catalog-pricing` |
-| Milestone in progress | M05 catalog and pricing. Code and tests are done. PR opening. |
-| Next milestone | M06 bookings. Needs M04 and M05 both merged (M04 is already on `main`). |
-| Demo | Runs from `app/` with `flutter run`. Service step reads the seeded catalog. Price step shows a server quote (labor, fee, GST, total). Confirm still uses the demo booking mock. |
-| Known broken | Nothing known. `flutter analyze` reports no issues |
+| Branch | `feat/m06-booking` |
+| Milestone in progress | M06 booking core. Code and tests are done. PR opening. |
+| Next milestone | M07 dispatch. Needs this M06 PR merged. |
+| Demo | Runs from `app/` with `flutter run`. Confirm submits `POST /v1/bookings` (fake adapter in demo). Offline confirm shows "Connect to book." and keeps the draft. Cancel after `arrived` shows support copy. |
+| Known broken | Nothing known. `flutter analyze` on touched booking files is clean. |
 
 ## Completed
 
@@ -19,44 +19,45 @@ Living log. Update this at the end of every session.
 | --- | --- |
 | 2026-10-19 | Frontend audit on `main` (`069f045`). Flutter 3.44.6, Dart 3.12.2. `flutter analyze`: 160 issues, 1 error (`MyApp` in `widget_test.dart`) |
 | 2026-10-19 | PRD chapters 01–25, ADRs 001–014, agent rules, milestone specs (PR #3) |
-| 2026-10-19 | M00 foundation (PR #4), M01 frontend foundations (PR #5), M02 auth (PR #6), rename to MechUpp (PR #7), M03 vehicles (PR #9), M04 mechanics (PR #8). All merged. |
-| 2026-10-19 | M05: pure `PricingService` (Python and Dart), integer paise GST split, four-wheeler labor × 1.5 from config (15000 bps). Seeded five PRD services. `POST /v1/quotes` has no booking write. Price step shows the quote. Drift catalog cache 24h with an "Updated" label. |
+| 2026-10-19 | M00 foundation (PR #4), M01 frontend foundations (PR #5), M02 auth (PR #6), rename to MechUpp (PR #7), M03 vehicles (PR #9), M04 mechanics (PR #8), M05 catalog/pricing (PR #10). All merged. |
+| 2026-10-19 | M06: product booking statuses, idempotent `POST /v1/bookings`, transitions, cancel fees, SOS payload, extra-line approve/reject. Wizard submit and cancel UI. |
 
-## M05 notes and follow-ups
+## M06 notes and follow-ups
 
 | What | Where |
 | --- | --- |
-| `PricingService` (pure, integer paise) | `backend/app/domain/pricing.py`, `app/lib/features/booking/domain/pricing.dart` |
-| `CatalogRepository` fake + Firestore, bound in `deps.py` | `backend/app/ports/catalog_repository.py`, adapters |
-| `GET /v1/catalog/services`, `POST /v1/quotes` | `backend/app/api/v1/catalog.py`, `quotes.py` |
-| OpenAPI + generated Dart client | `backend/openapi.json`, `app/lib/core/api/generated/` |
-| Price and service steps extracted | `app/lib/features/booking/presentation/` |
-| Offline catalog + last quote cache (Drift schema 2) | `app/lib/data/local/`, `features/catalog/data/` |
+| State table | `backend/app/domain/booking_state.py` |
+| `BookingRepository` fake + Firestore | `backend/app/ports/booking_repository.py`, adapters |
+| `POST /v1/bookings` + cancel + transitions + extra lines | `backend/app/api/v1/bookings.py` |
+| Wizard submit + offline error | `app/lib/features/booking/booking_flow_screen.dart`, `price_step.dart` |
+| Cancel after arrived | `app/lib/features/booking/presentation/cancel_booking_sheet.dart` |
+| SOS payload `urgency=sos` | `app/lib/features/booking/domain/sos_payload.dart` |
 
 Decisions:
 
-- GST is 18% on labor + convenience fee + parts. CGST/SGST split so they differ by at most 1 paise. Discount is subtracted from the total, not from the GST base. The chapter 12 sample with `discountPaise: 5000` and `totalPaise: 70664` is off by 100 paise from that rule (`70564`). M05 tests use the zero-discount glossary sample (`76464`).
-- Four-wheeler labor multiplier is config `four_wheeler_labor_bps=15000` (1.5x), not a binary float.
-- Empty coupon code means no discount. A non-empty code returns `invalid_input` "Coupons arrive in M10." The price step sends an empty code so the wizard can reach the estimate. The address-step demo coupons stay local until M10.
-- Quotes assume `two_wheeler` from the demo bike step (`BikeModel` has no vehicle type). Four-wheeler labor is covered by API/unit tests.
-- `MockServiceRepository` is replaced by `FakeCatalogServiceRepository` (PRD seed). The booking wizard reads `CatalogRepository` from `composition/providers.dart`.
-- Diff is a bit over 1,500 lines excluding generated OpenAPI/Dart client (four commits, no extra milestone split). Generated client files are excluded from that count.
+- Create lands on `confirmed` (`booking_auto_confirm=true`). No dispatch yet; the job stays confirmed until M07.
+- Cancel at `enRoute` records ₹99 (9900 paise) on the booking. No card charge.
+- Arrived and later cannot cancel. The sheet shows the support/dispute copy and does not call the API.
+- SOS forces `mode=instant` and `serviceCode=breakdown`. Offer timing stays normal until M07.
+- Addresses: `addr_home` resolves to a Patna snapshot so the wizard can submit without an addresses API.
+- Wizard confirm is `mode=instant`. The leftover date step is still local UI; scheduled-window validation is covered by the API.
+- `CancelRequest` was renamed `CancelBookingRequest` so the generated Dart client does not clash with Retrofit's `CancelRequest`.
+- Quote test that expected `GET /v1/bookings` to 404 now expects an empty list.
 
 Follow-ups, not done here (scope):
 
-- Booking create (M06) must call the same `PricingService` and snapshot the estimate.
-- Coupon redeem (M10).
-- Wire the address-step coupon field to `POST /v1/quotes`.
-- Price step still does not create a payment (M08).
-- Confirm booking still writes a mock `BookingModel` with leftover float totals. Replace in M06.
-- Bike step still uses `BikeModel` / `MockBikeRepository`. Vehicle type for quotes should come from the M03 vehicle when the wizard is rewired.
+- Real mechanic matching and offer timing (M07).
+- Extra-work 10-minute timeout (M07).
+- Payment capture (M08).
+- Coupon redeem on create (M10).
+- Addresses API; wizard still sends `addr_home`.
+- Bike step still uses `BikeModel`. Vehicle type for quotes should come from the M03 vehicle.
 
 ## Not verified locally
 
-- Firestore rules tests (`firebase/tests/rules.test.js`), including the new catalog read/write cases, were **not run**. This machine has no Java. The `firebase-rules` CI job installs Java 21 and runs them.
-- `FirestoreCatalogRepository` has not run against the emulator.
-- The app was not built for Android or iOS here. Manual wizard walk to the price step was not run (no device). Widget tests cover the price-step figures and the bike-step characterization.
-- The `api-client` CI job is the check that OpenAPI and the Dart client stay in lockstep.
+- Firestore rules tests (`firebase/tests/rules.test.js`) were **not run**. This machine has no Java. CI installs Java 21.
+- `FirestoreBookingRepository` has not run against the emulator.
+- The app was not built for Android or iOS here. Widget tests cover offline confirm, arrived cancel, SOS payload, and extra-line reject.
 
 ## Open items that do not block the next milestone
 
@@ -66,4 +67,4 @@ Follow-ups, not done here (scope):
 
 ## Next session
 
-M06 bookings per [MILESTONES.md](MILESTONES.md). Start only after this M05 PR is merged (M04 already is).
+M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.

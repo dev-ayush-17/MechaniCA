@@ -65,10 +65,10 @@ Manual: create an instant booking on the emulator, see it on the details screen,
 
 ## 11. Definition of done
 
-- [ ] Workshop statuses are gone from domain code.
-- [ ] Idempotency tested.
-- [ ] Demo's other tabs still open.
-- [ ] Progress updated. PR opened.
+- [x] Workshop statuses are gone from domain code.
+- [x] Idempotency tested.
+- [x] Demo's other tabs still open.
+- [x] Progress updated. PR opened.
 
 ## 12. Risks and rollback
 
