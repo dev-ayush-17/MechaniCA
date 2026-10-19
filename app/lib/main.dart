@@ -17,16 +17,16 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const ProviderScope(child: MechaniCAApp()));
+  runApp(const ProviderScope(child: MechUppApp()));
 }
 
-class MechaniCAApp extends StatelessWidget {
-  const MechaniCAApp({super.key});
+class MechUppApp extends StatelessWidget {
+  const MechUppApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'MechaniCA',
+      title: 'MechUpp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,

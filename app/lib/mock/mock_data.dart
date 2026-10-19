@@ -273,7 +273,7 @@ final mockBookings = [
     serviceType: ServiceType.visitWorkshop,
     scheduledDate: DateTime(2024, 3, 22),
     scheduledTime: '9:00 AM',
-    workshopAddress: 'MechaniCA Workshop, Boring Road, Patna',
+    workshopAddress: 'MechUpp Workshop, Boring Road, Patna',
     discount: 0.0,
     pickupCharges: 0.0,
     gst: 179.82,

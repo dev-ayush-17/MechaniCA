@@ -98,7 +98,7 @@ class ProfileScreen extends ConsumerWidget {
               _MenuItem('Logout', Icons.logout_rounded, () => _logout(context, ref), color: AppColors.error),
             ]),
             const SizedBox(height: 24),
-            const Text('MechaniCA v1.0.0', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+            const Text('MechUpp v1.0.0', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
             const SizedBox(height: 40),
           ],
         ),
