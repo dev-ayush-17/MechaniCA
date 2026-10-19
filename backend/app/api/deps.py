@@ -13,6 +13,7 @@ from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
+from app.adapters.fake.parts_proof_repository import FakePartsProofRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -25,6 +26,7 @@ from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.parts_proofs import CreatePartsProof, HidePartsProof, ListPartsProofs
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
@@ -45,6 +47,7 @@ from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
+from app.ports.parts_proof_repository import PartsProofRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -359,11 +362,44 @@ def cancel_booking_dep(
     return CancelBooking(bookings=bookings, clock=clock, policy=policy)
 
 
+@lru_cache
+def _proofs() -> PartsProofRepository:
+    return FakePartsProofRepository()
+
+
+def parts_proof_repository_dep() -> PartsProofRepository:
+    return _proofs()
+
+
+def create_parts_proof_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> CreatePartsProof:
+    return CreatePartsProof(bookings=bookings, proofs=proofs, storage=storage, clock=clock)
+
+
+def list_parts_proofs_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> ListPartsProofs:
+    return ListPartsProofs(bookings=bookings, proofs=proofs)
+
+
+def hide_parts_proof_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> HidePartsProof:
+    return HidePartsProof(bookings=bookings, proofs=proofs)
+
+
 def transition_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
 ) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock)
+    return TransitionBooking(bookings=bookings, clock=clock, proofs=proofs)
 
 
 def get_booking_dep(
