@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+from app.application.notify import Notify
 from app.domain.booking import Booking
 from app.domain.booking_state import BookingStatus, actor_for, assert_transition
 from app.domain.errors import InvalidTransition, NotFound, PermissionDenied
+from app.domain.notification_templates import Recipient
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
@@ -14,6 +16,7 @@ class TransitionBooking:
 
     bookings: BookingRepository
     clock: Clock
+    notify: Notify | None = None
 
     async def execute(
         self,
@@ -36,7 +39,33 @@ class TransitionBooking:
         if target is BookingStatus.CONFIRMED:
             mechanic_id = None
         updated = booking.with_status(target, now=self.clock.now(), mechanic_id=mechanic_id)
-        return await self.bookings.save(updated)
+        saved = await self.bookings.save(updated)
+        await self._emit(saved, target)
+        return saved
+
+    async def _emit(self, booking: Booking, target: BookingStatus) -> None:
+        if self.notify is None:
+            return
+        data = {
+            "bookingId": booking.id,
+            "serviceName": booking.service_name,
+            "mechanicName": booking.mechanic_id or "Your mechanic",
+            "displayNumber": booking.display_number,
+        }
+        if target is BookingStatus.MECHANIC_ASSIGNED:
+            await self.notify.emit(
+                "mechanicAssigned",
+                booking.customer_id,
+                data,
+                recipient=Recipient.CUSTOMER,
+            )
+        elif target is BookingStatus.ARRIVED:
+            await self.notify.emit(
+                "mechanicArrived",
+                booking.customer_id,
+                data,
+                recipient=Recipient.CUSTOMER,
+            )
 
     def _authorize(self, principal: Principal, booking: Booking, target: BookingStatus) -> None:
         if principal.role in {Role.ADMIN, Role.SUPER_ADMIN, Role.SUPPORT}:

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 
 from app.adapters.fake.auth import FakeAuth
+from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.clock import FakeClock
 from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
@@ -14,6 +15,7 @@ from app.api.deps import (
     register_device_dep,
     role_claims_dep,
 )
+from app.application.cancel_booking import CancelBooking
 from app.application.notify import (
     Notify,
     notify_payment_paid,
@@ -21,7 +23,18 @@ from app.application.notify import (
     notify_verification_rejected,
 )
 from app.application.register_device import RegisterDevice
+from app.application.transition_booking import TransitionBooking
+from app.domain.booking import (
+    AddressSnapshot,
+    Booking,
+    BookingMode,
+    BookingPolicy,
+    PaymentMethod,
+    Urgency,
+)
+from app.domain.booking_state import BookingStatus
 from app.domain.notification_templates import Channel, Recipient
+from app.domain.user import Principal, Role
 from app.main import create_app
 
 UID = "uid_notify"
@@ -91,6 +104,83 @@ async def test_verification_templates_send_on_direct_call() -> None:
         if m.template_id == "verificationRejected" and m.channel is Channel.IN_APP
     )
     assert rejected.body == "Licence photo is blurry."
+
+
+def _booking(*, status: BookingStatus, mechanic_id: str | None = None) -> Booking:
+    now = NOW
+    return Booking(
+        id="b-notify",
+        display_number="MCNOTIFY",
+        customer_id="cust",
+        vehicle_id="veh_1",
+        service_code="general_service",
+        service_name="General Service",
+        mode=BookingMode.INSTANT,
+        urgency=Urgency.NORMAL,
+        status=status,
+        payment_method=PaymentMethod.UPI,
+        address=AddressSnapshot(
+            id="addr_home",
+            label="Home",
+            line1="Rajendra Nagar",
+            city="Patna",
+            pincode="800001",
+            lat=25.5941,
+            lng=85.1376,
+        ),
+        labor_paise=59900,
+        parts_paise=0,
+        fee_paise=4900,
+        discount_paise=0,
+        cgst_paise=0,
+        sgst_paise=0,
+        total_paise=64800,
+        cancel_fee_paise=0,
+        cancel_reason=None,
+        scheduled_start=None,
+        mechanic_id=mechanic_id,
+        lines=(),
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+
+
+async def test_failed_push_does_not_roll_back_booking() -> None:
+    clock = FakeClock(NOW)
+    bookings = FakeBookingRepository()
+    await bookings.save(_booking(status=BookingStatus.CONFIRMED))
+    notifications = FakeNotificationRepository()
+    sender = RecordingNotificationSender(notifications, clock)
+    sender.fail_push_remaining = 9
+    notify = Notify(sender=sender, devices=FakeDeviceTokenRepository(), sms_enabled=False)
+    use_case = TransitionBooking(bookings=bookings, clock=clock, notify=notify)
+    admin = Principal(user_id="admin", role=Role.ADMIN, phone_e164="+919800000000")
+    saved = await use_case.execute(admin, "b-notify", target=BookingStatus.MECHANIC_ASSIGNED)
+    stored = await bookings.get("b-notify")
+    assert saved.status is BookingStatus.MECHANIC_ASSIGNED
+    assert stored is not None
+    assert stored.status is BookingStatus.MECHANIC_ASSIGNED
+    in_app = [
+        item for item in notifications.items.values() if item.template_id == "mechanicAssigned"
+    ]
+    assert len(in_app) == 1
+    assert in_app[0].title == "Mechanic assigned"
+
+
+async def test_cancel_notifies_the_other_party() -> None:
+    clock = FakeClock(NOW)
+    bookings = FakeBookingRepository()
+    await bookings.save(_booking(status=BookingStatus.MECHANIC_ASSIGNED, mechanic_id="mech"))
+    notifications = FakeNotificationRepository()
+    sender = RecordingNotificationSender(notifications, clock)
+    notify = Notify(sender=sender, devices=FakeDeviceTokenRepository())
+    use_case = CancelBooking(bookings=bookings, clock=clock, policy=BookingPolicy(), notify=notify)
+    customer = Principal(user_id="cust", role=Role.CUSTOMER, phone_e164="+919876543210")
+    saved = await use_case.execute(customer, "b-notify", reason="Changed plans")
+    assert saved.status is BookingStatus.CANCELLED
+    cancelled = [m for m in sender.sent if m.template_id == "bookingCancelled"]
+    assert {m.user_id for m in cancelled} == {"mech"}
 
 
 def test_register_device_is_idempotent_by_token() -> None:

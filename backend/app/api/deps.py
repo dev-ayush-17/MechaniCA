@@ -360,21 +360,6 @@ def create_booking_dep(
     )
 
 
-def cancel_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
-) -> CancelBooking:
-    return CancelBooking(bookings=bookings, clock=clock, policy=policy)
-
-
-def transition_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock)
-
-
 def get_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
 ) -> GetBooking:
@@ -459,6 +444,23 @@ def notify_dep(
     settings: Annotated[Settings, Depends(settings_dep)],
 ) -> Notify:
     return Notify(sender=sender, devices=devices, sms_enabled=settings.sms_enabled)
+
+
+def cancel_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> CancelBooking:
+    return CancelBooking(bookings=bookings, clock=clock, policy=policy, notify=notify)
+
+
+def transition_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> TransitionBooking:
+    return TransitionBooking(bookings=bookings, clock=clock, notify=notify)
 
 
 def register_device_dep(
