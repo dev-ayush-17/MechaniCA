@@ -1,7 +1,7 @@
 [project]
-name = "mechanica-backend"
+name = "mechupp-backend"
 version = "0.1.0"
-description = "MechaniCA FastAPI service"
+description = "MechUpp FastAPI service"
 requires-python = ">=3.12"
 dependencies = [
     "firebase-admin==7.7.0",

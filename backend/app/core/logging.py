@@ -37,4 +37,4 @@ def configure_logging(level: str) -> None:
 
 
 def log_info(message: str, **fields: Any) -> None:
-    logging.getLogger("mechanica").info(message, extra={"fields": fields})
+    logging.getLogger("mechupp").info(message, extra={"fields": fields})
