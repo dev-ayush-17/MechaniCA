@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
+import '../../composition/providers.dart';
 import '../../providers/app_providers.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
@@ -17,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = mockUser;
+    final accountRole = ref.watch(authProvider).account?.role;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,6 +27,21 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (accountRole == 'mechanic')
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                ),
+                child: const Text(
+                  'This phone is registered as a mechanic account. '
+                  'Open the MechUpp Mechanic app to go online and take jobs.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                ),
+              ),
             // Profile card
             Container(
               padding: const EdgeInsets.all(20),

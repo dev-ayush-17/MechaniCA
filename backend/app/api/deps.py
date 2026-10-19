@@ -5,17 +5,29 @@ from typing import Annotated
 
 from fastapi import Depends, Header
 
+from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
+from app.adapters.fake.file_storage import FakeFileStorage
+from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
+from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.manage_vehicles import ManageVehicles
+from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.set_mechanic_availability import SetMechanicAvailability
+from app.application.sign_upload import SignUpload
+from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.verify_mechanic import VerifyMechanic
 from app.core.config import Settings, get_settings
-from app.domain.errors import Unauthenticated
-from app.domain.user import Principal
+from app.domain.errors import PermissionDenied, Unauthenticated
+from app.domain.user import Principal, Role
+from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
 from app.ports.clock import Clock
+from app.ports.file_storage import FileStorage
+from app.ports.mechanic_repository import MechanicRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -129,3 +141,88 @@ def bootstrap_user_dep(
     return BootstrapUser(
         users=users, claims=claims, clock=clock, auth_provider=settings.provider_auth
     )
+
+
+@lru_cache
+def _mechanics() -> FakeMechanicRepository:
+    return FakeMechanicRepository()
+
+
+def mechanic_repository_dep() -> MechanicRepository:
+    return _mechanics()
+
+
+@lru_cache
+def _storage() -> FileStorage:
+    return FakeFileStorage()
+
+
+def file_storage_dep() -> FileStorage:
+    return _storage()
+
+
+@lru_cache
+def _audit() -> AuditLog:
+    return FakeAuditLog()
+
+
+def audit_log_dep() -> AuditLog:
+    return _audit()
+
+
+async def require_mechanic_dep(
+    principal: Annotated[Principal, Depends(principal_dep)],
+) -> Principal:
+    if principal.role != Role.MECHANIC:
+        raise PermissionDenied("Mechanic account required.")
+    return principal
+
+
+async def admin_principal_dep(
+    principal: Annotated[Principal, Depends(principal_dep)],
+) -> Principal:
+    if principal.role not in (Role.ADMIN, Role.SUPER_ADMIN):
+        raise PermissionDenied("Admin access required.")
+    return principal
+
+
+def create_mechanic_draft_dep(
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> CreateMechanicDraft:
+    return CreateMechanicDraft(mechanics=mechanics, clock=clock)
+
+
+def submit_mechanic_application_dep(
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SubmitMechanicApplication:
+    return SubmitMechanicApplication(mechanics=mechanics, clock=clock)
+
+
+def set_mechanic_availability_dep(
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+) -> SetMechanicAvailability:
+    return SetMechanicAvailability(mechanics=mechanics)
+
+
+def mechanic_heartbeat_dep(
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> MechanicHeartbeat:
+    return MechanicHeartbeat(mechanics=mechanics, clock=clock)
+
+
+def sign_upload_dep(
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+) -> SignUpload:
+    return SignUpload(storage=storage)
+
+
+def verify_mechanic_dep(
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    claims: Annotated[RoleClaims, Depends(role_claims_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> VerifyMechanic:
+    return VerifyMechanic(mechanics=mechanics, claims=claims, audit=audit, clock=clock)

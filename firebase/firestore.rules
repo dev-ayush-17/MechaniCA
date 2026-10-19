@@ -29,6 +29,15 @@ service cloud.firestore {
     match /coupons/{id} { allow read, write: if false; }
     match /auditLog/{id} { allow read, write: if false; }
 
+    match /mechanics/{mechanicId} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /documents/{docId} {
+        allow read: if isSelf(mechanicId);
+        allow write: if false;
+      }
+    }
+
     match /serviceCatalog/{code} {
       allow read: if signedIn();
       allow write: if false;

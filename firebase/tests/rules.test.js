@@ -33,6 +33,15 @@ beforeEach(async () => {
       totalPaise: 70000,
     });
     await setDoc(doc(db, 'payments/p1'), { bookingId: 'b1', status: 'pending' });
+    await setDoc(doc(db, 'mechanics/mech'), {
+      displayName: 'Imran',
+      verified: false,
+      verificationStatus: 'pending',
+    });
+    await setDoc(doc(db, 'mechanics/mech/documents/d1'), {
+      kind: 'licence',
+      storagePath: 'mechanicDocs/mech/licence/x.pdf',
+    });
     await setDoc(doc(db, 'users/cust/vehicles/v1'), {
       ownerId: 'cust',
       registrationNumber: 'BR01AB1234',
@@ -89,5 +98,15 @@ describe('firestore rules', () => {
   it('unknown_collections_are_denied', async () => {
     const db = env.authenticatedContext('cust').firestore();
     assert.ok(await assertFails(setDoc(doc(db, 'surprise/x'), { a: 1 })));
+  });
+
+  it('owner_reads_mechanic_documents', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertSucceeds(getDoc(doc(db, 'mechanics/mech/documents/d1')));
+  });
+
+  it('client_cannot_write_verified', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertFails(updateDoc(doc(db, 'mechanics/mech'), { verified: true }));
   });
 });

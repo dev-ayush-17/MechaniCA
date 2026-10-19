@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../composition/providers.dart';
 import '../../../core/error/result.dart';
+import '../../../navigation/route_names.dart';
 import '../domain/account_api.dart';
 import '../domain/auth_service.dart';
 
@@ -147,9 +148,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
+/// Customer app uses [AccountIntent.customer]. The mechanic entrypoint overrides this.
+final accountIntentProvider = Provider<AccountIntent>(
+  (ref) => AccountIntent.customer,
+);
+
+/// Where [OTPScreen] navigates after a successful verify.
+final postOtpRouteProvider = Provider<String>(
+  (ref) => RouteNames.locationPermission,
+);
+
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(
     ref.watch(authServiceProvider),
     ref.watch(accountApiProvider),
+    intent: ref.watch(accountIntentProvider),
   ),
 );

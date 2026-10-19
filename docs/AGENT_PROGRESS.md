@@ -103,29 +103,30 @@ Not verified locally:
 
 Manual check (fake binding, `flutter run --dart-define-from-file=config/dev.json`): sign in with any 10-digit number and `123456`, kill the app, relaunch, land on home. Sign out from Profile, land on login.
 
-## M03 vehicles (branch `feat/m03-vehicles`)
+## M03 vehicles
 
-Status: implementation complete. PR opened. Awaiting review.
+Status: **merged** to `main` (PR #9).
 
 | What | Where |
 | --- | --- |
 | Freezed `Vehicle`, Indian plate validation, `/bikes` UI under `features/vehicles/` | `app/lib/features/vehicles/` |
 | `GET/POST/PATCH/DELETE /v1/vehicles`, fake + Firestore vehicle repositories | `backend/app/api/v1/vehicles.py`, adapters |
 | Drift `LocalVehicles` + `SyncQueueEntries` (vehicle kinds only) | `app/lib/data/local/` |
-| Fake binding seeds two valid plates per user on first list | `FakeVehicleRepository` |
-| Rules: owner read, deny client write on `users/{uid}/vehicles` | `firebase/tests/rules.test.js` |
 
-Follow-ups (out of scope):
+Follow-ups: Firestore `UserRepository` on the API (M02 note); full vehicle POST idempotency replay later.
 
-- **Firestore `UserRepository` on the API** — still in-memory fake only (from M02). Required for `PROVIDER_AUTH=firebase` end-to-end with real user docs; add with a rules test in a later milestone.
-- **Full idempotency store** for vehicle POST — header is required; replay semantics can follow the booking pattern in a later PR.
-- **Manual emulator E2E** — not run on this machine (no Java for Firestore emulator).
+## M04 mechanics (branch `feat/m04-mechanics`)
 
-Not verified locally:
+Status: implementation complete. PR #8; merging after M03 reconciliation on shared files.
 
-- `firebase/tests/rules.test.js` (no Java). CI `firebase-rules` job is authoritative.
-- Android/iOS build with upgraded `firebase_core` / `share_plus` for Drift.
+| What | Where |
+| --- | --- |
+| Mechanic API (`/v1/mechanic/*`, `/v1/uploads/sign`, admin verification) | `backend/app/api/v1/mechanic.py`, `admin_verification.py` |
+| Ports `MechanicRepository`, `FileStorage`, `AuditLog` with fakes | `backend/app/ports/`, `backend/app/adapters/fake/` |
+| Mechanic entrypoint and onboarding | `app/lib/main_mechanic.dart`, `app/lib/features/mechanic_onboarding/` |
+| Customer profile mechanic-role banner | `app/lib/features/profile/profile_screen.dart` |
+| Firestore mechanics + documents rules | `firebase/firestore.rules`, `firebase/tests/rules.test.js` |
 
 ## Next session
 
-Review and merge M03. Reconcile with parallel M04 on shared files if needed. Then M05 catalog or continue auth rebase per [MILESTONES.md](MILESTONES.md).
+Merge M04 PR #8 after CI on the merged branch. Then M05 per [MILESTONES.md](MILESTONES.md).
