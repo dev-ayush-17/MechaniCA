@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 import '../../models/booking_model.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'presentation/price_step.dart';
+import 'presentation/service_step.dart';
 
 class BookingFlowScreen extends ConsumerStatefulWidget {
   const BookingFlowScreen({super.key});
@@ -25,7 +27,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bikeProvider.notifier).loadBikes('usr_001');
-      ref.read(servicesProvider);
+      ref.read(catalogServicesProvider);
     });
   }
 
@@ -152,11 +154,11 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
   Widget _buildStep() {
     switch (_step) {
       case 0: return _Step1Bike(onNext: _next);
-      case 1: return _Step2Service(onNext: _next);
+      case 1: return ServiceStep(onNext: _next);
       case 2: return _Step3DateTime(onNext: _next);
       case 3: return _Step4Pickup(onNext: _next);
       case 4: return _Step5Address(onNext: _next);
-      case 5: return _Step6Payment(onConfirm: _confirmBooking);
+      case 5: return PriceStep(onConfirm: _confirmBooking);
       default: return const SizedBox.shrink();
     }
   }
@@ -233,87 +235,6 @@ class _Step1Bike extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: AppButton(label: 'Next', onPressed: flow.selectedBike != null ? onNext : null),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── STEP 2: SELECT SERVICE ───────────────────────────────────────────────────
-
-class _Step2Service extends ConsumerWidget {
-  final VoidCallback onNext;
-  const _Step2Service({required this.onNext});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider);
-    final flow = ref.watch(bookingFlowProvider);
-
-    return Column(
-      children: [
-        Expanded(
-          child: servicesAsync.when(
-            loading: () => const ShimmerList(),
-            error: (_, __) => const Center(child: Text('Failed to load services')),
-            data: (services) => ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: services.length,
-              itemBuilder: (_, i) {
-                final svc = services[i];
-                final selected = flow.selectedService?.id == svc.id;
-                return GestureDetector(
-                  onTap: () => ref.read(bookingFlowProvider.notifier).selectService(svc),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: selected ? AppColors.primaryRed : AppColors.divider, width: selected ? 2 : 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryRed.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.build_rounded, size: 22, color: AppColors.primaryRed),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(children: [
-                                Text(svc.name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                                if (svc.isPopular) ...[
-                                  const SizedBox(width: 8),
-                                  const StatusBadge(label: 'Popular', color: AppColors.warning),
-                                ],
-                              ]),
-                              Text(svc.description, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                              Text(svc.duration, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-                            ],
-                          ),
-                        ),
-                        Text('₹${svc.price.toInt()}', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-                        if (selected) const Padding(padding: EdgeInsets.only(left: 8), child: Icon(Icons.check_circle, color: AppColors.primaryRed, size: 22)),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: AppButton(label: 'Next', onPressed: flow.selectedService != null ? onNext : null),
         ),
       ],
     );
@@ -666,112 +587,3 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
   }
 }
 
-// ─── STEP 6: PAYMENT ──────────────────────────────────────────────────────────
-
-class _Step6Payment extends ConsumerStatefulWidget {
-  final Future<void> Function() onConfirm;
-  const _Step6Payment({required this.onConfirm});
-  @override
-  ConsumerState<_Step6Payment> createState() => _Step6PaymentState();
-}
-
-class _Step6PaymentState extends ConsumerState<_Step6Payment> {
-  bool _isLoading = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final flow = ref.watch(bookingFlowProvider);
-
-    final methods = [
-      ('UPI', Icons.qr_code_rounded),
-      ('Card', Icons.credit_card_rounded),
-      ('Net Banking', Icons.account_balance_outlined),
-      ('Wallet', Icons.account_balance_wallet_outlined),
-      ('Cash After Service', Icons.money_rounded),
-    ];
-
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Price Estimate', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
-                  child: Column(
-                    children: [
-                      _priceRow('Service', '₹${flow.selectedService?.price.toInt() ?? 0}'),
-                      if (flow.isPickupDrop) _priceRow('Pickup & Drop', '₹${flow.pickupCharges.toInt()}'),
-                      if (flow.discount > 0) _priceRow('Discount', '-₹${flow.discount.toStringAsFixed(0)}', color: AppColors.success),
-                      _priceRow('GST (18%)', '₹${flow.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
-                      const Divider(color: AppColors.divider, height: 24),
-                      _priceRow('Total Amount', '₹${flow.total.toStringAsFixed(0)}', bold: true),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text('Payment Method', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                ...methods.map((m) {
-                  final selected = flow.paymentMethod == m.$1;
-                  return GestureDetector(
-                    onTap: () => ref.read(bookingFlowProvider.notifier).setPaymentMethod(m.$1),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: selected ? AppColors.primaryRed : AppColors.divider, width: selected ? 2 : 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(m.$2, size: 22, color: selected ? AppColors.primaryRed : AppColors.textSecondary),
-                          const SizedBox(width: 14),
-                          Text(m.$1, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                          const Spacer(),
-                          if (selected) const Icon(Icons.check_circle, color: AppColors.primaryRed, size: 20),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: AppButton(
-            label: 'Pay ₹${flow.total.toStringAsFixed(0)}',
-            isLoading: _isLoading,
-            onPressed: () async {
-              setState(() => _isLoading = true);
-              await widget.onConfirm();
-              if (mounted) setState(() => _isLoading = false);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-Widget _priceRow(String label, String value, {Color? color, bool bold = false}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 5),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-        Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
-      ],
-    ),
-  );
-}

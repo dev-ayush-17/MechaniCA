@@ -28,9 +28,18 @@ import '../features/auth/data/fake_session_store.dart';
 import '../features/auth/data/http_account_api.dart';
 import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
+import '../features/booking/domain/quote_api.dart';
+import '../features/catalog/data/fake_catalog_repository.dart';
+import '../features/catalog/data/fake_quote_api.dart';
+import '../features/catalog/data/http_catalog_repository.dart';
+import '../features/catalog/data/http_quote_api.dart';
+import '../features/catalog/domain/catalog_repository.dart';
+import '../features/catalog/domain/service_definition.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
+import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/quotes/quotes_client.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -137,4 +146,45 @@ final mechanicRepositoryProvider = Provider<MechanicRepository>((ref) {
         client: ref.watch(restClientProvider),
       ),
   };
+});
+
+final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeCatalogRepository(),
+    AuthProviderKind.firebase => HttpCatalogRepository(
+        client: CatalogClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final quoteApiProvider = Provider<QuoteApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeQuoteApi(
+        catalog: ref.watch(catalogRepositoryProvider),
+      ),
+    AuthProviderKind.firebase => HttpQuoteApi(
+        client: QuotesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final catalogServicesProvider =
+    FutureProvider<List<ServiceDefinition>>((ref) async {
+  final result = await ref.watch(catalogRepositoryProvider).listActiveServices();
+  return result.when(
+    onOk: (items) => items,
+    onErr: (failure) => throw Exception(failure.message),
+  );
 });
