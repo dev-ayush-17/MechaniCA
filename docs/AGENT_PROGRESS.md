@@ -68,3 +68,34 @@ Follow-ups, not done here (scope):
 ## Next session
 
 M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.
+
+## M12 notes
+
+Branch: `feat/m12-chat`. FR-COM-001–004.
+
+**Done**
+
+- Chat lifecycle: send from `mechanicAssigned` until 24 hours after a terminal status. Named test `message_after_24h_is_rejected`.
+- Rate limit 20 / 10 min / booking. Named test `twenty_first_message_is_rate_limited`.
+- `POST/GET /v1/bookings/{id}/messages`, chat image sign via `FileStorage` (`POST .../messages/uploads`). API is the only writer.
+- Firestore rules: parties read `bookings/{id}/messages`; client writes denied.
+- Job chat UI (`features/job_chat/`), polling every 4s, empty-thread copy, failed-message retry, in-memory offline text queue (`offline_text_queues`).
+- Chat entry on booking details when a mechanic is assigned. Support FAQ chat is unchanged.
+- `TelephonyPort` fake + unavailable adapter. `masked_call_enabled` on in dev, off in prod. Call hidden when off. Adapter never returns a user phone.
+
+**Left / follow-ups, not done here**
+
+- Persist the chat outbox in Drift (`chat_send` kind). Session queue only.
+- Firestore snapshot listener. Polling is the writer-safe fallback.
+- Image picker on the thread. The API already accepts `mediaPath` after a signed upload.
+- Real masked-call vendor. `UnavailableTelephony` stands in until a contract exists.
+
+**Not verified locally**
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- `FirestoreChatService` was not run against the emulator.
+- The app was not built for Android or iOS here.
+
+**Next**
+
+PR against `main`. Do not merge from this session. M07/M09/M10/M13 are parallel and out of this branch.
