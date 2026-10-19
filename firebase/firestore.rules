@@ -33,11 +33,27 @@ service cloud.firestore {
 
     match /mechanics/{mechanicId} {
       allow read: if signedIn();
+      // ratingAvg and ratingCount are server-only caches (FR-REV-004).
       allow write: if false;
       match /documents/{docId} {
         allow read: if isSelf(mechanicId);
         allow write: if false;
       }
+    }
+
+    match /bookings/{bookingId}/proofs/{proofId} {
+      allow read: if signedIn() && (
+        get(/databases/$(database)/documents/bookings/$(bookingId)).data.customerId
+          == request.auth.uid ||
+        get(/databases/$(database)/documents/bookings/$(bookingId)).data.mechanicId
+          == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if signedIn();
+      allow write: if false;
     }
 
     match /serviceCatalog/{code} {

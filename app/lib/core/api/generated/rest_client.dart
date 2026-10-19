@@ -7,10 +7,12 @@ import 'package:dio/dio.dart';
 import 'fallback/fallback_client.dart';
 import 'admin/admin_client.dart';
 import 'bookings/bookings_client.dart';
+import 'proofs/proofs_client.dart';
 import 'catalog/catalog_client.dart';
 import 'me/me_client.dart';
 import 'mechanic/mechanic_client.dart';
 import 'quotes/quotes_client.dart';
+import 'reviews/reviews_client.dart';
 import 'uploads/uploads_client.dart';
 import 'vehicles/vehicles_client.dart';
 
@@ -30,10 +32,12 @@ class RestClient {
   FallbackClient? _fallback;
   AdminClient? _admin;
   BookingsClient? _bookings;
+  ProofsClient? _proofs;
   CatalogClient? _catalog;
   MeClient? _me;
   MechanicClient? _mechanic;
   QuotesClient? _quotes;
+  ReviewsClient? _reviews;
   UploadsClient? _uploads;
   VehiclesClient? _vehicles;
 
@@ -43,6 +47,8 @@ class RestClient {
 
   BookingsClient get bookings => _bookings ??= BookingsClient(_dio, baseUrl: _baseUrl);
 
+  ProofsClient get proofs => _proofs ??= ProofsClient(_dio, baseUrl: _baseUrl);
+
   CatalogClient get catalog => _catalog ??= CatalogClient(_dio, baseUrl: _baseUrl);
 
   MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
@@ -50,6 +56,8 @@ class RestClient {
   MechanicClient get mechanic => _mechanic ??= MechanicClient(_dio, baseUrl: _baseUrl);
 
   QuotesClient get quotes => _quotes ??= QuotesClient(_dio, baseUrl: _baseUrl);
+
+  ReviewsClient get reviews => _reviews ??= ReviewsClient(_dio, baseUrl: _baseUrl);
 
   UploadsClient get uploads => _uploads ??= UploadsClient(_dio, baseUrl: _baseUrl);
 

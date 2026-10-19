@@ -15,6 +15,7 @@ from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.parts_proof_repository import FakePartsProofRepository
 from app.adapters.fake.readiness import FakeReadiness
+from app.adapters.fake.review_repository import FakeReviewRepository
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
@@ -27,6 +28,7 @@ from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.parts_proofs import CreatePartsProof, HidePartsProof, ListPartsProofs
+from app.application.reviews import EditReview, HideReview, ListReviews, SubmitReview
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
@@ -49,6 +51,7 @@ from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.parts_proof_repository import PartsProofRepository
 from app.ports.readiness import ReadinessCheck
+from app.ports.review_repository import ReviewRepository
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
@@ -421,3 +424,59 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+@lru_cache
+def _reviews() -> ReviewRepository:
+    return FakeReviewRepository()
+
+
+def review_repository_dep() -> ReviewRepository:
+    return _reviews()
+
+
+def _blocked_words(settings: Settings) -> tuple[str, ...]:
+    return tuple(word.strip() for word in settings.review_blocked_words.split(",") if word.strip())
+
+
+def submit_review_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> SubmitReview:
+    return SubmitReview(
+        bookings=bookings,
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def edit_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> EditReview:
+    return EditReview(
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def list_reviews_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+) -> ListReviews:
+    return ListReviews(reviews=reviews)
+
+
+def hide_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+) -> HideReview:
+    return HideReview(reviews=reviews, mechanics=mechanics)

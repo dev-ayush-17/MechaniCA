@@ -31,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(mechanic.upload_router)
     app.include_router(admin_verification.router)
     app.include_router(reviews.proofs_router)
+    app.include_router(reviews.reviews_router)
     return app
 
 

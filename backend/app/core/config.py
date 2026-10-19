@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     service_area_lat: float = 25.5941
     service_area_lng: float = 85.1376
     service_area_radius_km: float = 50.0
+    review_blocked_words: str = "spam,scam"
 
     @model_validator(mode="after")
     def _check_auth_provider(self) -> "Settings":

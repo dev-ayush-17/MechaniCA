@@ -6,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 let env;
 
@@ -53,6 +53,16 @@ beforeEach(async () => {
       durationMin: 60,
       active: true,
       sortOrder: 1,
+    });
+    await setDoc(doc(db, 'bookings/b1/proofs/p1'), {
+      kind: 'before',
+      storagePath: 'partsProof/b1/line1/before/x.jpg',
+    });
+    await setDoc(doc(db, 'reviews/r1'), {
+      bookingId: 'b1',
+      mechanicId: 'mech',
+      stars: 5,
+      status: 'published',
     });
   });
 });
@@ -121,6 +131,23 @@ describe('firestore rules', () => {
     await assertSucceeds(
       getDoc(doc(env.authenticatedContext('cust').firestore(), 'serviceCatalog/general_service')),
     );
+  });
+
+  it('aggregates_are_not_client_writable', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertFails(updateDoc(doc(db, 'mechanics/mech'), { ratingAvg: 5, ratingCount: 99 }));
+  });
+
+  it('proofs_not_deletable_by_mechanic', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertFails(updateDoc(doc(db, 'bookings/b1/proofs/p1'), { hidden: true }));
+    await assertFails(deleteDoc(doc(db, 'bookings/b1/proofs/p1')));
+  });
+
+  it('reviews_are_not_client_writable', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(updateDoc(doc(db, 'reviews/r1'), { stars: 1 }));
+    await assertFails(setDoc(doc(db, 'reviews/r2'), { bookingId: 'b1', stars: 5 }));
   });
 
   it('client_cannot_write_catalog', async () => {
