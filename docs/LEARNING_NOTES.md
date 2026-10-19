@@ -34,12 +34,12 @@ If you can find those six steps in the folders, the architecture is doing its jo
 | `backend/app/adapters` | Firebase, Cashfree, Maps, Cloud Tasks |
 | `firebase/` | Rules and emulator config |
 
-Until M00, the Flutter demo is `mechanica_app/` and the API stub is `mechanica_api/main.py`.
+The Flutter app is in `app/` and the API is in `backend/`.
 
 ## How to run the demo today
 
 ```bash
-cd mechanica_app
+cd app
 flutter pub get
 flutter run
 ```

@@ -6,7 +6,7 @@ MechaniCA is an on-demand mechanic service for India. Spec: [docs/PRD.md](docs/P
 
 Flutter (Dart 3) customer, mechanic, and admin-web entrypoints. FastAPI (Python 3.12) on Cloud Run. Firebase Auth, Firestore, Realtime Database (live location only), Storage, FCM. Cashfree and Google Maps behind adapters. No Cloud Functions.
 
-Today the demo is `mechanica_app/` and the stub API is `mechanica_api/`. M00 moves them to `app/`, `backend/`, and `firebase/` with `git mv`.
+Layout: `app/` (Flutter; the Dart package is still named `mechanica_app`), `backend/` (FastAPI), `firebase/` (rules, emulator config), `tool/` (repo checks).
 
 ## Architecture
 
@@ -49,9 +49,9 @@ You may restructure the Flutter demo. Do it safely:
 - Do not `firebase deploy`, `gcloud run deploy`, or delete cloud resources. Use the emulator.
 - Open a PR. Do not merge your own work to `main` unless the milestone and the owner say so.
 
-## Commands (after M00)
+## Commands
 
-`flutter analyze` and `flutter test` in `app/`. `ruff check`, `mypy`, and `pytest` in `backend/`. Until M00, analyze from `mechanica_app/`. The stock widget test is known broken; M01 replaces it.
+`flutter analyze` and `flutter test` in `app/`. `ruff check`, `mypy`, and `pytest` in `backend/`. Repo checks: `python tool/check_import_boundaries.py`. Hooks: `git config core.hooksPath .githooks`. The stock widget test is known broken; M01 replaces it.
 
 ## Definition of done
 

@@ -1,6 +1,6 @@
 ---
 description: Secrets, rules, webhooks, and PII limits
-globs: "{firebase,backend,mechanica_api,app,mechanica_app}/**/*"
+globs: "{firebase,backend,app}/**/*"
 alwaysApply: false
 ---
 

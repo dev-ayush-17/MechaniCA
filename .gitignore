@@ -46,3 +46,6 @@ yarn-error.log*
 
 # Node
 node_modules/
+
+__pycache__/
+*.pyc

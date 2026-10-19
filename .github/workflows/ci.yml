@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boundaries:
+    name: import boundaries and hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python tool/check_import_boundaries.py
+      - run: python -m unittest discover -s tool -q
+      - run: sh tool/test_hooks.sh
+        # Needs full history for the force-push ancestor check.
+        env:
+          GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
+
+  flutter:
+    name: flutter analyze and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  backend:
+    name: backend ruff, mypy, pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: mypy app
+      - run: pytest -q
+
+  firebase-rules:
+    name: firestore rules tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: firebase/package-lock.json
+      - run: npm ci
+      - run: npm test
