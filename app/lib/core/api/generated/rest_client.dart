@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'fallback/fallback_client.dart';
 import 'me/me_client.dart';
 
-/// MechaniCA API `v0.1.0`
+/// MechUpp API `v0.1.0`
 class RestClient {
   RestClient(
     Dio dio, {
