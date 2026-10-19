@@ -84,7 +84,7 @@ class CreateBooking:
         if principal.role != Role.CUSTOMER:
             raise PermissionDenied("Customer account required.")
         key = parse_idempotency_key(idempotency_key)
-        body = {
+        body: dict[str, object] = {
             "vehicleId": vehicle_id,
             "serviceCode": service_code,
             "addressId": address_id,
@@ -105,8 +105,6 @@ class CreateBooking:
 
         effective_mode = BookingMode.INSTANT if urgency is Urgency.SOS else mode
         effective_code = "breakdown" if urgency is Urgency.SOS else service_code
-        if urgency is Urgency.SOS:
-            effective_mode = BookingMode.INSTANT
 
         await self._reject_if_active(principal.user_id)
 

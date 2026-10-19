@@ -5,33 +5,44 @@ from typing import Annotated
 
 from fastapi import Depends, Header
 
+from app.adapters.fake.address_repository import FakeAddressRepository
 from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
+from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
+from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
+from app.application.cancel_booking import CancelBooking
+from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
+from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.transition_booking import TransitionBooking
 from app.application.verify_mechanic import VerifyMechanic
 from app.core.config import Settings, get_settings
+from app.domain.booking import BookingPolicy
 from app.domain.catalog import PricingConfig
 from app.domain.errors import PermissionDenied, Unauthenticated
 from app.domain.pricing import PricingService
 from app.domain.user import Principal, Role
+from app.ports.address_repository import AddressRepository
 from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
+from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
+from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
@@ -266,3 +277,95 @@ def verify_mechanic_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> VerifyMechanic:
     return VerifyMechanic(mechanics=mechanics, claims=claims, audit=audit, clock=clock)
+
+
+def booking_policy_dep(settings: Annotated[Settings, Depends(settings_dep)]) -> BookingPolicy:
+    return BookingPolicy(
+        auto_confirm=settings.booking_auto_confirm,
+        cancel_fee_enroute_paise=settings.cancel_fee_enroute_paise,
+        service_area_lat=settings.service_area_lat,
+        service_area_lng=settings.service_area_lng,
+        service_area_radius_km=settings.service_area_radius_km,
+    )
+
+
+@lru_cache
+def _bookings() -> BookingRepository:
+    settings = get_settings()
+    if settings.provider_bookings == "firestore":
+        from app.adapters.firebase.booking_repository import FirestoreBookingRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreBookingRepository(settings.firebase_project_id)
+    return FakeBookingRepository()
+
+
+def booking_repository_dep() -> BookingRepository:
+    return _bookings()
+
+
+@lru_cache
+def _idempotency() -> IdempotencyStore:
+    settings = get_settings()
+    if settings.provider_bookings == "firestore":
+        from app.adapters.firebase.idempotency_store import FirestoreIdempotencyStore
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreIdempotencyStore(settings.firebase_project_id)
+    return FakeIdempotencyStore()
+
+
+def idempotency_store_dep() -> IdempotencyStore:
+    return _idempotency()
+
+
+@lru_cache
+def _addresses() -> AddressRepository:
+    return FakeAddressRepository()
+
+
+def address_repository_dep() -> AddressRepository:
+    return _addresses()
+
+
+def create_booking_dep(
+    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    addresses: Annotated[AddressRepository, Depends(address_repository_dep)],
+    idempotency: Annotated[IdempotencyStore, Depends(idempotency_store_dep)],
+    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+) -> CreateBooking:
+    return CreateBooking(
+        catalog=catalog,
+        vehicles=vehicles,
+        bookings=bookings,
+        addresses=addresses,
+        idempotency=idempotency,
+        pricing=pricing,
+        clock=clock,
+        policy=policy,
+    )
+
+
+def cancel_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+) -> CancelBooking:
+    return CancelBooking(bookings=bookings, clock=clock, policy=policy)
+
+
+def transition_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> TransitionBooking:
+    return TransitionBooking(bookings=bookings, clock=clock)
+
+
+def get_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+) -> GetBooking:
+    return GetBooking(bookings=bookings)

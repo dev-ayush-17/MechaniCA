@@ -57,6 +57,206 @@
         "title": "AvailabilityRequest",
         "type": "object"
       },
+      "BookingCreateOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelFeePaise": {
+            "default": 0,
+            "title": "Cancelfeepaise",
+            "type": "integer"
+          },
+          "displayNumber": {
+            "title": "Displaynumber",
+            "type": "string"
+          },
+          "estimate": {
+            "$ref": "#/components/schemas/EstimateOut"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "serviceCode": {
+            "title": "Servicecode",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "urgency": {
+            "title": "Urgency",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "displayNumber",
+          "estimate",
+          "version",
+          "urgency",
+          "mode",
+          "serviceCode"
+        ],
+        "title": "BookingCreateOut",
+        "type": "object"
+      },
+      "BookingListOut": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BookingOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BookingListOut",
+        "type": "object"
+      },
+      "BookingMode": {
+        "enum": [
+          "instant",
+          "scheduled"
+        ],
+        "title": "BookingMode",
+        "type": "string"
+      },
+      "BookingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelFeePaise": {
+            "default": 0,
+            "title": "Cancelfeepaise",
+            "type": "integer"
+          },
+          "cancelReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelreason"
+          },
+          "displayNumber": {
+            "title": "Displaynumber",
+            "type": "string"
+          },
+          "estimate": {
+            "$ref": "#/components/schemas/EstimateOut"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "mechanicId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mechanicid"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "paymentMethod": {
+            "title": "Paymentmethod",
+            "type": "string"
+          },
+          "scheduledStart": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledstart"
+          },
+          "serviceCode": {
+            "title": "Servicecode",
+            "type": "string"
+          },
+          "serviceName": {
+            "title": "Servicename",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "urgency": {
+            "title": "Urgency",
+            "type": "string"
+          },
+          "vehicleId": {
+            "title": "Vehicleid",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "displayNumber",
+          "estimate",
+          "version",
+          "urgency",
+          "mode",
+          "serviceCode",
+          "vehicleId",
+          "serviceName",
+          "paymentMethod",
+          "mechanicId",
+          "scheduledStart",
+          "cancelReason"
+        ],
+        "title": "BookingOut",
+        "type": "object"
+      },
+      "BookingStatus": {
+        "enum": [
+          "requested",
+          "confirmed",
+          "mechanicAssigned",
+          "enRoute",
+          "arrived",
+          "inService",
+          "completed",
+          "paid",
+          "cancelled",
+          "failed",
+          "disputed"
+        ],
+        "title": "BookingStatus",
+        "type": "string"
+      },
       "BootstrapRequest": {
         "description": "`role` is deliberately not a field: the server derives it from `intent`.",
         "properties": {
@@ -79,6 +279,71 @@
           "intent"
         ],
         "title": "BootstrapRequest",
+        "type": "object"
+      },
+      "CancelRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "default": "Cancelled",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "CancelRequest",
+        "type": "object"
+      },
+      "CreateBookingRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "addressId": {
+            "title": "Addressid",
+            "type": "string"
+          },
+          "couponCode": {
+            "default": "",
+            "title": "Couponcode",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/BookingMode"
+          },
+          "paymentMethod": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "scheduledStart": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledstart"
+          },
+          "serviceCode": {
+            "title": "Servicecode",
+            "type": "string"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/Urgency",
+            "default": "normal"
+          },
+          "vehicleId": {
+            "title": "Vehicleid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vehicleId",
+          "serviceCode",
+          "addressId",
+          "mode",
+          "paymentMethod"
+        ],
+        "title": "CreateBookingRequest",
         "type": "object"
       },
       "CreateVehicleRequest": {
@@ -217,6 +482,50 @@
           "error"
         ],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EstimateOut": {
+        "additionalProperties": false,
+        "properties": {
+          "cgstPaise": {
+            "title": "Cgstpaise",
+            "type": "integer"
+          },
+          "discountPaise": {
+            "title": "Discountpaise",
+            "type": "integer"
+          },
+          "feePaise": {
+            "title": "Feepaise",
+            "type": "integer"
+          },
+          "laborPaise": {
+            "title": "Laborpaise",
+            "type": "integer"
+          },
+          "partsPaise": {
+            "title": "Partspaise",
+            "type": "integer"
+          },
+          "sgstPaise": {
+            "title": "Sgstpaise",
+            "type": "integer"
+          },
+          "totalPaise": {
+            "title": "Totalpaise",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "laborPaise",
+          "partsPaise",
+          "feePaise",
+          "discountPaise",
+          "cgstPaise",
+          "sgstPaise",
+          "totalPaise"
+        ],
+        "title": "EstimateOut",
         "type": "object"
       },
       "Intent": {
@@ -438,6 +747,17 @@
         ],
         "title": "PatchVehicleRequest",
         "type": "object"
+      },
+      "PaymentMethod": {
+        "enum": [
+          "upi",
+          "card",
+          "netbanking",
+          "cash",
+          "wallet"
+        ],
+        "title": "PaymentMethod",
+        "type": "string"
       },
       "QuoteOut": {
         "properties": {
@@ -666,6 +986,38 @@
         ],
         "title": "SignUploadRequest",
         "type": "object"
+      },
+      "TransitionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedversion"
+          },
+          "to": {
+            "$ref": "#/components/schemas/BookingStatus"
+          }
+        },
+        "required": [
+          "to"
+        ],
+        "title": "TransitionRequest",
+        "type": "object"
+      },
+      "Urgency": {
+        "enum": [
+          "normal",
+          "sos"
+        ],
+        "title": "Urgency",
+        "type": "string"
       },
       "UserOut": {
         "properties": {
@@ -1025,6 +1377,522 @@
         "summary": "Decide Verification",
         "tags": [
           "admin"
+        ]
+      }
+    },
+    "/v1/bookings": {
+      "get": {
+        "operationId": "list_bookings_v1_bookings_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "List Bookings",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "post": {
+        "operationId": "create_booking_v1_bookings_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingCreateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Create Booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/v1/bookings/{booking_id}": {
+      "get": {
+        "operationId": "get_booking_v1_bookings__booking_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Get Booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/v1/bookings/{booking_id}/cancel": {
+      "post": {
+        "operationId": "cancel_booking_v1_bookings__booking_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Cancel Booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/v1/bookings/{booking_id}/transitions": {
+      "post": {
+        "operationId": "transition_booking_v1_bookings__booking_id__transitions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Transition Booking",
+        "tags": [
+          "bookings"
         ]
       }
     },

@@ -25,6 +25,8 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /idempotencyKeys/{id} { allow read, write: if false; }
+
     match /payments/{id} { allow read, write: if false; }
     match /coupons/{id} { allow read, write: if false; }
     match /auditLog/{id} { allow read, write: if false; }
