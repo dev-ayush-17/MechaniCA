@@ -33,5 +33,6 @@ abstract interface class AuthService {
   Future<Result<void>> signOut();
 
   /// The locally stored session, or null. Async because platform storage is.
-  Future<Session?> currentSession();
+  /// [forceRefresh] asks the vendor for a fresh token, for example after a 401.
+  Future<Session?> currentSession({bool forceRefresh = false});
 }

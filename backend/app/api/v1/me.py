@@ -6,13 +6,14 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 from app.api.deps import bootstrap_user_dep, principal_dep, user_repository_dep
+from app.api.errors import error_responses
 from app.application.bootstrap_user import BootstrapUser, Intent
 from app.core.logging import log_info
 from app.domain.errors import NotFound
 from app.domain.user import Principal, User
 from app.ports.user_repository import UserRepository
 
-router = APIRouter(prefix="/v1/me", tags=["me"])
+router = APIRouter(prefix="/v1/me", tags=["me"], responses=error_responses(400, 401, 403, 404, 409))
 
 
 class _Camel(BaseModel):

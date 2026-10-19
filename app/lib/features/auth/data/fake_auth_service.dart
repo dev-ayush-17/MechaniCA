@@ -79,7 +79,8 @@ class FakeAuthService implements AuthService {
     _lockedUntil.remove(phoneE164);
     final session = Session(
       userId: 'fake_${phoneE164.replaceAll('+', '')}',
-      idToken: 'fake-id-token',
+      // Same shape the backend FakeAuth accepts. Carries no secret.
+      idToken: 'fake:fake_${phoneE164.replaceAll('+', '')}:$phoneE164',
       expiresAt: now.add(const Duration(hours: 1)),
       role: 'customer',
     );
@@ -98,5 +99,6 @@ class FakeAuthService implements AuthService {
   }
 
   @override
-  Future<Session?> currentSession() async => _session;
+  Future<Session?> currentSession({bool forceRefresh = false}) async =>
+      _session;
 }

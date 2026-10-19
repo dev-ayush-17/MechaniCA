@@ -18,6 +18,7 @@ class AppConfig {
     required this.apiBaseUrl,
     required this.useFirebaseEmulator,
     this.providerAuth = AuthProviderKind.fake,
+    this.firebaseEmulatorHost = '10.0.2.2',
   });
 
   factory AppConfig.fromEnvironment() => AppConfig(
@@ -32,8 +33,13 @@ class AppConfig {
         providerAuth: AuthProviderKind.parse(
           const String.fromEnvironment('PROVIDER_AUTH', defaultValue: 'fake'),
         ),
+        firebaseEmulatorHost: const String.fromEnvironment(
+          'FIREBASE_EMULATOR_HOST',
+          defaultValue: '10.0.2.2',
+        ),
       );
 
+  final String firebaseEmulatorHost;
   final AuthProviderKind providerAuth;
   final AppEnv env;
   final String apiBaseUrl;

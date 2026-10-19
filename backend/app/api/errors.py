@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.domain.errors import (
@@ -22,6 +23,24 @@ from app.domain.errors import (
 )
 
 REQUEST_ID_HEADER = "X-Request-Id"
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    fields: dict[str, Any]
+    request_id: str = Field(serialization_alias="requestId", validation_alias="requestId")
+
+
+class ErrorEnvelope(BaseModel):
+    """Documents the error body in OpenAPI so the generated client can read it."""
+
+    error: ErrorBody
+
+
+def error_responses(*statuses: int) -> dict[int | str, dict[str, Any]]:
+    return {status: {"model": ErrorEnvelope, "description": "Error"} for status in statuses}
+
 
 _STATUS: dict[type[DomainError], int] = {
     InvalidInput: 400,
@@ -69,7 +88,26 @@ def _envelope(
     return JSONResponse(body, status_code=status, headers=response_headers)
 
 
+def _without_default_422(app: FastAPI) -> Callable[[], dict[str, Any]]:
+    """We answer validation failures with 400 invalid_input, so the stock 422 is a lie."""
+    original = app.openapi
+
+    def openapi() -> dict[str, Any]:
+        if app.openapi_schema is None:
+            schema = original()
+            for path in schema.get("paths", {}).values():
+                for operation in path.values():
+                    operation.get("responses", {}).pop("422", None)
+            for name in ("HTTPValidationError", "ValidationError"):
+                schema.get("components", {}).get("schemas", {}).pop(name, None)
+        return app.openapi_schema or {}
+
+    return openapi
+
+
 def install_error_handling(app: FastAPI) -> None:
+    app.openapi = _without_default_422(app)  # type: ignore[method-assign]  # FastAPI's documented hook
+
     @app.middleware("http")
     async def request_id_middleware(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
