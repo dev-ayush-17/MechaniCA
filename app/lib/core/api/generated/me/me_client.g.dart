@@ -21,18 +21,22 @@ class _MeClient implements MeClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<UserOut> meV1MeGet({String? authorization}) async {
+  Future<UserOut> bootstrapV1MeBootstrapPost({
+    required BootstrapRequest body,
+    String? authorization,
+  }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'authorization': authorization};
     _headers.removeWhere((k, v) => v == null);
-    const Map<String, dynamic>? _data = null;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<UserOut>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
+      Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/v1/me',
+            '/v1/me/bootstrap',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -50,22 +54,18 @@ class _MeClient implements MeClient {
   }
 
   @override
-  Future<UserOut> bootstrapV1MeBootstrapPost({
-    required BootstrapRequest body,
-    String? authorization,
-  }) async {
+  Future<UserOut> meV1MeGet({String? authorization}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'authorization': authorization};
     _headers.removeWhere((k, v) => v == null);
-    final _data = <String, dynamic>{};
-    _data.addAll(body.toJson());
+    const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<UserOut>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+      Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/v1/me/bootstrap',
+            '/v1/me',
             queryParameters: queryParameters,
             data: _data,
           )
