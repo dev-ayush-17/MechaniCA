@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
 from app.application.dispatch import SequentialDispatch
+from app.application.expire_extra_line import ExpireExtraLine
+from app.domain.booking import LineStatus
 from app.domain.booking_state import BookingStatus
+from app.domain.dispatch import DispatchConfig
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
 from app.ports.mechanic_repository import MechanicRepository
@@ -17,6 +20,7 @@ class SweepExpiredOffers:
     mechanics: MechanicRepository
     dispatch: SequentialDispatch
     clock: Clock
+    extra_lines: ExpireExtraLine | None = None
 
     async def execute(self) -> int:
         now = self.clock.now()
@@ -39,4 +43,18 @@ class SweepExpiredOffers:
             await self.bookings.save(cleared)
             await self.dispatch.offer(booking.id)
             stale += 1
-        return len(expired) + stale
+        extra = 0
+        if self.extra_lines is not None:
+            timeout = DispatchConfig().extra_work_timeout_seconds
+            in_service = await self.bookings.list_by_status(BookingStatus.IN_SERVICE)
+            for booking in in_service:
+                for line in booking.lines:
+                    if line.status is not LineStatus.PENDING_APPROVAL:
+                        continue
+                    if line.created_at is None:
+                        continue
+                    if (now - line.created_at).total_seconds() < timeout:
+                        continue
+                    await self.extra_lines.execute(booking.id, line.id)
+                    extra += 1
+        return len(expired) + stale + extra

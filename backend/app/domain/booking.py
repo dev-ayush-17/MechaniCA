@@ -72,6 +72,7 @@ class BookingLine:
     gst_paise: int
     status: LineStatus
     part_replacement: bool = False
+    created_at: datetime | None = None
 
 
 @dataclass(frozen=True)

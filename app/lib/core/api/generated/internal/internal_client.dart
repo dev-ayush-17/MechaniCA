@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../models/dispatch_timeout_request.dart';
+import '../models/extra_work_timeout_request.dart';
 import '../models/job_ok.dart';
 
 part 'internal_client.g.dart';
@@ -24,6 +25,13 @@ abstract class InternalClient {
   @POST('/v1/internal/jobs/dispatch-timeout')
   Future<JobOk> dispatchTimeoutV1InternalJobsDispatchTimeoutPost({
     @Body() required DispatchTimeoutRequest body,
+    @Header('x-internal-job-token') String? xInternalJobToken,
+  });
+
+  /// Extra Work Timeout
+  @POST('/v1/internal/jobs/extra-work-timeout')
+  Future<JobOk> extraWorkTimeoutV1InternalJobsExtraWorkTimeoutPost({
+    @Body() required ExtraWorkTimeoutRequest body,
     @Header('x-internal-job-token') String? xInternalJobToken,
   });
 }

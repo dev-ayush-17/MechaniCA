@@ -35,6 +35,7 @@ export 'models/document_kind.dart';
 export 'models/error_body.dart';
 export 'models/error_envelope.dart';
 export 'models/estimate_out.dart';
+export 'models/extra_work_timeout_request.dart';
 export 'models/intent.dart';
 export 'models/job_ok.dart';
 export 'models/line_decision_request.dart';

@@ -25,6 +25,7 @@ from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
 from app.application.dispatch import SequentialDispatch
+from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
@@ -387,12 +388,20 @@ def expire_offer_dep(
     return ExpireOffer(dispatch=dispatch)
 
 
+def expire_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ExpireExtraLine:
+    return ExpireExtraLine(bookings=bookings, clock=clock)
+
+
 def sweep_expired_offers_dep(
     offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
     dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    extra_lines: Annotated[ExpireExtraLine, Depends(expire_extra_line_dep)],
 ) -> SweepExpiredOffers:
     return SweepExpiredOffers(
         offers=offers,
@@ -400,6 +409,7 @@ def sweep_expired_offers_dep(
         mechanics=mechanics,
         dispatch=dispatch,
         clock=clock,
+        extra_lines=extra_lines,
     )
 
 
@@ -476,8 +486,11 @@ def add_extra_line_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     settings: Annotated[Settings, Depends(settings_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> AddExtraLine:
-    return AddExtraLine(bookings=bookings, clock=clock, gst_bps=settings.gst_bps)
+    return AddExtraLine(
+        bookings=bookings, clock=clock, gst_bps=settings.gst_bps, scheduler=scheduler
+    )
 
 
 def decide_extra_line_dep(

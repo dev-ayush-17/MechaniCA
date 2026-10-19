@@ -55,6 +55,7 @@ def _line_to_doc(line: BookingLine) -> dict[str, object]:
         "gstPaise": line.gst_paise,
         "status": line.status.value,
         "partReplacement": line.part_replacement,
+        "createdAt": line.created_at,
     }
 
 
@@ -67,6 +68,7 @@ def _line_from_doc(data: dict[str, object]) -> BookingLine:
         gst_paise=int(str(data["gstPaise"])),
         status=LineStatus(str(data["status"])),
         part_replacement=bool(data.get("partReplacement", False)),
+        created_at=_parse_time(data["createdAt"]) if data.get("createdAt") else None,
     )
 
 

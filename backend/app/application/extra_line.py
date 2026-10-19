@@ -1,22 +1,29 @@
+import logging
 import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 
 from app.domain.booking import Booking, BookingLine, LineKind, LineStatus
 from app.domain.booking_state import BookingStatus
 from app.domain.catalog import BPS_DENOMINATOR
+from app.domain.dispatch import DispatchConfig
 from app.domain.errors import InvalidInput, InvalidTransition, NotFound, PermissionDenied
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.job_scheduler import JobScheduler, ScheduledJob
+
+_LOG = logging.getLogger("mechupp.extra_line")
 
 
 @dataclass(frozen=True)
 class AddExtraLine:
-    """Mechanic adds a pending extra line. The 10-minute timeout is M07."""
+    """Mechanic adds a pending extra line and schedules the 10-minute timeout."""
 
     bookings: BookingRepository
     clock: Clock
     gst_bps: int
+    scheduler: JobScheduler | None = None
 
     async def execute(
         self,
@@ -50,9 +57,31 @@ class AddExtraLine:
             gst_paise=gst,
             status=LineStatus.PENDING_APPROVAL,
             part_replacement=kind is LineKind.PART,
+            created_at=self.clock.now(),
         )
         updated = booking.with_lines((*booking.lines, line), now=self.clock.now())
-        return await self.bookings.save(updated)
+        saved = await self.bookings.save(updated)
+        await self._schedule_timeout(saved.id, line.id)
+        return saved
+
+    async def _schedule_timeout(self, booking_id: str, line_id: str) -> None:
+        if self.scheduler is None:
+            return
+        delay = timedelta(seconds=DispatchConfig().extra_work_timeout_seconds)
+        try:
+            await self.scheduler.schedule(
+                ScheduledJob(
+                    id=f"extra-line-{line_id}",
+                    run_at=self.clock.now() + delay,
+                    target_path="/v1/internal/jobs/extra-work-timeout",
+                    body={"bookingId": booking_id, "lineId": line_id},
+                )
+            )
+        except Exception as exc:
+            _LOG.warning(
+                "schedule_failed",
+                extra={"fields": {"lineId": line_id, "error": type(exc).__name__}},
+            )
 
     async def _load(self, booking_id: str) -> Booking:
         booking = await self.bookings.get(booking_id)
@@ -96,6 +125,7 @@ class DecideExtraLine:
             gst_paise=found.gst_paise,
             status=LineStatus.APPROVED if approve else LineStatus.REJECTED,
             part_replacement=found.part_replacement,
+            created_at=found.created_at,
         )
         lines = tuple(updated_line if line.id == line_id else line for line in booking.lines)
         changed = booking.with_lines(lines, now=self.clock.now())

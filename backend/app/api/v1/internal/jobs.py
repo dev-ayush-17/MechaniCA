@@ -4,8 +4,14 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-from app.api.deps import expire_offer_dep, require_internal_job_dep, sweep_expired_offers_dep
+from app.api.deps import (
+    expire_extra_line_dep,
+    expire_offer_dep,
+    require_internal_job_dep,
+    sweep_expired_offers_dep,
+)
 from app.api.errors import error_responses
+from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.sweep_jobs import SweepExpiredOffers
 
@@ -23,6 +29,11 @@ class _Camel(BaseModel):
 
 class DispatchTimeoutRequest(_Camel):
     offer_id: str
+
+
+class ExtraWorkTimeoutRequest(_Camel):
+    booking_id: str
+    line_id: str
 
 
 class JobOk(_Camel):
@@ -45,3 +56,12 @@ async def dispatch_sweep(
 ) -> JobOk:
     expired = await use_case.execute()
     return JobOk(expired=expired)
+
+
+@router.post("/extra-work-timeout", response_model=JobOk)
+async def extra_work_timeout(
+    body: ExtraWorkTimeoutRequest,
+    use_case: Annotated[ExpireExtraLine, Depends(expire_extra_line_dep)],
+) -> JobOk:
+    await use_case.execute(body.booking_id, body.line_id)
+    return JobOk()
