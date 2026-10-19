@@ -41,11 +41,15 @@ import '../features/catalog/data/http_quote_api.dart';
 import '../features/catalog/data/offline_catalog_repository.dart';
 import '../features/catalog/domain/catalog_repository.dart';
 import '../features/catalog/domain/catalog_snapshot.dart';
+import '../features/mechanic_jobs/data/fake_offer_api.dart';
+import '../features/mechanic_jobs/data/http_offer_api.dart';
+import '../features/mechanic_jobs/domain/offer_api.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/offers/offers_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
@@ -145,6 +149,21 @@ final accountApiProvider = Provider<AccountApi>((ref) {
   };
 });
 
+final offerApiProvider = Provider<OfferApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeOfferApi(),
+    AuthProviderKind.firebase => HttpOfferApi(
+        client: OffersClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
 final mechanicRepositoryProvider = Provider<MechanicRepository>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
@@ -223,7 +242,8 @@ final bookingApiProvider = Provider<BookingApi>((ref) {
 });
 
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
-  final result = await ref.watch(catalogRepositoryProvider).listActiveServices();
+  final result =
+      await ref.watch(catalogRepositoryProvider).listActiveServices();
   final updatedAt = await ref.watch(catalogLocalStoreProvider).lastCachedAt();
   return result.when(
     onOk: (items) => CatalogSnapshot(services: items, updatedAt: updatedAt),

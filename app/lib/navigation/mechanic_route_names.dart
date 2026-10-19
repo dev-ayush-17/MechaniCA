@@ -4,4 +4,7 @@ class MechanicRouteNames {
   static const login = '/login';
   static const otp = '/otp';
   static const home = '/home';
+  static const offer = '/mechanic/offers/:offerId';
+
+  static String offerPath(String offerId) => '/mechanic/offers/$offerId';
 }
