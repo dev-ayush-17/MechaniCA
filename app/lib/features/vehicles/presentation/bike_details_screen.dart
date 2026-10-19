@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../mock/mock_data.dart';
+import '../../../composition/providers.dart';
 import '../../../navigation/route_names.dart';
-import '../../../providers/app_providers.dart';
+import '../domain/bike_mapper.dart';
+import '../domain/vehicle.dart';
 import '../../../widgets/shared/app_states.dart';
 import '../../../widgets/shared/app_widgets.dart';
 
@@ -15,14 +16,18 @@ class BikeDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bikes = ref.watch(bikeProvider);
-    final bike = bikes.whenOrNull(
-          data: (list) => list.firstWhere(
-            (b) => b.id == bikeId,
-            orElse: () => mockBikes.first,
-          ),
-        ) ??
-        mockBikes.first;
+    Vehicle? vehicle;
+    for (final v in ref.watch(vehiclesControllerProvider).vehicles) {
+      if (v.id == bikeId) {
+        vehicle = v;
+        break;
+      }
+    }
+    vehicle ??= ref.read(vehiclesControllerProvider.notifier).byId(bikeId);
+    final bike = vehicle?.toBikeModel();
+    if (bike == null) {
+      return const Scaffold(body: Center(child: Text('Bike not found')));
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,

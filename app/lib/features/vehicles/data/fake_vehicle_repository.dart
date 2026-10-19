@@ -4,12 +4,16 @@ import '../domain/vehicle_repository.dart';
 
 /// Offline demo vehicles with valid plates (no mock BR80Y 024).
 class FakeVehicleRepository implements VehicleRepository {
-  FakeVehicleRepository() {
+  final Set<String> _seededOwners = {};
+
+  void _seedFor(String ownerId) {
+    if (_seededOwners.contains(ownerId)) return;
+    _seededOwners.add(ownerId);
     final now = DateTime.utc(2024, 1, 15);
     _vehicles.addAll([
       Vehicle(
         id: 'veh_seed_1',
-        ownerId: 'demo',
+        ownerId: ownerId,
         vehicleType: VehicleType.twoWheeler,
         brand: 'TVS',
         model: 'Apache RTR 160 4V',
@@ -26,7 +30,7 @@ class FakeVehicleRepository implements VehicleRepository {
       ),
       Vehicle(
         id: 'veh_seed_2',
-        ownerId: 'demo',
+        ownerId: ownerId,
         vehicleType: VehicleType.twoWheeler,
         brand: 'Yamaha',
         model: 'MT-15',
@@ -46,6 +50,7 @@ class FakeVehicleRepository implements VehicleRepository {
 
   @override
   Future<Result<List<Vehicle>>> listByOwner(String ownerId) async {
+    _seedFor(ownerId);
     return Ok(_vehicles.where((v) => v.ownerId == ownerId).toList());
   }
 

@@ -12,6 +12,8 @@ import 'vehicle_sync_worker.dart';
 
 /// Drift-backed repository with a vehicle-only sync queue.
 class OfflineVehicleRepository implements VehicleRepository {
+  bool lastWriteWasQueued = false;
+
   OfflineVehicleRepository({
     required VehicleLocalStore local,
     required VehicleRemotePort remote,

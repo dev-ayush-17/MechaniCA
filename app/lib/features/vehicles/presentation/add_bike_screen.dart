@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../models/bike_model.dart';
-import '../../../providers/app_providers.dart';
 import '../../../widgets/shared/app_widgets.dart';
+import '../domain/indian_plate.dart';
+import '../domain/vehicle.dart';
 
 class AddBikeScreen extends ConsumerStatefulWidget {
   const AddBikeScreen({super.key});
@@ -31,25 +32,38 @@ class _AddBikeScreenState extends ConsumerState<AddBikeScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final userId = ref.read(authProvider).session?.userId;
+    if (userId == null) return;
     setState(() => _isLoading = true);
-    final bike = BikeModel(
-      id: 'bike_${DateTime.now().millisecondsSinceEpoch}',
-      userId: 'usr_001',
-      name: _nameCtrl.text,
-      brand: _brandCtrl.text,
-      model: _nameCtrl.text,
-      registrationNumber: _regCtrl.text,
+    final now = DateTime.now().toUtc();
+    final vehicle = Vehicle(
+      id: '',
+      ownerId: userId,
+      vehicleType: VehicleType.twoWheeler,
+      brand: _brandCtrl.text.trim(),
+      model: _nameCtrl.text.trim(),
       year: 2023,
+      registrationNumber: _regCtrl.text.trim(),
       fuelType: _fuelType,
-      odometer: 0,
+      odometerKm: 0,
       color: 'Black',
-      isPrimary: false,
-      addedAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
     );
-    await ref.read(bikeProvider.notifier).addBike(bike);
+    final ok = await ref.read(vehiclesControllerProvider.notifier).save(vehicle);
     if (mounted) {
       setState(() => _isLoading = false);
-      showAppSnackbar(context, 'Bike added successfully!');
+      if (!ok) {
+        final message = ref.read(vehiclesControllerProvider).errorMessage ??
+            invalidPlateMessage;
+        showAppSnackbar(context, message);
+        return;
+      }
+      if (!ref.read(networkOnlineProvider)) {
+        showAppSnackbar(context, 'Saved on this phone');
+      } else {
+        showAppSnackbar(context, 'Bike added successfully!');
+      }
       context.pop();
     }
   }
@@ -84,7 +98,11 @@ class _AddBikeScreenState extends ConsumerState<AddBikeScreen> {
               AppTextField(
                 hint: 'e.g. BR01AB1234',
                 controller: _regCtrl,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  if (!isValidIndianPlate(v)) return invalidPlateMessage;
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _label('Fuel Type'),

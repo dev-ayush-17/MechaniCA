@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/bike_model.dart';
 import '../../../navigation/route_names.dart';
-import '../../../providers/app_providers.dart';
+import '../../../composition/providers.dart';
 import '../../../widgets/shared/app_states.dart';
 import '../../../widgets/shared/app_widgets.dart';
 
@@ -20,25 +20,29 @@ class _MyBikesScreenState extends ConsumerState<MyBikesScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(bikeProvider.notifier).loadBikes('usr_001');
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  void _load() {
+    final userId = ref.read(authProvider).session?.userId;
+    if (userId != null) {
+      ref.read(vehiclesControllerProvider.notifier).load(userId);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bikesAsync = ref.watch(bikeProvider);
+    final vehiclesState = ref.watch(vehiclesControllerProvider);
+    final bikes = vehiclesState.asBikeModels;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('My Bikes')),
-      body: bikesAsync.when(
-        loading: () => const ShimmerList(),
-        error: (e, _) => ErrorState(
-          message: e.toString(),
-          onRetry: () => ref.read(bikeProvider.notifier).loadBikes('usr_001'),
-        ),
-        data: (bikes) => Column(
+      body: vehiclesState.isLoading
+          ? const ShimmerList()
+          : vehiclesState.errorMessage != null
+              ? ErrorState(message: vehiclesState.errorMessage!, onRetry: _load)
+              : Column(
           children: [
             Expanded(
               child: bikes.isEmpty
@@ -69,7 +73,6 @@ class _MyBikesScreenState extends ConsumerState<MyBikesScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -89,7 +92,7 @@ class _MyBikesScreenState extends ConsumerState<MyBikesScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(bikeProvider.notifier).deleteBike(bike.id);
+              ref.read(vehiclesControllerProvider.notifier).delete(bike.id);
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),

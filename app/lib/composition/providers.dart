@@ -8,6 +8,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api/generated/export.dart' show RestClient;
+import '../core/api/generated/vehicles/vehicles_client.dart';
+import '../data/local/app_database.dart';
+import '../features/vehicles/data/fake_vehicle_repository.dart';
+import '../features/vehicles/data/offline_vehicle_repository.dart';
+import '../features/vehicles/data/vehicle_local_store.dart';
+import '../features/vehicles/data/vehicle_remote_data_source.dart';
+import '../features/vehicles/data/vehicle_sync_worker.dart';
+import '../features/vehicles/domain/vehicle_repository.dart';
+import '../features/vehicles/presentation/vehicles_controller.dart';
 import '../core/config/app_config.dart';
 import '../core/flags/feature_flags.dart';
 import '../core/logging/logger.dart';
@@ -57,6 +66,54 @@ final restClientProvider = Provider<RestClient>((ref) {
 
 /// The offline fake follows the fake auth binding so the demo runs with no
 /// server. With Firebase auth the account calls go to the real API.
+/// Test and demo hooks can flip this to exercise the offline queue.
+final networkOnlineProvider = StateProvider<bool>((ref) => true);
+
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase(AppDatabase.openConnection());
+  ref.onDispose(db.close);
+  return db;
+});
+
+final vehicleLocalStoreProvider = Provider<VehicleLocalStore>(
+  (ref) => VehicleLocalStore(ref.watch(appDatabaseProvider)),
+);
+
+final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeVehicleRepository(),
+    AuthProviderKind.firebase => OfflineVehicleRepository(
+        local: ref.watch(vehicleLocalStoreProvider),
+        remote: VehicleRemoteDataSource(
+          client: VehiclesClient(
+            Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+            baseUrl: config.apiBaseUrl,
+          ),
+          token: () async =>
+              (await ref.read(authServiceProvider).currentSession())?.idToken,
+        ),
+        syncWorker: VehicleSyncWorker(
+          local: ref.watch(vehicleLocalStoreProvider),
+          remote: VehicleRemoteDataSource(
+            client: VehiclesClient(
+              Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+              baseUrl: config.apiBaseUrl,
+            ),
+            token: () async =>
+                (await ref.read(authServiceProvider).currentSession())?.idToken,
+          ),
+        ),
+        isOnline: () => ref.read(networkOnlineProvider),
+      ),
+  };
+});
+
+final vehiclesControllerProvider =
+    StateNotifierProvider<VehiclesController, VehiclesState>(
+  (ref) => VehiclesController(ref.watch(vehicleRepositoryProvider)),
+);
+
 final accountApiProvider = Provider<AccountApi>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
