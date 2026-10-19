@@ -20,7 +20,7 @@ class ForgotPasswordScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('Enter your registered mobile number to reset', style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 32),
-            AppTextField(hint: 'Mobile Number', keyboardType: TextInputType.phone),
+            const AppTextField(hint: 'Mobile Number', keyboardType: TextInputType.phone),
             const SizedBox(height: 24),
             AppButton(label: 'Send OTP', onPressed: () => context.pop()),
           ],

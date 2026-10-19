@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
 import '../../mock/mock_data.dart';
-import '../../models/booking_model.dart';
 import '../../widgets/shared/app_widgets.dart';
 
 class BookingSuccessScreen extends ConsumerWidget {
@@ -61,12 +60,12 @@ class BookingSuccessScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    _InfoRow('Booking ID', booking.bookingNumber),
-                    _InfoRow('Service', booking.serviceName),
-                    _InfoRow('Bike', booking.bikeName),
-                    _InfoRow('Scheduled', '${booking.scheduledDate.day} May 2024 at ${booking.scheduledTime}'),
-                    _InfoRow('Amount', '₹${booking.totalAmount.toStringAsFixed(0)}'),
-                    _InfoRow('Payment', booking.paymentMethod),
+                    _infoRow('Booking ID', booking.bookingNumber),
+                    _infoRow('Service', booking.serviceName),
+                    _infoRow('Bike', booking.bikeName),
+                    _infoRow('Scheduled', '${booking.scheduledDate.day} May 2024 at ${booking.scheduledTime}'),
+                    _infoRow('Amount', '₹${booking.totalAmount.toStringAsFixed(0)}'),
+                    _infoRow('Payment', booking.paymentMethod),
                   ],
                 ),
               ).animate().slideY(begin: 0.2, delay: 500.ms),
@@ -93,7 +92,7 @@ class BookingSuccessScreen extends ConsumerWidget {
   }
 }
 
-Widget _InfoRow(String label, String value) {
+Widget _infoRow(String label, String value) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: Row(

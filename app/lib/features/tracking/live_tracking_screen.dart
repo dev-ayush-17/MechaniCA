@@ -6,7 +6,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -404,20 +403,20 @@ class ServiceProgressScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Repair In Progress', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                      Text('Repair In Progress', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                       StatusBadge(label: 'Active', color: AppColors.primaryRed),
                     ],
                   ),
                   const SizedBox(height: 12),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
+                    child: const LinearProgressIndicator(
                       value: 0.6,
                       backgroundColor: AppColors.divider,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.primaryRed),
+                      valueColor: AlwaysStoppedAnimation(AppColors.primaryRed),
                       minHeight: 6,
                     ),
                   ),
@@ -455,7 +454,7 @@ class ServiceProgressScreen extends ConsumerWidget {
                   Text(item.$1, style: TextStyle(color: item.$2 ? Colors.white : AppColors.textSecondary, fontSize: 13)),
                 ],
               ),
-            )).toList(),
+            )),
 
             const SizedBox(height: 20),
             // Parts changed
@@ -479,7 +478,7 @@ class ServiceProgressScreen extends ConsumerWidget {
                   Text(p.$3, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                 ],
               ),
-            )).toList(),
+            )),
 
             const SizedBox(height: 20),
             // Mechanic notes
@@ -490,16 +489,16 @@ class ServiceProgressScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.divider),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(children: [
+                  Row(children: [
                     Icon(Icons.notes_rounded, color: AppColors.primaryRed, size: 16),
                     SizedBox(width: 8),
                     Text('Mechanic Notes', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                   ]),
-                  const SizedBox(height: 8),
-                  const Text('Bike in overall good condition. Engine running smoothly after oil change. Recommend checking rear tyre pressure next month.',
+                  SizedBox(height: 8),
+                  Text('Bike in overall good condition. Engine running smoothly after oil change. Recommend checking rear tyre pressure next month.',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
                 ],
               ),

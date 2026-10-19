@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     GestureDetector(
                       onTap: () async {
                         final success = await ref.read(authProvider.notifier).loginWithGoogle();
-                        if (success && mounted) {
+                        if (success && context.mounted) {
                           context.go(RouteNames.locationPermission);
                         }
                       },

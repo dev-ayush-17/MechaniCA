@@ -64,12 +64,12 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Stats row
-            Row(
+            const Row(
               children: [
                 _StatCard3('8', 'Bookings', Icons.build_rounded),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _StatCard3('₹2,150', 'Saved', Icons.percent_rounded),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _StatCard3('4.9★', 'Rating', Icons.star_rounded),
               ],
             ),
@@ -77,25 +77,25 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 20),
 
             // Menu sections
-            _MenuSection('Account', [
-              _MenuItem('Edit Profile', Icons.person_outline, () => context.push(RouteNames.editProfile)),
-              _MenuItem('My Addresses', Icons.location_on_outlined, () => context.push(RouteNames.addresses)),
-              _MenuItem('Documents', Icons.description_outlined, () => context.push(RouteNames.documents)),
+            _menuSection('Account', [
+              _menuItem('Edit Profile', Icons.person_outline, () => context.push(RouteNames.editProfile)),
+              _menuItem('My Addresses', Icons.location_on_outlined, () => context.push(RouteNames.addresses)),
+              _menuItem('Documents', Icons.description_outlined, () => context.push(RouteNames.documents)),
             ]),
             const SizedBox(height: 12),
-            _MenuSection('Features', [
-              _MenuItem('Service History', Icons.history_rounded, () => context.go(RouteNames.history)),
-              _MenuItem('Fuel Tracker', Icons.local_gas_station_rounded, () => context.push(RouteNames.fuelTracker)),
-              _MenuItem('Health Score', Icons.favorite_rounded, () => context.push(RouteNames.healthScore)),
-              _MenuItem('Refer & Earn', Icons.people_rounded, () => context.push(RouteNames.referEarn)),
-              _MenuItem('Membership', Icons.star_rounded, () => context.push(RouteNames.membership)),
+            _menuSection('Features', [
+              _menuItem('Service History', Icons.history_rounded, () => context.go(RouteNames.history)),
+              _menuItem('Fuel Tracker', Icons.local_gas_station_rounded, () => context.push(RouteNames.fuelTracker)),
+              _menuItem('Health Score', Icons.favorite_rounded, () => context.push(RouteNames.healthScore)),
+              _menuItem('Refer & Earn', Icons.people_rounded, () => context.push(RouteNames.referEarn)),
+              _menuItem('Membership', Icons.star_rounded, () => context.push(RouteNames.membership)),
             ]),
             const SizedBox(height: 12),
-            _MenuSection('Settings', [
-              _MenuItem('App Settings', Icons.settings_rounded, () => context.push(RouteNames.settings)),
-              _MenuItem('Support', Icons.support_agent_rounded, () => context.push(RouteNames.support)),
-              _MenuItem('Rate the App', Icons.thumb_up_rounded, () => showAppSnackbar(context, 'Thanks for the feedback!')),
-              _MenuItem('Logout', Icons.logout_rounded, () => _logout(context, ref), color: AppColors.error),
+            _menuSection('Settings', [
+              _menuItem('App Settings', Icons.settings_rounded, () => context.push(RouteNames.settings)),
+              _menuItem('Support', Icons.support_agent_rounded, () => context.push(RouteNames.support)),
+              _menuItem('Rate the App', Icons.thumb_up_rounded, () => showAppSnackbar(context, 'Thanks for the feedback!')),
+              _menuItem('Logout', Icons.logout_rounded, () => _logout(context, ref), color: AppColors.error),
             ]),
             const SizedBox(height: 24),
             const Text('MechUpp v1.0.0', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
@@ -155,7 +155,7 @@ class _StatCard3 extends StatelessWidget {
   }
 }
 
-Widget _MenuSection(String title, List<Widget> items) {
+Widget _menuSection(String title, List<Widget> items) {
   return Container(
     decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
     child: Column(
@@ -171,7 +171,7 @@ Widget _MenuSection(String title, List<Widget> items) {
   );
 }
 
-Widget _MenuItem(String label, IconData icon, VoidCallback onTap, {Color? color}) {
+Widget _menuItem(String label, IconData icon, VoidCallback onTap, {Color? color}) {
   return GestureDetector(
     onTap: onTap,
     child: Padding(
@@ -251,7 +251,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               onPressed: () async {
                 setState(() => _isLoading = true);
                 await Future.delayed(const Duration(milliseconds: 1000));
-                if (mounted) {
+                if (context.mounted) {
                   setState(() => _isLoading = false);
                   showAppSnackbar(context, 'Profile updated successfully!');
                   context.pop();
@@ -353,24 +353,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SettingsSection('Notifications', [
-            _Toggle('Push Notifications', _notifs, (v) => setState(() => _notifs = v)),
-            _Toggle('SMS Alerts', _smsAlerts, (v) => setState(() => _smsAlerts = v)),
-            _Toggle('Offer Notifications', _offerNotifs, (v) => setState(() => _offerNotifs = v)),
+          _settingsSection('Notifications', [
+            _toggle('Push Notifications', _notifs, (v) => setState(() => _notifs = v)),
+            _toggle('SMS Alerts', _smsAlerts, (v) => setState(() => _smsAlerts = v)),
+            _toggle('Offer Notifications', _offerNotifs, (v) => setState(() => _offerNotifs = v)),
           ]),
           const SizedBox(height: 16),
-          _SettingsSection('Appearance', [
-            _Toggle('Dark Mode', _darkMode, (v) => setState(() => _darkMode = v)),
+          _settingsSection('Appearance', [
+            _toggle('Dark Mode', _darkMode, (v) => setState(() => _darkMode = v)),
           ]),
           const SizedBox(height: 16),
-          _SettingsSection('Security', [
-            _Toggle('Biometric Login', _biometrics, (v) => setState(() => _biometrics = v)),
+          _settingsSection('Security', [
+            _toggle('Biometric Login', _biometrics, (v) => setState(() => _biometrics = v)),
           ]),
           const SizedBox(height: 16),
-          _SettingsSection('Data', [
-            _SettingRow('Clear Cache', Icons.delete_outline, () => showAppSnackbar(context, 'Cache cleared!')),
-            _SettingRow('Export Data', Icons.download_outlined, () => showAppSnackbar(context, 'Data export started')),
-            _SettingRow('Delete Account', Icons.delete_forever_rounded, () {}, color: AppColors.error),
+          _settingsSection('Data', [
+            _settingRow('Clear Cache', Icons.delete_outline, () => showAppSnackbar(context, 'Cache cleared!')),
+            _settingRow('Export Data', Icons.download_outlined, () => showAppSnackbar(context, 'Data export started')),
+            _settingRow('Delete Account', Icons.delete_forever_rounded, () {}, color: AppColors.error),
           ]),
         ],
       ),
@@ -378,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-Widget _SettingsSection(String title, List<Widget> items) {
+Widget _settingsSection(String title, List<Widget> items) {
   return Container(
     decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
     child: Column(
@@ -394,20 +394,20 @@ Widget _SettingsSection(String title, List<Widget> items) {
   );
 }
 
-Widget _Toggle(String label, bool value, ValueChanged<bool> onChanged) {
+Widget _toggle(String label, bool value, ValueChanged<bool> onChanged) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
-        Switch.adaptive(value: value, onChanged: onChanged, activeColor: AppColors.primaryRed),
+        Switch.adaptive(value: value, onChanged: onChanged, activeTrackColor: AppColors.primaryRed),
       ],
     ),
   );
 }
 
-Widget _SettingRow(String label, IconData icon, VoidCallback onTap, {Color? color}) {
+Widget _settingRow(String label, IconData icon, VoidCallback onTap, {Color? color}) {
   return GestureDetector(
     onTap: onTap,
     child: Padding(

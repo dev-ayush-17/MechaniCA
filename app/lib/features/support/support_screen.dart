@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
-import '../../widgets/shared/app_states.dart';
 
 // ─── SUPPORT SCREEN ───────────────────────────────────────────────────────────
 
@@ -78,7 +74,7 @@ class SupportScreen extends StatelessWidget {
               ('How do I track my bike?', 'You can track your bike in real-time from the Tracking screen.'),
               ('Can I reschedule my booking?', 'Yes, you can reschedule up to 2 hours before the service.'),
               ('What is the cancellation policy?', 'Free cancellation up to 24 hours before service.'),
-            ].map((faq) => _FaqItem(faq.$1, faq.$2)).toList(),
+            ].map((faq) => _FaqItem(faq.$1, faq.$2)),
 
             const SizedBox(height: 40),
           ],
@@ -263,7 +259,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: AppColors.surface, border: const Border(top: BorderSide(color: AppColors.divider))),
+            decoration: const BoxDecoration(color: AppColors.surface, border: Border(top: BorderSide(color: AppColors.divider))),
             child: Row(
               children: [
                 Expanded(child: AppTextField(hint: 'Type a message...', controller: _ctrl, onChanged: (_) => setState(() {}))),
@@ -361,7 +357,7 @@ class _TicketScreenState extends State<TicketScreen> {
               onPressed: _category == null ? null : () async {
                 setState(() => _isLoading = true);
                 await Future.delayed(const Duration(milliseconds: 1200));
-                if (mounted) {
+                if (context.mounted) {
                   setState(() => _isLoading = false);
                   showAppSnackbar(context, 'Ticket submitted! ID: TKT-${(1000 + DateTime.now().millisecond).toString()}');
                   context.pop();

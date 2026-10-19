@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
@@ -58,12 +57,12 @@ class _FuelTrackerScreenState extends ConsumerState<FuelTrackerScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Summary cards
-                    Row(
+                    const Row(
                       children: [
                         Expanded(child: _FuelStat('₹1,250', 'This Month', Icons.attach_money_rounded)),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Expanded(child: _FuelStat('42 L', 'Total Litres', Icons.local_gas_station_rounded)),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Expanded(child: _FuelStat('45 km/L', 'Avg. Mileage', Icons.speed_rounded)),
                       ],
                     ),
@@ -313,7 +312,7 @@ class _AddFuelLogScreenState extends ConsumerState<AddFuelLogScreen> {
                   date: DateTime.now(),
                 );
                 await ref.read(fuelProvider.notifier).addLog(log);
-                if (mounted) {
+                if (context.mounted) {
                   setState(() => _isLoading = false);
                   showAppSnackbar(context, 'Fuel log saved!');
                   context.pop();
