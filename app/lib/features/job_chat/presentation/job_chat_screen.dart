@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../widgets/shared/app_widgets.dart';
 import '../data/offline_chat_service.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_service.dart';
@@ -19,15 +20,11 @@ class JobChatScreen extends ConsumerStatefulWidget {
     required this.bookingId,
     this.threadClosed = false,
     this.selfUserId = 'demo-user',
-    this.showCall = false,
-    this.onCall,
   });
 
   final String bookingId;
   final bool threadClosed;
   final String selfUserId;
-  final bool showCall;
-  final VoidCallback? onCall;
 
   @override
   ConsumerState<JobChatScreen> createState() => _JobChatScreenState();
@@ -79,6 +76,25 @@ class _JobChatScreenState extends ConsumerState<JobChatScreen> {
     await _refresh();
   }
 
+  Future<void> _call() async {
+    final result = await ref.read(telephonyPortProvider).mask(
+          bookingId: widget.bookingId,
+          partyA: widget.selfUserId,
+          partyB: 'other',
+        );
+    if (!mounted) return;
+    await result.when(
+      onOk: (call) => ref.read(dialerProvider).open(call.dialNumber),
+      onErr: (failure) async {
+        showAppSnackbar(
+          context,
+          failure.message,
+          isError: true,
+        );
+      },
+    );
+  }
+
   Future<void> _retry(ChatMessage message) async {
     final chat = _chat;
     if (chat is OfflineChatService) {
@@ -101,9 +117,9 @@ class _JobChatScreenState extends ConsumerState<JobChatScreen> {
       appBar: AppBar(
         title: const Text('Chat'),
         actions: [
-          if (widget.showCall)
+          if (ref.watch(featureFlagsProvider).isEnabled('masked_call_enabled'))
             TextButton(
-              onPressed: widget.onCall,
+              onPressed: _call,
               child: const Text('Call'),
             ),
         ],

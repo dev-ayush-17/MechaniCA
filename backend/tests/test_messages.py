@@ -8,16 +8,19 @@ from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.chat_service import FakeChatService
 from app.adapters.fake.clock import FakeClock
 from app.adapters.fake.file_storage import FakeFileStorage
+from app.adapters.fake.telephony import FakeTelephony
 from app.api.deps import (
     auth_verifier_dep,
     booking_repository_dep,
     chat_service_dep,
     clock_dep,
     file_storage_dep,
+    mask_call_dep,
     role_claims_dep,
     send_message_dep,
     sign_chat_media_dep,
 )
+from app.application.mask_call import MaskCall
 from app.application.send_message import SendMessage
 from app.application.sign_chat_media import SignChatMedia
 from app.domain.booking import (
@@ -28,6 +31,7 @@ from app.domain.booking import (
     Urgency,
 )
 from app.domain.booking_state import BookingStatus
+from app.domain.telephony import MASKED_DIAL_NUMBER
 from app.domain.user import Role
 from app.main import create_app
 
@@ -92,6 +96,11 @@ class _Env:
         self.storage = FakeFileStorage()
         send = SendMessage(bookings=self.bookings, chat=self.chat, clock=self.clock)
         sign = SignChatMedia(storage=self.storage, bookings=self.bookings)
+        mask = MaskCall(
+            bookings=self.bookings,
+            telephony=FakeTelephony(self.clock),
+            enabled=True,
+        )
         app = create_app()
         app.dependency_overrides[auth_verifier_dep] = lambda: self.auth
         app.dependency_overrides[role_claims_dep] = lambda: self.auth
@@ -101,6 +110,7 @@ class _Env:
         app.dependency_overrides[file_storage_dep] = lambda: self.storage
         app.dependency_overrides[send_message_dep] = lambda: send
         app.dependency_overrides[sign_chat_media_dep] = lambda: sign
+        app.dependency_overrides[mask_call_dep] = lambda: mask
         self.client = TestClient(app)
         self.bookings.bookings["book_1"] = _booking()
 
@@ -163,3 +173,16 @@ def test_chat_upload_uses_chat_path(env: _Env) -> None:
     assert response.status_code == 201
     assert response.json()["path"].startswith("chat/book_1/")
     assert "phone" not in response.json()
+
+
+def test_masked_call_omits_party_phone(env: _Env) -> None:
+    response = env.client.post(
+        "/v1/bookings/book_1/masked-call",
+        headers={"Authorization": f"Bearer {TOKEN}"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dialNumber"] == MASKED_DIAL_NUMBER
+    assert "phone" not in body
+    assert CUSTOMER not in str(body)
+    assert MECHANIC not in str(body)

@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from app.api.deps import principal_dep, send_message_dep, sign_chat_media_dep
+from app.api.deps import mask_call_dep, principal_dep, send_message_dep, sign_chat_media_dep
 from app.api.errors import error_responses
+from app.application.mask_call import MaskCall
 from app.application.send_message import SendMessage
 from app.application.sign_chat_media import SignChatMedia
 from app.domain.chat import ChatMessage
@@ -17,7 +18,7 @@ from app.domain.user import Principal
 router = APIRouter(
     prefix="/v1/bookings",
     tags=["messages"],
-    responses=error_responses(400, 401, 403, 404, 429),
+    responses=error_responses(400, 401, 403, 404, 429, 503),
 )
 
 
@@ -117,6 +118,21 @@ async def sign_chat_media(
         max_bytes=body.max_bytes,
     )
     return SignChatMediaOut(upload_url=signed.upload_url, path=signed.path, headers=signed.headers)
+
+
+class MaskedCallOut(_Camel):
+    dial_number: str
+    expires_at: datetime
+
+
+@router.post("/{booking_id}/masked-call", response_model=MaskedCallOut)
+async def masked_call(
+    booking_id: str,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[MaskCall, Depends(mask_call_dep)],
+) -> MaskedCallOut:
+    call = await use_case.execute(principal, booking_id)
+    return MaskedCallOut(dial_number=call.dial_number, expires_at=call.expires_at)
 
 
 def _message_key(raw: str | None) -> str:

@@ -37,6 +37,7 @@ export 'models/estimate_out.dart';
 export 'models/intent.dart';
 export 'models/line_decision_request.dart';
 export 'models/line_kind.dart';
+export 'models/masked_call_out.dart';
 export 'models/mechanic_out.dart';
 export 'models/patch_vehicle_request.dart';
 export 'models/payment_method.dart';

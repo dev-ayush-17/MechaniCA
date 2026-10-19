@@ -49,9 +49,13 @@ import '../core/api/generated/catalog/catalog_client.dart';
 import '../core/api/generated/messages/messages_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
 import '../features/job_chat/data/fake_chat_service.dart';
+import '../features/job_chat/data/fake_telephony.dart';
 import '../features/job_chat/data/http_chat_service.dart';
+import '../features/job_chat/data/http_telephony.dart';
 import '../features/job_chat/data/offline_chat_service.dart';
+import '../features/job_chat/data/url_launcher_dialer.dart';
 import '../features/job_chat/domain/chat_service.dart';
+import '../features/job_chat/domain/telephony_port.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -63,8 +67,12 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 final loggerProvider = Provider<Logger>((ref) => const DeveloperLogger());
 
-final featureFlagsProvider =
-    Provider<FeatureFlags>((ref) => const StaticFeatureFlags());
+final featureFlagsProvider = Provider<FeatureFlags>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return StaticFeatureFlags({
+    'masked_call_enabled': config.env != AppEnv.prod,
+  });
+});
 
 /// `PROVIDER_AUTH` picks the adapter. Rollback is the fake binding.
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -245,6 +253,23 @@ final chatServiceProvider = Provider<ChatService>((ref) {
     isOnline: () => ref.read(networkOnlineProvider),
   );
 });
+
+final telephonyPortProvider = Provider<TelephonyPort>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeTelephony(),
+    AuthProviderKind.firebase => HttpTelephony(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final dialerProvider = Provider<Dialer>((ref) => UrlLauncherDialer());
 
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
   final result = await ref.watch(catalogRepositoryProvider).listActiveServices();

@@ -15,6 +15,7 @@ from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.readiness import FakeReadiness
+from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
@@ -25,6 +26,7 @@ from app.application.create_quote import CreateQuote
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
+from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.send_message import SendMessage
 from app.application.set_mechanic_availability import SetMechanicAvailability
@@ -51,6 +53,7 @@ from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
+from app.ports.telephony import TelephonyPort
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
 
@@ -419,3 +422,26 @@ def sign_chat_media_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
 ) -> SignChatMedia:
     return SignChatMedia(storage=storage, bookings=bookings)
+
+
+def telephony_port_dep(
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> TelephonyPort:
+    if settings.provider_telephony == "unavailable":
+        from app.adapters.telephony.unavailable import UnavailableTelephony
+
+        return UnavailableTelephony()
+    return FakeTelephony(clock)
+
+
+def mask_call_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    telephony: Annotated[TelephonyPort, Depends(telephony_port_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> MaskCall:
+    return MaskCall(
+        bookings=bookings,
+        telephony=telephony,
+        enabled=settings.is_masked_call_enabled(),
+    )
