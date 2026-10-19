@@ -1,6 +1,6 @@
 {
-    "name": "mechanica_app",
-    "short_name": "mechanica_app",
+    "name": "mechupp_app",
+    "short_name": "mechupp_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

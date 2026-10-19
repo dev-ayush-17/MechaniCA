@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'MechaniCA';
+  String get appName => 'MechUpp';
 
   @override
   String get appTagline => 'Your Bike. Our Responsibility.';

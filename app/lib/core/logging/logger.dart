@@ -35,11 +35,11 @@ class DeveloperLogger implements Logger {
 
   @override
   void info(String message, [Map<String, Object?> fields = const {}]) =>
-      developer.log(message, name: 'mechanica', level: 800, error: _tail(fields));
+      developer.log(message, name: 'mechupp', level: 800, error: _tail(fields));
 
   @override
   void warning(String message, [Map<String, Object?> fields = const {}]) =>
-      developer.log(message, name: 'mechanica', level: 900, error: _tail(fields));
+      developer.log(message, name: 'mechupp', level: 900, error: _tail(fields));
 
   @override
   void error(
@@ -49,7 +49,7 @@ class DeveloperLogger implements Logger {
   ]) =>
       developer.log(
         message,
-        name: 'mechanica',
+        name: 'mechupp',
         level: 1000,
         error: error ?? _tail(fields),
       );

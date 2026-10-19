@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// Product name shown on the splash screen.
   ///
   /// In en, this message translates to:
-  /// **'MechaniCA'**
+  /// **'MechUpp'**
   String get appName;
 
   /// Tagline shown under the product name on the splash screen.
