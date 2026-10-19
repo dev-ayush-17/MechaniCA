@@ -14,18 +14,18 @@ part 'me_client.g.dart';
 abstract class MeClient {
   factory MeClient(Dio dio, {String? baseUrl}) = _MeClient;
 
-  /// Me
-  @GET('/v1/me')
-  Future<UserOut> meV1MeGet({
-    @Header('authorization') String? authorization,
-  });
-
   /// Bootstrap.
   ///
   /// Create the caller's user document on first sign-in. Safe to repeat.
   @POST('/v1/me/bootstrap')
   Future<UserOut> bootstrapV1MeBootstrapPost({
     @Body() required BootstrapRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// Me
+  @GET('/v1/me')
+  Future<UserOut> meV1MeGet({
     @Header('authorization') String? authorization,
   });
 }

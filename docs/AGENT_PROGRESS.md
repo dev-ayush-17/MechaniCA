@@ -103,9 +103,21 @@ Not verified locally:
 
 Manual check (fake binding, `flutter run --dart-define-from-file=config/dev.json`): sign in with any 10-digit number and `123456`, kill the app, relaunch, land on home. Sign out from Profile, land on login.
 
+## M03 vehicles
+
+Status: **merged** to `main` (PR #9).
+
+| What | Where |
+| --- | --- |
+| Freezed `Vehicle`, Indian plate validation, `/bikes` UI under `features/vehicles/` | `app/lib/features/vehicles/` |
+| `GET/POST/PATCH/DELETE /v1/vehicles`, fake + Firestore vehicle repositories | `backend/app/api/v1/vehicles.py`, adapters |
+| Drift `LocalVehicles` + `SyncQueueEntries` (vehicle kinds only) | `app/lib/data/local/` |
+
+Follow-ups: Firestore `UserRepository` on the API (M02 note); full vehicle POST idempotency replay later.
+
 ## M04 mechanics (branch `feat/m04-mechanics`)
 
-Status: implementation complete. PR opened against `main`. M03 runs elsewhere; this branch touches only M04-owned paths plus minimal shared wiring.
+Status: implementation complete. PR #8; merging after M03 reconciliation on shared files.
 
 | What | Where |
 | --- | --- |
@@ -115,10 +127,6 @@ Status: implementation complete. PR opened against `main`. M03 runs elsewhere; t
 | Customer profile mechanic-role banner | `app/lib/features/profile/profile_screen.dart` |
 | Firestore mechanics + documents rules | `firebase/firestore.rules`, `firebase/tests/rules.test.js` |
 
-Tests: `pytest` mechanic suite (6), `flutter test` (+ `unverified_mechanic_cannot_go_online`). Firestore rules tests **not run locally** (no Java / emulator).
-
-Manual: `flutter run -t lib/main_mechanic.dart --dart-define-from-file=config/dev.json`, submit application, approve via admin API test client, toggle online after refresh.
-
 ## Next session
 
-Merge M01, rebase `feat/m02-auth` onto it, then start M03. Previously: start M01 from [milestones/M01-frontend-foundations.md](milestones/M01-frontend-foundations.md). Branch `refactor/m01-frontend-foundations` from `chore/m00-foundation`.
+Merge M04 PR #8 after CI on the merged branch. Then M05 per [MILESTONES.md](MILESTONES.md).

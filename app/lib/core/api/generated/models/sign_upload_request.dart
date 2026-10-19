@@ -9,16 +9,16 @@ part 'sign_upload_request.g.dart';
 @JsonSerializable()
 class SignUploadRequest {
   const SignUploadRequest({
+    required this.path,
     required this.contentType,
     required this.maxBytes,
-    required this.path,
   });
   
   factory SignUploadRequest.fromJson(Map<String, Object?> json) => _$SignUploadRequestFromJson(json);
   
+  final String path;
   final String contentType;
   final int maxBytes;
-  final String path;
 
   Map<String, Object?> toJson() => _$SignUploadRequestToJson(this);
 }

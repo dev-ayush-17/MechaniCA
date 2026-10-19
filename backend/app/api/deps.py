@@ -14,6 +14,7 @@ from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
 from app.application.create_mechanic_draft import CreateMechanicDraft
+from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
@@ -30,6 +31,7 @@ from app.ports.mechanic_repository import MechanicRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
+from app.ports.vehicle_repository import VehicleRepository
 
 
 def settings_dep() -> Settings:
@@ -104,6 +106,30 @@ async def principal_dep(
     if scheme.lower() != "bearer" or not token.strip():
         raise Unauthenticated("Sign in again.")
     return await verifier.verify(token.strip())
+
+
+@lru_cache
+def _vehicles() -> VehicleRepository:
+    settings = get_settings()
+    if settings.provider_vehicles == "firestore":
+        from app.adapters.firebase.vehicle_repository import FirestoreVehicleRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreVehicleRepository(settings.firebase_project_id)
+    from app.adapters.fake.vehicle_repository import FakeVehicleRepository
+
+    return FakeVehicleRepository()
+
+
+def vehicle_repository_dep() -> VehicleRepository:
+    return _vehicles()
+
+
+def manage_vehicles_dep(
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ManageVehicles:
+    return ManageVehicles(vehicles=vehicles, clock=clock)
 
 
 def bootstrap_user_dep(

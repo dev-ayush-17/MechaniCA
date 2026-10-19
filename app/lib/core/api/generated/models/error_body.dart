@@ -10,16 +10,16 @@ part 'error_body.g.dart';
 class ErrorBody {
   const ErrorBody({
     required this.code,
-    required this.fields,
     required this.message,
+    required this.fields,
     required this.requestId,
   });
   
   factory ErrorBody.fromJson(Map<String, Object?> json) => _$ErrorBodyFromJson(json);
   
   final String code;
-  final dynamic fields;
   final String message;
+  final dynamic fields;
   final String requestId;
 
   Map<String, Object?> toJson() => _$ErrorBodyToJson(this);

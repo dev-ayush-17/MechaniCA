@@ -9,16 +9,16 @@ part 'sign_upload_out.g.dart';
 @JsonSerializable()
 class SignUploadOut {
   const SignUploadOut({
-    required this.headers,
-    required this.path,
     required this.uploadUrl,
+    required this.path,
+    required this.headers,
   });
   
   factory SignUploadOut.fromJson(Map<String, Object?> json) => _$SignUploadOutFromJson(json);
   
-  final Map<String, String> headers;
-  final String path;
   final String uploadUrl;
+  final String path;
+  final Map<String, String> headers;
 
   Map<String, Object?> toJson() => _$SignUploadOutToJson(this);
 }
