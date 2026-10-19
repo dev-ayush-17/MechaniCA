@@ -25,6 +25,76 @@
         "title": "BootstrapRequest",
         "type": "object"
       },
+      "CreateVehicleRequest": {
+        "properties": {
+          "brand": {
+            "title": "Brand",
+            "type": "string"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "fuelType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fueltype"
+          },
+          "isPrimary": {
+            "default": false,
+            "title": "Isprimary",
+            "type": "boolean"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "odometerKm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometerkm"
+          },
+          "registrationNumber": {
+            "title": "Registrationnumber",
+            "type": "string"
+          },
+          "vehicleType": {
+            "$ref": "#/components/schemas/VehicleType",
+            "default": "two_wheeler"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "brand",
+          "model",
+          "year",
+          "registrationNumber"
+        ],
+        "title": "CreateVehicleRequest",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -75,6 +145,117 @@
         "title": "Intent",
         "type": "string"
       },
+      "PatchVehicleRequest": {
+        "properties": {
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "fuelType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fueltype"
+          },
+          "isPrimary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isprimary"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "odometerKm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometerkm"
+          },
+          "registrationNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrationnumber"
+          },
+          "vehicleType": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "PatchVehicleRequest",
+        "type": "object"
+      },
       "UserOut": {
         "properties": {
           "createdAt": {
@@ -119,6 +300,131 @@
         ],
         "title": "UserOut",
         "type": "object"
+      },
+      "VehicleListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "VehicleListOut",
+        "type": "object"
+      },
+      "VehicleOut": {
+        "properties": {
+          "brand": {
+            "title": "Brand",
+            "type": "string"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "fuelType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fueltype"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "isPrimary": {
+            "title": "Isprimary",
+            "type": "boolean"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "odometerKm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Odometerkm"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "registrationNumber": {
+            "title": "Registrationnumber",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "vehicleType": {
+            "title": "Vehicletype",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "vehicleType",
+          "brand",
+          "model",
+          "year",
+          "registrationNumber",
+          "fuelType",
+          "color",
+          "odometerKm",
+          "isPrimary",
+          "createdAt",
+          "updatedAt",
+          "version"
+        ],
+        "title": "VehicleOut",
+        "type": "object"
+      },
+      "VehicleType": {
+        "enum": [
+          "two_wheeler",
+          "four_wheeler"
+        ],
+        "title": "VehicleType",
+        "type": "string"
       }
     }
   },
@@ -368,6 +674,405 @@
         "summary": "Bootstrap",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/v1/vehicles": {
+      "get": {
+        "operationId": "list_vehicles_v1_vehicles_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "List Vehicles",
+        "tags": [
+          "vehicles"
+        ]
+      },
+      "post": {
+        "operationId": "create_vehicle_v1_vehicles_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVehicleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Create Vehicle",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
+    "/v1/vehicles/{vehicle_id}": {
+      "delete": {
+        "operationId": "delete_vehicle_v1_vehicles__vehicle_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vehicle_id",
+            "required": true,
+            "schema": {
+              "title": "Vehicle Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Delete Vehicle",
+        "tags": [
+          "vehicles"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_vehicle_v1_vehicles__vehicle_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vehicle_id",
+            "required": true,
+            "schema": {
+              "title": "Vehicle Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchVehicleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Patch Vehicle",
+        "tags": [
+          "vehicles"
         ]
       }
     }

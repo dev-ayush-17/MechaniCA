@@ -103,6 +103,29 @@ Not verified locally:
 
 Manual check (fake binding, `flutter run --dart-define-from-file=config/dev.json`): sign in with any 10-digit number and `123456`, kill the app, relaunch, land on home. Sign out from Profile, land on login.
 
+## M03 vehicles (branch `feat/m03-vehicles`)
+
+Status: implementation complete. PR opened. Awaiting review.
+
+| What | Where |
+| --- | --- |
+| Freezed `Vehicle`, Indian plate validation, `/bikes` UI under `features/vehicles/` | `app/lib/features/vehicles/` |
+| `GET/POST/PATCH/DELETE /v1/vehicles`, fake + Firestore vehicle repositories | `backend/app/api/v1/vehicles.py`, adapters |
+| Drift `LocalVehicles` + `SyncQueueEntries` (vehicle kinds only) | `app/lib/data/local/` |
+| Fake binding seeds two valid plates per user on first list | `FakeVehicleRepository` |
+| Rules: owner read, deny client write on `users/{uid}/vehicles` | `firebase/tests/rules.test.js` |
+
+Follow-ups (out of scope):
+
+- **Firestore `UserRepository` on the API** — still in-memory fake only (from M02). Required for `PROVIDER_AUTH=firebase` end-to-end with real user docs; add with a rules test in a later milestone.
+- **Full idempotency store** for vehicle POST — header is required; replay semantics can follow the booking pattern in a later PR.
+- **Manual emulator E2E** — not run on this machine (no Java for Firestore emulator).
+
+Not verified locally:
+
+- `firebase/tests/rules.test.js` (no Java). CI `firebase-rules` job is authoritative.
+- Android/iOS build with upgraded `firebase_core` / `share_plus` for Drift.
+
 ## Next session
 
-Merge M01, rebase `feat/m02-auth` onto it, then start M03. Previously: start M01 from [milestones/M01-frontend-foundations.md](milestones/M01-frontend-foundations.md). Branch `refactor/m01-frontend-foundations` from `chore/m00-foundation`.
+Review and merge M03. Reconcile with parallel M04 on shared files if needed. Then M05 catalog or continue auth rebase per [MILESTONES.md](MILESTONES.md).

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 
 import 'fallback/fallback_client.dart';
 import 'me/me_client.dart';
+import 'vehicles/vehicles_client.dart';
 
 /// MechUpp API `v0.1.0`
 class RestClient {
@@ -22,8 +23,11 @@ class RestClient {
 
   FallbackClient? _fallback;
   MeClient? _me;
+  VehiclesClient? _vehicles;
 
   FallbackClient get fallback => _fallback ??= FallbackClient(_dio, baseUrl: _baseUrl);
 
   MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
+
+  VehiclesClient get vehicles => _vehicles ??= VehiclesClient(_dio, baseUrl: _baseUrl);
 }
