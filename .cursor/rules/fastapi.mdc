@@ -1,0 +1,22 @@
+---
+description: FastAPI layers, settings, and idempotent money routes
+globs: "{backend,mechanica_api}/**/*.py"
+alwaysApply: false
+---
+
+# FastAPI
+
+- Layers: `api` → `application` → `domain` → `ports`. Adapters implement ports and are wired in `api/deps.py`.
+- Routers parse input, call one use case, and map errors to the codes in `docs/prd/12-api-contracts.md`.
+- Settings come from `pydantic-settings`. No hardcoded project ids or fee amounts.
+- Domain modules do not import FastAPI or `firebase_admin`.
+- Booking and payment POSTs require `Idempotency-Key` and check it before side effects.
+- The Cashfree webhook verifies the signature on the raw body before any state change.
+- Internal job routes accept Cloud Tasks or Scheduler OIDC, not end-user tokens.
+- Structured logs. Never log tokens, OTP, or the raw webhook body.
+- pytest with dependency overrides. Payment and booking tests use the fake gateway.
+- ruff and mypy must pass for files you touch. Do not silence a payment-module type error.
+
+Until M00, the only server file is `mechanica_api/main.py`. M00 replaces that stub. Do not extend the stub's fake JWT login.
+
+Detail: `docs/prd/10-hybrid-backend.md`.

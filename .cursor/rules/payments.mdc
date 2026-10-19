@@ -1,0 +1,21 @@
+---
+description: Cashfree, cash, wallet, idempotency, and PCI boundaries
+globs: "**/*{payment,wallet,coupon,invoice}*"
+alwaysApply: false
+---
+
+# Payments
+
+- The client SDK returning success does not mark a booking paid. A verified webhook or the reconciler does.
+- Verify the Cashfree signature on the raw body before parsing side effects.
+- Reject amount or order-id mismatches. Alert. Do not "fix forward" by trusting the provider body blindly.
+- Idempotency-Key on create and refund. Store the event id and ignore replays.
+- Recompute the total on the server at pay time. If it changed, return `total_changed` and do not charge.
+- Wallet debits cannot go negative. Ledger entries are append-only.
+- Cash becomes `paid` only after the mechanic mark and the customer confirm, or a staff confirm with an audit note.
+- Refunds are admin-only, once, amount-capped, and idempotent.
+- Never add PAN, CVV, or UPI PIN fields.
+- Tests: bad signature, replay, insufficient wallet, and idempotent create. Use `FakePaymentGateway` in unit tests.
+- Prod must refuse sandbox keys. The fake gateway is the dev default.
+
+Detail: `docs/prd/15-payments.md`.

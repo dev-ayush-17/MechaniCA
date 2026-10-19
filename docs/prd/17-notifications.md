@@ -42,9 +42,7 @@ Support in-app items are stored for every user with role `support` or `admin`. T
 
 ## In-app list
 
-The existing notifications screen is the UI. It reads `/v1` or a repository that listens to `users/{id}/notifications`. Mark-all-read sets `readAt` through the API in batches of 50, or via the allowed client field update. Prefer the API so both platforms share one path. Client rule update remains as a backup and must not be the only implementation if it complicates testing. **Decision:** mark-read goes through `POST /v1/notifications/{id}/read` so we do not special-case Security Rules. Chapter 10's client `readAt` exception is withdrawn. Rules deny all client writes to notifications. This is simpler and matches the golden rule.
-
-Add that endpoint to the inventory in spirit: it is part of M09. Chapter 10's table said client may set `readAt`. This chapter overrides that. The implementation follows this chapter.
+The existing notifications screen is the UI. It reads the user's notification documents. Mark-read is `POST /v1/notifications/{id}/read`. Mark-all-read sends batches of up to 50. Delete is `DELETE /v1/notifications/{id}`. Security Rules deny client writes. Both endpoints are part of M09 and are listed in chapter 10.
 
 ## Empty and error
 

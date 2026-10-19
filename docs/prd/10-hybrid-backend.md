@@ -71,6 +71,7 @@ All JSON. Schemas in [chapter 12](12-api-contracts.md).
 | PATCH | `/v1/me` | self | yes |
 | POST | `/v1/me/devices` | self | yes, by token |
 | POST | `/v1/notifications/{id}/read` | owner | yes |
+| DELETE | `/v1/notifications/{id}` | owner | yes |
 | GET/POST | `/v1/vehicles` | customer | POST uses key |
 | PATCH/DELETE | `/v1/vehicles/{id}` | owner | yes |
 | GET/POST | `/v1/addresses` | customer | POST uses key |

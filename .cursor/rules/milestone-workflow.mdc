@@ -1,0 +1,24 @@
+---
+description: One milestone per session, finish it, do not widen it
+alwaysApply: true
+---
+
+# Milestone workflow
+
+At the start of a session, read:
+
+1. `AGENTS.md`
+2. `docs/PRD.md` (then the chapters the milestone cites)
+3. `docs/AGENT_PROGRESS.md`
+4. The current `docs/milestones/Mxx-*.md`
+
+Rules:
+
+- Work on one milestone at a time. Finish it (code, tests, docs, commits, PR) before starting the next.
+- The milestone file is the scope. If you discover a needed change outside it, record an ADR or a PRD amendment. Do not implement the extra scope in the same PR.
+- Do not start M0N if `docs/AGENT_PROGRESS.md` says an earlier milestone is still open.
+- If the diff would exceed about 1,500 lines excluding generated code, stop and split the milestone in the spec before continuing.
+- When you stop, update `docs/AGENT_PROGRESS.md` with what finished, what is left, and the next milestone.
+- The demo must still run at the end of the session.
+
+Detail: `docs/MILESTONES.md`.

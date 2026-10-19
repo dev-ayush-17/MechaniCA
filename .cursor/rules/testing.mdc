@@ -1,0 +1,18 @@
+---
+description: Tests that protect money, status, and permissions
+globs: "**/*test*"
+alwaysApply: false
+---
+
+# Testing
+
+- Add the critical tests named in the milestone file. A milestone is not done without them.
+- Test behavior: illegal transitions, idempotency, webhook signature failure, rules denying client writes.
+- Do not assert on full widget trees or on log text.
+- Characterization tests come before a refactor of an existing screen.
+- Fakes implement the same port as the real adapter. Do not spin up Cashfree or Maps in unit tests.
+- Emulator tests cover Security Rules for any collection the milestone adds.
+- A broken test is a failed task. Do not delete it to go green.
+- `flutter test` and `pytest` must pass for the areas you changed before you open the PR.
+
+Detail: `docs/prd/20-testing.md`.

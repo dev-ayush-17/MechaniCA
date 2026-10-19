@@ -1,0 +1,22 @@
+---
+description: Hexagonal boundaries, composition roots, and the Firebase write rule
+alwaysApply: true
+---
+
+# Architecture
+
+- Domain and use cases do not import vendor SDKs (Firebase, Cashfree, Google Maps, FCM, Storage).
+- SDK imports belong under adapter directories only.
+- Bind implementations in one composition root: Riverpod `composition/providers.dart` or FastAPI `deps.py`.
+- A provider swap is a new adapter plus a config change. Do not edit widgets or use cases to swap Cashfree, Auth, or Maps.
+- Persist money as integer paise. Do not use binary floats for money.
+- Expected failures use typed errors (`Result` in Dart, domain exceptions in Python). No empty catches.
+- Booking create and payment create require an `Idempotency-Key`.
+- Only FastAPI writes booking status, prices, payments, wallet, coupons, rating aggregates, and verification.
+- The one client write to Firebase data plane is the caller's own live-location node while the gate is open.
+- OpenAPI from FastAPI is the contract. Do not hand-maintain a second client.
+- Do not add a port, package, or layer without a one-line reason tied to a requirement, a vendor swap, or a test.
+- Do not extract a shared abstraction on the first copy. Wait for the third.
+- The demo's workshop statuses are not the domain. Use `docs/prd/13-state-machines.md`.
+
+Detail: `docs/prd/07-system-architecture.md`, `docs/prd/08-port-catalog.md`, `docs/prd/22-coding-standards.md`.
