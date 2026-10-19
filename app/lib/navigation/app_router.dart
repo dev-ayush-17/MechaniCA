@@ -14,6 +14,7 @@ import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
 import '../features/tracking/live_tracking_screen.dart';
 import '../features/inspection/digital_inspection_screen.dart';
+import '../features/parts_proof/presentation/customer_proofs_screen.dart';
 import '../features/invoice/invoice_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/offers/offers_screen.dart';
@@ -136,6 +137,13 @@ final appRouter = GoRouter(
     // ── Inspection ────────────────────────────────────────────────────────────
     GoRoute(
       path: RouteNames.inspection,
+      builder: (_, state) {
+        final bookingId = state.extra as String? ?? '';
+        return CustomerProofsScreen(bookingId: bookingId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.inspectionMock,
       builder: (_, state) {
         final bookingId = state.extra as String? ?? '';
         return DigitalInspectionScreen(bookingId: bookingId);

@@ -32,6 +32,7 @@ class RouteNames {
 
   // Inspection & Invoice
   static const String inspection = '/inspection';
+  static const String inspectionMock = '/inspection/mock';
   static const String photoGallery = '/inspection/gallery';
   static const String invoice = '/invoice';
 
