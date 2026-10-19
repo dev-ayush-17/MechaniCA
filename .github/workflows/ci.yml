@@ -18,13 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # hook test needs history for the force-push check
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: python tool/check_import_boundaries.py
       - run: python -m unittest discover -s tool -q
       - run: sh tool/test_hooks.sh
-        # Needs full history for the force-push ancestor check.
         env:
           GIT_DISCOVERY_ACROSS_FILESYSTEM: "1"
 
