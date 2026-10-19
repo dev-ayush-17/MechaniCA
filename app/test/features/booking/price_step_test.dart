@@ -23,7 +23,7 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.darkTheme,
           home: Scaffold(
-            body: PriceStep(onConfirm: () async {}, quote: quote),
+            body: PriceStep(onConfirm: () async => null, quote: quote),
           ),
         ),
       ),
