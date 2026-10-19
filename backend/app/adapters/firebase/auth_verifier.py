@@ -46,6 +46,15 @@ class FirebaseAuth:
             fb_auth.set_custom_user_claims, user_id, {"role": role.value}, self._app
         )
 
+    async def set_mechanic_verified(self, user_id: str, verified: bool) -> None:
+        def _merge() -> None:
+            user = fb_auth.get_user(user_id, app=self._app)
+            claims = dict(user.custom_claims or {})
+            claims["mechanicVerified"] = verified
+            fb_auth.set_custom_user_claims(user_id, claims, self._app)
+
+        await asyncio.to_thread(_merge)
+
 
 def _role_from(value: str | None) -> Role:
     if value is None:

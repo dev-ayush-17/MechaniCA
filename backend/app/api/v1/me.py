@@ -5,9 +5,16 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-from app.api.deps import bootstrap_user_dep, principal_dep, user_repository_dep
+from app.api.deps import (
+    bootstrap_user_dep,
+    create_mechanic_draft_dep,
+    principal_dep,
+    user_repository_dep,
+)
+from app.application.bootstrap_user import Intent
+from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.api.errors import error_responses
-from app.application.bootstrap_user import BootstrapUser, Intent
+from app.application.bootstrap_user import BootstrapUser
 from app.core.logging import log_info
 from app.domain.errors import NotFound
 from app.domain.user import Principal, User
@@ -55,9 +62,12 @@ async def bootstrap(
     response: Response,
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[BootstrapUser, Depends(bootstrap_user_dep)],
+    mechanic_draft: Annotated[CreateMechanicDraft, Depends(create_mechanic_draft_dep)],
 ) -> UserOut:
     """Create the caller's user document on first sign-in. Safe to repeat."""
     user, created = await use_case.execute(principal, name=body.name, intent=body.intent)
+    if body.intent == Intent.MECHANIC:
+        await mechanic_draft.execute(user.id)
     response.status_code = 201 if created else 200
     log_info("user bootstrapped", user_id=user.id, created=created)
     return UserOut.of(user)

@@ -16,6 +16,7 @@ class FakeAuth:
         if env not in FAKE_AUTH_ENVS:
             raise ValueError("FakeAuth is only available when app_env is dev or test")
         self._claims: dict[str, Role] = {}
+        self._mechanic_verified: dict[str, bool] = {}
 
     async def verify(self, id_token: str, *, check_revoked: bool = False) -> Principal:
         parts = id_token.split(":")
@@ -26,7 +27,11 @@ class FakeAuth:
             user_id=uid,
             role=self._claims.get(uid, Role.CUSTOMER),
             phone_e164=phone,
+            mechanic_verified=self._mechanic_verified.get(uid, False),
         )
 
     async def set_role(self, user_id: str, role: Role) -> None:
         self._claims[user_id] = role
+
+    async def set_mechanic_verified(self, user_id: str, verified: bool) -> None:
+        self._mechanic_verified[user_id] = verified

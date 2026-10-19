@@ -1,6 +1,62 @@
 {
   "components": {
     "schemas": {
+      "ApplicationRequest": {
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentIn"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "photoPath": {
+            "title": "Photopath",
+            "type": "string"
+          },
+          "serviceArea": {
+            "$ref": "#/components/schemas/ServiceAreaIn"
+          },
+          "yearsExperience": {
+            "title": "Yearsexperience",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "displayName",
+          "photoPath",
+          "yearsExperience",
+          "languages",
+          "serviceArea",
+          "documents"
+        ],
+        "title": "ApplicationRequest",
+        "type": "object"
+      },
+      "AvailabilityRequest": {
+        "properties": {
+          "online": {
+            "title": "Online",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "online"
+        ],
+        "title": "AvailabilityRequest",
+        "type": "object"
+      },
       "BootstrapRequest": {
         "description": "`role` is deliberately not a field: the server derives it from `intent`.",
         "properties": {
@@ -25,6 +81,32 @@
         "title": "BootstrapRequest",
         "type": "object"
       },
+      "DocumentIn": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind"
+          },
+          "storagePath": {
+            "title": "Storagepath",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "storagePath"
+        ],
+        "title": "DocumentIn",
+        "type": "object"
+      },
+      "DocumentKind": {
+        "enum": [
+          "licence",
+          "government_id",
+          "selfie"
+        ],
+        "title": "DocumentKind",
+        "type": "string"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -32,7 +114,6 @@
             "type": "string"
           },
           "fields": {
-            "additionalProperties": true,
             "title": "Fields",
             "type": "object"
           },
@@ -74,6 +155,210 @@
         ],
         "title": "Intent",
         "type": "string"
+      },
+      "MechanicOut": {
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "lastHeartbeatAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastheartbeatat"
+          },
+          "online": {
+            "title": "Online",
+            "type": "boolean"
+          },
+          "photoPath": {
+            "title": "Photopath",
+            "type": "string"
+          },
+          "ratingAvg": {
+            "title": "Ratingavg",
+            "type": "number"
+          },
+          "ratingCount": {
+            "title": "Ratingcount",
+            "type": "integer"
+          },
+          "rejectionReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejectionreason"
+          },
+          "serviceArea": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceAreaOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verificationStatus": {
+            "title": "Verificationstatus",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "yearsExperience": {
+            "title": "Yearsexperience",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "photoPath",
+          "yearsExperience",
+          "languages",
+          "serviceArea",
+          "verified",
+          "verificationStatus",
+          "online",
+          "lastHeartbeatAt",
+          "ratingAvg",
+          "ratingCount",
+          "version"
+        ],
+        "title": "MechanicOut",
+        "type": "object"
+      },
+      "ServiceAreaIn": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "radiusKm": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Radiuskm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "radiusKm"
+        ],
+        "title": "ServiceAreaIn",
+        "type": "object"
+      },
+      "ServiceAreaOut": {
+        "properties": {
+          "geohash": {
+            "title": "Geohash",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          },
+          "radiusKm": {
+            "title": "Radiuskm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "radiusKm",
+          "geohash"
+        ],
+        "title": "ServiceAreaOut",
+        "type": "object"
+      },
+      "SignUploadOut": {
+        "properties": {
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "object"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "uploadUrl": {
+            "title": "Uploadurl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uploadUrl",
+          "path",
+          "headers"
+        ],
+        "title": "SignUploadOut",
+        "type": "object"
+      },
+      "SignUploadRequest": {
+        "properties": {
+          "contentType": {
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "maxBytes": {
+            "maximum": 5242880.0,
+            "title": "Maxbytes",
+            "type": "integer"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "contentType",
+          "maxBytes"
+        ],
+        "title": "SignUploadRequest",
+        "type": "object"
       },
       "UserOut": {
         "properties": {
@@ -119,6 +404,37 @@
         ],
         "title": "UserOut",
         "type": "object"
+      },
+      "VerificationDecision": {
+        "enum": [
+          "approve",
+          "reject"
+        ],
+        "title": "VerificationDecision",
+        "type": "string"
+      },
+      "VerificationRequest": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/VerificationDecision"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "VerificationRequest",
+        "type": "object"
       }
     }
   },
@@ -160,7 +476,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "title": "Response Ready Health Ready Get",
                   "type": "object"
                 }
@@ -170,6 +485,114 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/admin/mechanics/{mechanic_id}/verification": {
+      "post": {
+        "operationId": "decide_verification_v1_admin_mechanics__mechanic_id__verification_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mechanic_id",
+            "required": true,
+            "schema": {
+              "title": "Mechanic Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Decide Verification",
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/v1/me": {
@@ -368,6 +791,461 @@
         "summary": "Bootstrap",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/v1/mechanic": {
+      "get": {
+        "operationId": "get_mechanic_profile_v1_mechanic_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Get Mechanic Profile",
+        "tags": [
+          "mechanic"
+        ]
+      }
+    },
+    "/v1/mechanic/application": {
+      "post": {
+        "operationId": "submit_application_v1_mechanic_application_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Submit Application",
+        "tags": [
+          "mechanic"
+        ]
+      }
+    },
+    "/v1/mechanic/availability": {
+      "post": {
+        "operationId": "set_availability_v1_mechanic_availability_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Set Availability",
+        "tags": [
+          "mechanic"
+        ]
+      }
+    },
+    "/v1/mechanic/heartbeat": {
+      "post": {
+        "operationId": "heartbeat_v1_mechanic_heartbeat_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Heartbeat",
+        "tags": [
+          "mechanic"
+        ]
+      }
+    },
+    "/v1/uploads/sign": {
+      "post": {
+        "operationId": "sign_upload_v1_uploads_sign_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Sign Upload",
+        "tags": [
+          "uploads"
         ]
       }
     }
