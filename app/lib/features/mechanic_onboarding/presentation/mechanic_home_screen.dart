@@ -82,6 +82,16 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
               ),
             ],
             const SizedBox(height: 24),
+            ListTile(
+              title: const Text('Earnings'),
+              subtitle: const Text(
+                'Recorded earnings. Bank payout is not live yet.',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+              onTap: () => context.push(MechanicRouteNames.earnings),
+            ),
+            const SizedBox(height: 8),
             SwitchListTile(
               title: const Text('Go online'),
               subtitle: Text(
