@@ -1,0 +1,9 @@
+# Generates the Dart client from FastAPI's OpenAPI schema (ADR-012).
+# Regenerate with tool/generate_api_client.ps1 (Windows) or tool/generate_api_client.sh.
+swagger_parser:
+  schema_path: ../backend/openapi.json
+  output_directory: lib/core/api/generated
+  name: mechanica_api
+  json_serializer: json_serializable
+  root_client: true
+  put_in_folder: true

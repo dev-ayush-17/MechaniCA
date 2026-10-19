@@ -1,34 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
-import '../../navigation/route_names.dart';
-import '../../widgets/shared/app_widgets.dart';
-
-class ForgotPasswordScreen extends StatelessWidget {
-  const ForgotPasswordScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Forgot Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Reset Password', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
-            const SizedBox(height: 8),
-            const Text('Enter your registered mobile number to reset', style: TextStyle(color: AppColors.textSecondary)),
-            const SizedBox(height: 32),
-            const AppTextField(hint: 'Mobile Number', keyboardType: TextInputType.phone),
-            const SizedBox(height: 24),
-            AppButton(label: 'Send OTP', onPressed: () => context.pop()),
-          ],
-        ),
-      ),
-    );
-  }
-}
+import '../../../core/theme/app_colors.dart';
+import '../../../navigation/route_names.dart';
+import '../../../widgets/shared/app_widgets.dart';
 
 class LocationPermissionScreen extends StatelessWidget {
   const LocationPermissionScreen({super.key});
@@ -55,7 +29,7 @@ class LocationPermissionScreen extends StatelessWidget {
               const Text('Enable Location', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
               const SizedBox(height: 12),
               const Text(
-                'Allow MechUpp to access your location to find nearby workshops and mechanics.',
+                'Allow MechaniCA to access your location to find nearby workshops and mechanics.',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.6),
                 textAlign: TextAlign.center,
               ),

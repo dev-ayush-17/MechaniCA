@@ -7,7 +7,6 @@ class RouteNames {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String otp = '/otp';
-  static const String forgotPassword = '/forgot-password';
   static const String locationPermission = '/location-permission';
   static const String notificationPermission = '/notification-permission';
 

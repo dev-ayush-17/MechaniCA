@@ -4,16 +4,16 @@ import '../models/bike_model.dart';
 import '../models/app_models.dart';
 import '../models/service_model.dart';
 import '../models/booking_model.dart';
-import '../repositories/auth_repository.dart';
 import '../repositories/bike_repository.dart';
 import '../repositories/service_repository.dart';
 import '../repositories/booking_repository.dart';
 import '../repositories/all_repositories.dart';
 import '../mock/mock_data.dart';
 
+export '../features/auth/presentation/auth_controller.dart';
+
 // ─── REPOSITORY PROVIDERS ─────────────────────────────────────────────────────
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) => MockAuthRepository());
 final bikeRepositoryProvider = Provider<BikeRepository>((ref) => MockBikeRepository());
 final serviceRepositoryProvider = Provider<ServiceRepository>((ref) => MockServiceRepository());
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) => MockBookingRepository());
@@ -28,87 +28,6 @@ final supportRepositoryProvider = Provider<SupportRepository>((ref) => MockSuppo
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) => MockProfileRepository());
 final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) => MockInvoiceRepository());
 final inspectionRepositoryProvider = Provider<InspectionRepository>((ref) => MockInspectionRepository());
-
-// ─── AUTH PROVIDER ────────────────────────────────────────────────────────────
-
-class AuthState {
-  final UserModel? user;
-  final bool isLoading;
-  final String? error;
-  final bool isLoggedIn;
-
-  const AuthState({
-    this.user,
-    this.isLoading = false,
-    this.error,
-    this.isLoggedIn = false,
-  });
-
-  AuthState copyWith({
-    UserModel? user,
-    bool? isLoading,
-    String? error,
-    bool? isLoggedIn,
-  }) =>
-      AuthState(
-        user: user ?? this.user,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-        isLoggedIn: isLoggedIn ?? this.isLoggedIn,
-      );
-}
-
-class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repo;
-  AuthNotifier(this._repo) : super(const AuthState());
-
-  Future<void> sendOtp(String phone) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repo.sendOtp(phone);
-      state = state.copyWith(isLoading: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
-  }
-
-  Future<bool> verifyOtp(String phone, String otp) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final user = await _repo.loginWithPhone(phone, otp);
-      state = state.copyWith(isLoading: false, user: user, isLoggedIn: true);
-      return true;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Invalid OTP. Please try again.');
-      return false;
-    }
-  }
-
-  Future<bool> loginWithGoogle() async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final user = await _repo.loginWithGoogle();
-      state = state.copyWith(isLoading: false, user: user, isLoggedIn: true);
-      return true;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-      return false;
-    }
-  }
-
-  Future<void> logout() async {
-    await _repo.logout();
-    state = const AuthState();
-  }
-
-  void updateUser(UserModel user) {
-    state = state.copyWith(user: user);
-  }
-}
-
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.watch(authRepositoryProvider)),
-);
 
 // ─── BIKE PROVIDER ────────────────────────────────────────────────────────────
 
