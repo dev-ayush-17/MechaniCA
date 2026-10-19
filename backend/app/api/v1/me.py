@@ -11,10 +11,9 @@ from app.api.deps import (
     principal_dep,
     user_repository_dep,
 )
-from app.application.bootstrap_user import Intent
-from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.api.errors import error_responses
-from app.application.bootstrap_user import BootstrapUser
+from app.application.bootstrap_user import BootstrapUser, Intent
+from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.core.logging import log_info
 from app.domain.errors import NotFound
 from app.domain.user import Principal, User

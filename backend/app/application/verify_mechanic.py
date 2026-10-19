@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import uuid4
 
-from app.domain.audit import AuditEvent, AuditTarget
+from app.domain.audit import AuditEvent
 from app.domain.errors import InvalidInput, NotFound, PermissionDenied
 from app.domain.mechanic import Mechanic, VerificationStatus
 from app.domain.user import Principal, Role

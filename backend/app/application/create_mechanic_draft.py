@@ -14,7 +14,6 @@ class CreateMechanicDraft:
         existing = await self.mechanics.get(mechanic_id)
         if existing is not None:
             return existing
-        now = self.clock.now()
         draft = Mechanic(
             id=mechanic_id,
             display_name="",

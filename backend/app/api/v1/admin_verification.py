@@ -6,8 +6,8 @@ from pydantic.alias_generators import to_camel
 
 from app.api.deps import admin_principal_dep, verify_mechanic_dep
 from app.api.errors import REQUEST_ID_HEADER, error_responses
-from app.application.verify_mechanic import VerificationDecision, VerifyMechanic
 from app.api.v1.mechanic import MechanicOut
+from app.application.verify_mechanic import VerificationDecision, VerifyMechanic
 from app.domain.user import Principal
 
 router = APIRouter(

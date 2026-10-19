@@ -29,7 +29,11 @@ from app.domain.mechanic import DocumentKind, Mechanic
 from app.domain.user import Principal
 from app.ports.mechanic_repository import MechanicRepository
 
-router = APIRouter(prefix="/v1/mechanic", tags=["mechanic"], responses=error_responses(400, 401, 403, 404, 409))
+router = APIRouter(
+    prefix="/v1/mechanic",
+    tags=["mechanic"],
+    responses=error_responses(400, 401, 403, 404, 409),
+)
 
 
 class _Camel(BaseModel):
@@ -142,9 +146,7 @@ async def submit_application(
             lng=body.service_area.lng,
             radius_km=body.service_area.radius_km,
         ),
-        documents=[
-            DocumentInput(kind=d.kind, storage_path=d.storage_path) for d in body.documents
-        ],
+        documents=[DocumentInput(kind=d.kind, storage_path=d.storage_path) for d in body.documents],
     )
     return MechanicOut.of(mechanic)
 
@@ -199,6 +201,4 @@ async def sign_upload(
         content_type=body.content_type,
         max_bytes=body.max_bytes,
     )
-    return SignUploadOut(
-        upload_url=signed.upload_url, path=signed.path, headers=signed.headers
-    )
+    return SignUploadOut(upload_url=signed.upload_url, path=signed.path, headers=signed.headers)

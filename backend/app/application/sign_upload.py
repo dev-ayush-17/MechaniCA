@@ -5,7 +5,6 @@ from app.domain.storage import SignedUpload
 from app.domain.user import Principal, Role
 from app.ports.file_storage import FileStorage
 
-
 _ALLOWED_TYPES = frozenset(
     {"image/jpeg", "image/png", "application/pdf"},
 )

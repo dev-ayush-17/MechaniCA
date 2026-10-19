@@ -75,9 +75,17 @@ def env() -> Iterator[_Env]:
     yield _Env()
 
 
+def _submit_application(env: _Env) -> None:
+    env.client.post(
+        "/v1/mechanic/application",
+        json=_application_body(MECH_UID),
+        headers=_headers(MECH_TOKEN),
+    )
+
+
 def test_unverified_mechanic_cannot_go_online(env: _Env) -> None:
     env.bootstrap_mechanic()
-    env.client.post("/v1/mechanic/application", json=_application_body(MECH_UID), headers=_headers(MECH_TOKEN))
+    _submit_application(env)
     response = env.client.post(
         "/v1/mechanic/availability", json={"online": True}, headers=_headers(MECH_TOKEN)
     )
@@ -88,7 +96,7 @@ def test_unverified_mechanic_cannot_go_online(env: _Env) -> None:
 def test_approve_sets_verified_and_audit(env: _Env) -> None:
     env.bootstrap_mechanic()
     env.bootstrap_admin()
-    env.client.post("/v1/mechanic/application", json=_application_body(MECH_UID), headers=_headers(MECH_TOKEN))
+    _submit_application(env)
     approve = env.client.post(
         f"/v1/admin/mechanics/{MECH_UID}/verification",
         json={"decision": "approve"},
@@ -112,7 +120,7 @@ def test_approve_sets_verified_and_audit(env: _Env) -> None:
 def test_reject_requires_a_reason(env: _Env) -> None:
     env.bootstrap_mechanic()
     env.bootstrap_admin()
-    env.client.post("/v1/mechanic/application", json=_application_body(MECH_UID), headers=_headers(MECH_TOKEN))
+    _submit_application(env)
     response = env.client.post(
         f"/v1/admin/mechanics/{MECH_UID}/verification",
         json={"decision": "reject"},
@@ -139,7 +147,7 @@ def test_signed_upload_rejects_parent_directory(env: _Env) -> None:
 def test_reject_writes_audit(env: _Env) -> None:
     env.bootstrap_mechanic()
     env.bootstrap_admin()
-    env.client.post("/v1/mechanic/application", json=_application_body(MECH_UID), headers=_headers(MECH_TOKEN))
+    _submit_application(env)
     response = env.client.post(
         f"/v1/admin/mechanics/{MECH_UID}/verification",
         json={"decision": "reject", "reason": "Blurry licence photo"},

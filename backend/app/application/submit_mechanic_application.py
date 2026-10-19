@@ -3,7 +3,13 @@ from uuid import uuid4
 
 from app.domain.errors import InvalidInput, NotFound, PermissionDenied
 from app.domain.geo import geohash_encode
-from app.domain.mechanic import DocumentKind, Mechanic, MechanicDocument, ServiceArea, VerificationStatus
+from app.domain.mechanic import (
+    DocumentKind,
+    Mechanic,
+    MechanicDocument,
+    ServiceArea,
+    VerificationStatus,
+)
 from app.domain.user import Principal, Role
 from app.ports.clock import Clock
 from app.ports.mechanic_repository import MechanicRepository
@@ -60,7 +66,9 @@ class SubmitMechanicApplication:
         if not languages:
             raise InvalidInput("Pick at least one language.", fields={"languages": "required"})
         if service_area.radius_km < 1 or service_area.radius_km > 20:
-            raise InvalidInput("Radius must be 1–20 km.", fields={"serviceArea.radiusKm": "invalid"})
+            raise InvalidInput(
+                "Radius must be 1–20 km.", fields={"serviceArea.radiusKm": "invalid"}
+            )
 
         kinds = {DocumentKind.LICENCE, DocumentKind.GOVERNMENT_ID, DocumentKind.SELFIE}
         provided = {doc.kind for doc in documents}

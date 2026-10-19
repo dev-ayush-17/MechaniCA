@@ -114,6 +114,7 @@
             "type": "string"
           },
           "fields": {
+            "additionalProperties": true,
             "title": "Fields",
             "type": "object"
           },
@@ -476,6 +477,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "title": "Response Ready Health Ready Get",
                   "type": "object"
                 }

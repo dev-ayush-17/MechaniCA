@@ -1,7 +1,7 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from app.domain.errors import Conflict, NotFound
-from app.domain.mechanic import Mechanic, MechanicDocument, ServiceArea, VerificationStatus
+from app.domain.mechanic import Mechanic, MechanicDocument, VerificationStatus
 
 
 class FakeMechanicRepository:

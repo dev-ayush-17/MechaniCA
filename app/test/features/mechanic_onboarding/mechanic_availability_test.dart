@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechupp_app/composition/providers.dart';
-import 'package:mechupp_app/features/auth/domain/account_api.dart';
 import 'package:mechupp_app/features/mechanic_onboarding/data/fake_mechanic_repository.dart';
-import 'package:mechupp_app/features/mechanic_onboarding/domain/mechanic_repository.dart';
 import 'package:mechupp_app/features/mechanic_onboarding/presentation/mechanic_controller.dart';
+import 'package:mechupp_app/features/mechanic_onboarding/domain/mechanic_repository.dart';
 import 'package:mechupp_app/features/mechanic_onboarding/presentation/mechanic_home_screen.dart';
 
 class _LoadedMechanicNotifier extends MechanicNotifier {
