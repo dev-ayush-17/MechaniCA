@@ -81,4 +81,7 @@ class RouteNames {
   // History
   static const String history = '/history';
   static const String serviceDetail = '/history/detail';
+
+  static const String reviewSubmit = '/reviews/submit';
+  static const String reviews = '/reviews';
 }

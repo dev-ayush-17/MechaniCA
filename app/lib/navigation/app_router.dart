@@ -15,6 +15,8 @@ import '../features/booking/booking_details_screen.dart';
 import '../features/tracking/live_tracking_screen.dart';
 import '../features/inspection/digital_inspection_screen.dart';
 import '../features/parts_proof/presentation/customer_proofs_screen.dart';
+import '../features/reviews/presentation/mechanic_reviews_screen.dart';
+import '../features/reviews/presentation/submit_review_screen.dart';
 import '../features/invoice/invoice_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/offers/offers_screen.dart';
@@ -281,6 +283,21 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.healthScore,
       builder: (_, __) => const HealthScoreScreen(),
+    ),
+
+    GoRoute(
+      path: RouteNames.reviewSubmit,
+      builder: (_, state) {
+        final bookingId = state.extra as String? ?? '';
+        return SubmitReviewScreen(bookingId: bookingId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.reviews,
+      builder: (_, state) {
+        final mechanicId = state.extra as String? ?? 'mech_1';
+        return MechanicReviewsScreen(mechanicId: mechanicId);
+      },
     ),
 
     // ── History ───────────────────────────────────────────────────────────────

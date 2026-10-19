@@ -47,6 +47,9 @@ import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../features/parts_proof/data/fake_parts_proof_repository.dart';
 import '../features/parts_proof/data/http_parts_proof_repository.dart';
 import '../features/parts_proof/domain/parts_proof.dart';
+import '../features/reviews/data/fake_review_repository.dart';
+import '../features/reviews/data/http_review_repository.dart';
+import '../features/reviews/domain/review.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
@@ -215,6 +218,16 @@ final partsProofRepositoryProvider = Provider<PartsProofRepository>((ref) {
   return switch (config.providerAuth) {
     AuthProviderKind.fake => FakePartsProofRepository(),
     AuthProviderKind.firebase => HttpPartsProofRepository(
+        client: ref.watch(restClientProvider),
+      ),
+  };
+});
+
+final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeReviewRepository(),
+    AuthProviderKind.firebase => HttpReviewRepository(
         client: ref.watch(restClientProvider),
       ),
   };
