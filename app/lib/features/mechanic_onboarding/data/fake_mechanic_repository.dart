@@ -7,12 +7,12 @@ class FakeMechanicRepository implements MechanicRepository {
 
   @override
   Future<Result<MechanicProfile>> getProfile(String idToken) async {
-    _profile ??= MechanicProfile(
+    _profile ??= const MechanicProfile(
       id: 'fake_mechanic',
       displayName: '',
       photoPath: '',
       yearsExperience: 0,
-      languages: const [],
+      languages: [],
       serviceArea: null,
       verified: false,
       verificationStatus: VerificationStatus.draft,
