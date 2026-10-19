@@ -10,6 +10,7 @@ from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
+from app.adapters.fake.chat_service import FakeChatService
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
@@ -25,7 +26,9 @@ from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.send_message import SendMessage
 from app.application.set_mechanic_availability import SetMechanicAvailability
+from app.application.sign_chat_media import SignChatMedia
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
 from app.application.transition_booking import TransitionBooking
@@ -41,6 +44,7 @@ from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
 from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
+from app.ports.chat_service import ChatService
 from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
@@ -385,3 +389,33 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+@lru_cache
+def _chat() -> ChatService:
+    settings = get_settings()
+    if settings.provider_chat == "firestore":
+        from app.adapters.firebase.chat_service import FirestoreChatService
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreChatService(settings.firebase_project_id)
+    return FakeChatService()
+
+
+def chat_service_dep() -> ChatService:
+    return _chat()
+
+
+def send_message_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    chat: Annotated[ChatService, Depends(chat_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SendMessage:
+    return SendMessage(bookings=bookings, chat=chat, clock=clock)
+
+
+def sign_chat_media_dep(
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+) -> SignChatMedia:
+    return SignChatMedia(storage=storage, bookings=bookings)

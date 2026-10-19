@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     provider_vehicles: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
     provider_bookings: Literal["fake", "firestore"] = "fake"
+    provider_chat: Literal["fake", "firestore"] = "fake"
     firebase_project_id: str | None = None
     convenience_fee_paise: int = 4900
     four_wheeler_labor_bps: int = 15000
@@ -52,6 +53,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_BOOKINGS=firestore"
             )
+        if self.provider_chat == "firestore" and not self.firebase_project_id:
+            raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_CHAT=firestore")
         return self
 
 
