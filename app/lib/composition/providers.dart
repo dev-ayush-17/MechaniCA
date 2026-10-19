@@ -46,7 +46,12 @@ import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/messages/messages_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
+import '../features/job_chat/data/fake_chat_service.dart';
+import '../features/job_chat/data/http_chat_service.dart';
+import '../features/job_chat/data/offline_chat_service.dart';
+import '../features/job_chat/domain/chat_service.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -220,6 +225,25 @@ final bookingApiProvider = Provider<BookingApi>((ref) {
             (await ref.read(authServiceProvider).currentSession())?.idToken,
       ),
   };
+});
+
+final chatServiceProvider = Provider<ChatService>((ref) {
+  final config = ref.watch(appConfigProvider);
+  final ChatService remote = switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeChatService(),
+    AuthProviderKind.firebase => HttpChatService(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+  return OfflineChatService(
+    remote: remote,
+    isOnline: () => ref.read(networkOnlineProvider),
+  );
 });
 
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
