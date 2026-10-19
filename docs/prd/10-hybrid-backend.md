@@ -27,7 +27,7 @@ They may not write the other party's node, a booking document, or a payment. Rul
 
 Chat is not a client write. It is easy to get wrong (abuse, phone numbers, media). The API writes it. The client listens. That is still "read realtime."
 
-Notification `readAt` is a client write on the user's own notification docs. It cannot change `title` or `deepLink`. Rules allow update of `readAt` only.
+Marking a notification read is also an API call (`POST /v1/notifications/{id}/read`). Keeping that off the client avoids a special Security Rules case. The list itself is still readable by the owner.
 
 ## Security rules, by collection
 
@@ -41,7 +41,7 @@ Full samples live in [chapter 25](25-glossary-and-appendices.md). The behavior:
 | `bookings/{id}/messages` | Parties | None |
 | `payments`, `ledger`, `coupons`, `reviews`, `invoices`, `auditLog`, `serviceCatalog` | No direct client read of payments, ledger, coupons, audit. Reviews: public read of `published` only. Catalog: any signed-in read | None |
 | `mechanics/{id}` public fields | Any signed-in user | None. The public profile is what the API is willing to put in the document. Documents subcollection: owner read, no client write |
-| `notifications` | Owner | Update `readAt` only |
+| `notifications` | Owner | None. Mark-read is `POST /v1/notifications/{id}/read` |
 | RTDB `liveLocations` | Parties while `locationOpen` | Own role only |
 | Storage | Signed URLs only. Default rules deny | Deny except matching signed URL |
 
@@ -70,6 +70,7 @@ All JSON. Schemas in [chapter 12](12-api-contracts.md).
 | GET | `/v1/me` | self | yes |
 | PATCH | `/v1/me` | self | yes |
 | POST | `/v1/me/devices` | self | yes, by token |
+| POST | `/v1/notifications/{id}/read` | owner | yes |
 | GET/POST | `/v1/vehicles` | customer | POST uses key |
 | PATCH/DELETE | `/v1/vehicles/{id}` | owner | yes |
 | GET/POST | `/v1/addresses` | customer | POST uses key |
