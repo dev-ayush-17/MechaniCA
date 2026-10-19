@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 import 'navigation/app_router.dart';
 
 void main() {
@@ -17,17 +18,19 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const ProviderScope(child: MechaniCAApp()));
+  runApp(const ProviderScope(child: MechUppApp()));
 }
 
-class MechaniCAApp extends StatelessWidget {
-  const MechaniCAApp({super.key});
+class MechUppApp extends StatelessWidget {
+  const MechUppApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'MechaniCA',
+      title: 'MechUpp',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,
     );

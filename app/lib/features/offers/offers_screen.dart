@@ -59,7 +59,7 @@ class OffersScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _MemberCard('Gold Member', '6 months', '₹499', ['2 Free Services', '20% off', 'Free Pickup', 'Priority Support'], AppColors.gold, () => context.push(RouteNames.membership)),
+                  _MemberCard('Gold Member', '6 months', '₹499', const ['2 Free Services', '20% off', 'Free Pickup', 'Priority Support'], AppColors.gold, () => context.push(RouteNames.membership)),
                 ],
               ),
             ),
@@ -135,9 +135,9 @@ class _CouponCard extends StatelessWidget {
           Container(
             width: 80,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primaryRed,
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              borderRadius: BorderRadius.horizontal(left: Radius.circular(16)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -225,7 +225,7 @@ class _MemberCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(b, style: const TextStyle(color: Colors.white, fontSize: 13)),
               ]),
-            )).toList(),
+            )),
             const SizedBox(height: 16),
             AppButton(label: 'Upgrade Now', onPressed: onTap),
           ],
@@ -290,11 +290,11 @@ class OfferDetailsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            _OfferInfoRow('Discount', offer.discountPercent > 0 ? '${offer.discountPercent}%' : '₹${offer.maxDiscount.toInt()}'),
-            _OfferInfoRow('Min Order', '₹${offer.minOrderValue.toInt()}'),
-            _OfferInfoRow('Max Discount', '₹${offer.maxDiscount.toInt()}'),
-            _OfferInfoRow('Valid Till', '${offer.validTill.day}/${offer.validTill.month}/${offer.validTill.year}'),
-            _OfferInfoRow('Category', offer.category.toUpperCase()),
+            _offerInfoRow('Discount', offer.discountPercent > 0 ? '${offer.discountPercent}%' : '₹${offer.maxDiscount.toInt()}'),
+            _offerInfoRow('Min Order', '₹${offer.minOrderValue.toInt()}'),
+            _offerInfoRow('Max Discount', '₹${offer.maxDiscount.toInt()}'),
+            _offerInfoRow('Valid Till', '${offer.validTill.day}/${offer.validTill.month}/${offer.validTill.year}'),
+            _offerInfoRow('Category', offer.category.toUpperCase()),
             const SizedBox(height: 24),
             AppButton(
               label: 'Book Now & Apply',
@@ -307,7 +307,7 @@ class OfferDetailsScreen extends ConsumerWidget {
   }
 }
 
-Widget _OfferInfoRow(String label, String value) {
+Widget _offerInfoRow(String label, String value) {
   return Container(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(14),

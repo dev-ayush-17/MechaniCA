@@ -401,22 +401,22 @@ class ServiceDetailScreen extends ConsumerWidget {
                           fontSize: 14,
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
-                  _Row2('Service Charge',
+                  _row2('Service Charge',
                       '₹${booking.servicePrice.toInt()}'),
                   if (booking.pickupCharges > 0)
-                    _Row2('Pickup & Drop',
+                    _row2('Pickup & Drop',
                         '₹${booking.pickupCharges.toInt()}'),
                   if (booking.discount > 0)
-                    _Row2('Discount',
+                    _row2('Discount',
                         '-₹${booking.discount.toStringAsFixed(0)}',
                         color: AppColors.success),
-                  _Row2('GST (18%)', '₹${booking.gst.toStringAsFixed(0)}',
+                  _row2('GST (18%)', '₹${booking.gst.toStringAsFixed(0)}',
                       color: AppColors.textSecondary),
                   const Divider(color: AppColors.divider, height: 20),
-                  _Row2('Total',
+                  _row2('Total',
                       '₹${booking.totalAmount.toStringAsFixed(0)}',
                       bold: true),
-                  _Row2('Payment Method', booking.paymentMethod),
+                  _row2('Payment Method', booking.paymentMethod),
                 ],
               ),
             ),
@@ -489,7 +489,7 @@ class ServiceDetailScreen extends ConsumerWidget {
   }
 }
 
-Widget _Row2(String label, String value,
+Widget _row2(String label, String value,
     {Color? color, bool bold = false}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),

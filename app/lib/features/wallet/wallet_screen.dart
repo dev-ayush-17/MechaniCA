@@ -5,7 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -98,12 +97,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       ).animate().fadeIn(),
 
                       // Cashback + Points row
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
                           children: [
                             Expanded(child: _StatCard2('1,250', 'Loyalty Points', Icons.star_rounded, AppColors.gold)),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             Expanded(child: _StatCard2('₹350', 'Total Cashback', Icons.percent_rounded, AppColors.success)),
                           ],
                         ),
@@ -285,7 +284,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
                   const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
                 ]),
               ),
-            ).toList(),
+            ),
             const Spacer(),
             AppButton(
               label: 'Add ₹${_amount.toInt()} to Wallet',
@@ -293,7 +292,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
               onPressed: () async {
                 setState(() => _isLoading = true);
                 await ref.read(walletProvider.notifier).addMoney('usr_001', _amount);
-                if (mounted) {
+                if (context.mounted) {
                   setState(() => _isLoading = false);
                   showAppSnackbar(context, '₹${_amount.toInt()} added to wallet!');
                   context.pop();

@@ -5,7 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -163,7 +162,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                   ]),
                 ),
               ),
-            ).toList(),
+            ),
           ],
         ),
       ),

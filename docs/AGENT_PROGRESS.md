@@ -7,11 +7,11 @@ Living log. Update this at the end of every session.
 | Field | Value |
 | --- | --- |
 | Phase | Implementation |
-| Branch | `chore/m00-foundation` (stacked on `docs/prd-and-milestones`, PR #3) |
-| Milestone in progress | M00 foundation. Code, tests, CI, and docs are done. Awaiting review |
-| Next milestone | M01 frontend foundations, stacked on this branch |
+| Branch | `refactor/m01-frontend-foundations` (stacked on `chore/m00-foundation`, PR #4) |
+| Milestone in progress | M01 frontend foundations. Code and tests are done. Awaiting review. M00 awaits review (PR #4) |
+| Next milestone | M02 auth (runs in parallel on `feat/m02-auth`), then M03 |
 | Demo | Runs from `app/` with `flutter run`. Screens are unchanged. Mock providers are re-exported by `app/lib/composition/providers.dart` |
-| Known broken | `app/test/widget_test.dart` references `MyApp`. M01 replaces it |
+| Known broken | Nothing known. `flutter analyze` reports no issues |
 
 ## Completed
 
@@ -24,6 +24,17 @@ Living log. Update this at the end of every session.
 | 2026-10-19 | M00: `firebase/` emulator config, deny-by-default Security Rules, rules tests (written, see below) |
 | 2026-10-19 | M00: Flutter core (`Result`, `AppFailure`, `Clock`, `Logger`, `FeatureFlags`, `AppConfig`) and `composition/providers.dart`. 5 tests pass |
 | 2026-10-19 | M00: `tool/check_import_boundaries.py` with unit tests, `.githooks/` with smoke tests, `.github/workflows/ci.yml` |
+
+| 2026-10-19 | M01: widget test pumps `MechaniCAApp` and checks splash then onboarding. Deleted `lib/screens`, `lib/theme`, and two unreferenced permission screens. Dropped 5 unused packages and the missing asset dirs. Direct deps pinned to the locked versions. `flutter analyze`: no issues (was 160). l10n scaffold (`l10n.yaml`, `app_en.arb`, delegates in `main.dart`). `avoid_print` and `prefer_const_constructors` enabled |
+
+## M01 notes and follow-ups
+
+- `intl` moved 0.19.0 to 0.20.2 because `flutter_localizations` pins it.
+- The analyzer fixes touched `features/auth/login_screen.dart`, `onboarding_screen.dart` and `forgot_password_screen.dart` (one-line const and mounted fixes). Expect a trivial merge with M02.
+- `assets/` is not declared in pubspec (no asset is referenced). Add the block back with the first real asset.
+- Behavior-adjacent analyzer fixes: `context.mounted` guards before snackbars and pop in save handlers, a `mounted` guard after the coupon delay, and the write-only `_isRefreshing` field removed from Home. No visible change intended.
+- Not done: moving strings into `app_en.arb` (only the catalog exists; no screen reads it yet). Do it per feature milestone.
+- Manual walk of tabs, fuel, membership, refer, and documents was not run (no device here). Only the widget test covers splash then onboarding.
 
 ## Not verified locally
 

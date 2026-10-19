@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/composition/providers.dart';
-import 'package:mechanica_app/core/config/app_config.dart';
-import 'package:mechanica_app/core/theme/app_theme.dart';
-import 'package:mechanica_app/features/auth/presentation/login_screen.dart';
-import 'package:mechanica_app/features/auth/presentation/otp_screen.dart';
-import 'package:mechanica_app/widgets/shared/app_widgets.dart';
+import 'package:mechupp_app/composition/providers.dart';
+import 'package:mechupp_app/core/config/app_config.dart';
+import 'package:mechupp_app/core/theme/app_theme.dart';
+import 'package:mechupp_app/features/auth/presentation/login_screen.dart';
+import 'package:mechupp_app/features/auth/presentation/otp_screen.dart';
+import 'package:mechupp_app/widgets/shared/app_widgets.dart';
 import 'package:pinput/pinput.dart';
 
 Future<void> _pump(

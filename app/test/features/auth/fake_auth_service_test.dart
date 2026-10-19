@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/core/config/app_config.dart';
-import 'package:mechanica_app/core/error/result.dart';
-import 'package:mechanica_app/core/time/clock.dart';
-import 'package:mechanica_app/features/auth/data/fake_auth_service.dart';
+import 'package:mechupp_app/core/config/app_config.dart';
+import 'package:mechupp_app/core/error/result.dart';
+import 'package:mechupp_app/core/time/clock.dart';
+import 'package:mechupp_app/features/auth/data/fake_auth_service.dart';
 
 const _phone = '+919876543210';
 

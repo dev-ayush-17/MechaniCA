@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/core/config/app_config.dart';
-import 'package:mechanica_app/core/error/result.dart';
-import 'package:mechanica_app/core/time/clock.dart';
-import 'package:mechanica_app/features/auth/data/fake_account_api.dart';
-import 'package:mechanica_app/features/auth/data/fake_auth_service.dart';
-import 'package:mechanica_app/features/auth/domain/account_api.dart';
-import 'package:mechanica_app/features/auth/domain/auth_service.dart';
-import 'package:mechanica_app/features/auth/presentation/auth_controller.dart';
+import 'package:mechupp_app/core/config/app_config.dart';
+import 'package:mechupp_app/core/error/result.dart';
+import 'package:mechupp_app/core/time/clock.dart';
+import 'package:mechupp_app/features/auth/data/fake_account_api.dart';
+import 'package:mechupp_app/features/auth/data/fake_auth_service.dart';
+import 'package:mechupp_app/features/auth/domain/account_api.dart';
+import 'package:mechupp_app/features/auth/domain/auth_service.dart';
+import 'package:mechupp_app/features/auth/presentation/auth_controller.dart';
 
 class _FailingAccounts implements AccountApi {
   @override

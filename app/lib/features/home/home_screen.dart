@@ -8,9 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
 import '../../mock/mock_data.dart';
-import '../../models/booking_model.dart';
 import '../../widgets/shared/app_states.dart';
-import '../../widgets/shared/app_widgets.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +18,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _bannerIndex = 0;
-  bool _isRefreshing = false;
 
   final _banners = [
     {'title': 'FLAT 20% OFF', 'sub': 'ON COMPLETE SERVICE\nThis Week Only!', 'code': 'FLAT20'},
@@ -43,10 +40,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _isRefreshing = true);
     _load();
     await Future.delayed(const Duration(milliseconds: 1000));
-    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
@@ -86,20 +81,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Good Morning,', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w400)),
-                      Text(mockUser.name.split(' ').first + ' 👋',
+                      Text('${mockUser.name.split(' ').first} 👋',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
                     ],
                   ),
                 ],
               ),
               actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: AppColors.primaryRed),
-                      const SizedBox(width: 2),
-                      const Text('Patna, Bihar', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      Icon(Icons.location_on, size: 14, color: AppColors.primaryRed),
+                      SizedBox(width: 2),
+                      Text('Patna, Bihar', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -129,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             SliverToBoxAdapter(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Banner Slider
                   _BannerSlider(
@@ -284,7 +279,7 @@ class _BannerSlider extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.only(left: 20, top: 20, bottom: 20, right: 110),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -528,7 +523,7 @@ class _ActiveBookingCard extends StatelessWidget {
                       Text(booking.bikeName, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                     ],
                   ),
-                  StatusBadge(label: 'Live in 5 Min', color: AppColors.success),
+                  const StatusBadge(label: 'Live in 5 Min', color: AppColors.success),
                 ],
               ),
               const SizedBox(height: 12),
@@ -675,12 +670,12 @@ class _FuelMini extends StatelessWidget {
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('This Month', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-            const SizedBox(height: 8),
-            const Row(
+            Text('This Month', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            SizedBox(height: 8),
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
@@ -699,8 +694,8 @@ class _FuelMini extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            const Text('Mileage: 45 km/L', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+            SizedBox(height: 4),
+            Text('Mileage: 45 km/L', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
           ],
         ),
       ),
@@ -719,15 +714,15 @@ class _OffersList extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _OfferCard('FLAT 20% OFF', 'On Complete Service', 'ARC049', AppColors.primaryRed, context),
-          _OfferCard('₹110 OFF', 'On Bike Washing', 'WASH110', AppColors.info, context),
-          _OfferCard('Refer & Earn ₹150', 'Invite friends', null, AppColors.warning, context),
+          _offerCard('FLAT 20% OFF', 'On Complete Service', 'ARC049', AppColors.primaryRed, context),
+          _offerCard('₹110 OFF', 'On Bike Washing', 'WASH110', AppColors.info, context),
+          _offerCard('Refer & Earn ₹150', 'Invite friends', null, AppColors.warning, context),
         ],
       ),
     );
   }
 
-  Widget _OfferCard(String title, String sub, String? code, Color color, BuildContext context) {
+  Widget _offerCard(String title, String sub, String? code, Color color, BuildContext context) {
     return GestureDetector(
       onTap: () => context.push(RouteNames.offers),
       child: Container(

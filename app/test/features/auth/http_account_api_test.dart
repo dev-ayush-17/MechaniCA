@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/core/api/generated/export.dart' as api;
-import 'package:mechanica_app/core/error/result.dart';
-import 'package:mechanica_app/features/auth/data/http_account_api.dart';
-import 'package:mechanica_app/features/auth/domain/account_api.dart';
-import 'package:mechanica_app/features/auth/domain/auth_service.dart';
+import 'package:mechupp_app/core/api/generated/export.dart' as api;
+import 'package:mechupp_app/core/error/result.dart';
+import 'package:mechupp_app/features/auth/data/http_account_api.dart';
+import 'package:mechupp_app/features/auth/domain/account_api.dart';
+import 'package:mechupp_app/features/auth/domain/auth_service.dart';
 
 class _StubAdapter implements HttpClientAdapter {
   _StubAdapter(this._respond);

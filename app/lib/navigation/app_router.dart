@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'route_names.dart';
 import '../features/auth/presentation/splash_screen.dart';
@@ -10,40 +9,22 @@ import '../features/home/main_shell.dart';
 import '../features/home/home_screen.dart';
 import '../features/home/notifications_screen.dart';
 import '../features/bikes/my_bikes_screen.dart';
-import '../features/bikes/add_bike_screen.dart';
-import '../features/bikes/bike_details_screen.dart';
 import '../features/booking/booking_flow_screen.dart';
 import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
-import '../features/booking/reschedule_screen.dart';
 import '../features/tracking/live_tracking_screen.dart';
-import '../features/tracking/service_progress_screen.dart';
 import '../features/inspection/digital_inspection_screen.dart';
-import '../features/inspection/photo_gallery_screen.dart';
 import '../features/invoice/invoice_screen.dart';
 import '../features/wallet/wallet_screen.dart';
-import '../features/wallet/add_money_screen.dart';
 import '../features/offers/offers_screen.dart';
-import '../features/offers/offer_details_screen.dart';
 import '../features/membership/membership_screen.dart';
-import '../features/membership/purchase_success_screen.dart';
-import '../features/referral/refer_earn_screen.dart';
 import '../features/emergency/emergency_screen.dart';
-import '../features/emergency/emergency_tracking_screen.dart';
 import '../features/documents/documents_screen.dart';
-import '../features/documents/document_viewer_screen.dart';
 import '../features/support/support_screen.dart';
-import '../features/support/chat_screen.dart';
-import '../features/support/ticket_screen.dart';
 import '../features/profile/profile_screen.dart';
-import '../features/profile/edit_profile_screen.dart';
-import '../features/profile/addresses_screen.dart';
-import '../features/profile/settings_screen.dart';
 import '../features/fuel/fuel_tracker_screen.dart';
-import '../features/fuel/add_fuel_log_screen.dart';
 import '../features/health/health_score_screen.dart';
 import '../features/history/history_screen.dart';
-import '../features/history/service_detail_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash,

@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/core/error/result.dart';
-import 'package:mechanica_app/features/auth/data/adapters/firebase_auth_service.dart';
+import 'package:mechupp_app/core/error/result.dart';
+import 'package:mechupp_app/features/auth/data/adapters/firebase_auth_service.dart';
 
 void main() {
   test('wrong_code_maps_to_invalid_input', () {

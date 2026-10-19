@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mechanica_app/core/theme/app_theme.dart';
-import 'package:mechanica_app/features/auth/presentation/permission_screens.dart';
-import 'package:mechanica_app/navigation/app_router.dart';
+import 'package:mechupp_app/core/theme/app_theme.dart';
+import 'package:mechupp_app/features/auth/presentation/permission_screens.dart';
+import 'package:mechupp_app/navigation/app_router.dart';
 
 Iterable<String> _paths(List<RouteBase> routes) sync* {
   for (final route in routes) {
