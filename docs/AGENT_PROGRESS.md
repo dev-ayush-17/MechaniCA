@@ -25,7 +25,7 @@ Living log. Update this at the end of every session.
 | 2026-10-19 | M00: Flutter core (`Result`, `AppFailure`, `Clock`, `Logger`, `FeatureFlags`, `AppConfig`) and `composition/providers.dart`. 5 tests pass |
 | 2026-10-19 | M00: `tool/check_import_boundaries.py` with unit tests, `.githooks/` with smoke tests, `.github/workflows/ci.yml` |
 
-| 2026-10-19 | M01: widget test pumps `MechaniCAApp` and checks splash then onboarding. Deleted `lib/screens`, `lib/theme`, and two unreferenced permission screens. Dropped 5 unused packages and the missing asset dirs. Direct deps pinned to the locked versions. `flutter analyze`: no issues (was 160). l10n scaffold (`l10n.yaml`, `app_en.arb`, delegates in `main.dart`). `avoid_print` and `prefer_const_constructors` enabled |
+| 2026-10-19 | Product rename chore to MechUpp: identifiers, package names, Android com.mechupp.app, iOS display name/bundle id, env prefix MECHUPP_, emulator project id demo-mechupp, ADR-016. |
 
 ## M01 notes and follow-ups
 
@@ -52,7 +52,7 @@ See [DECISIONS/README.md](DECISIONS/README.md). Do not re-litigate them inside a
 
 ## Open items that do not block the next milestone
 
-- Product rename to MechUpp (default: no).
+- Product rename to MechUpp (done in `chore/rename-to-mechupp`, ADR-016).
 - Production Firebase and GCP projects (owner). Do not create them from an agent session.
 - Cashfree and Google Maps keys (owner). Fakes until then.
 - Final auth vendor if not Firebase (default adapter is Firebase phone OTP).

@@ -1,4 +1,4 @@
-# MechaniCA
+# MechUpp
 
 On-demand mechanic booking and roadside assistance for two-wheelers and four-wheelers in India. A customer books a verified mechanic who comes to their location, follows them live, pays, and gets a GST invoice. Mechanics and admins use the same codebase through separate entrypoints.
 
@@ -17,7 +17,7 @@ The Flutter app under `app/` is still a static demo. The FastAPI service under `
 ## Layout
 
 ```
-app/               Flutter (Dart package is still named mechanica_app)
+app/               Flutter (Dart package is named mechupp_app)
 backend/           FastAPI on Cloud Run
 firebase/          Security Rules, emulator config, rules tests
 tool/              Repo checks (import boundaries, hook tests)

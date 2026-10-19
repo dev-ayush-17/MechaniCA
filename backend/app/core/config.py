@@ -13,7 +13,7 @@ FAKE_AUTH_ENVS: frozenset[str] = frozenset({"dev", "test"})
 class Settings(BaseSettings):
     """Process configuration. Provider choices come from here, never from business code."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="MECHANICA_", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="MECHUPP_", extra="ignore")
 
     app_env: Env = "dev"
     log_level: str = "INFO"
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
         if self.provider_auth == "fake" and self.app_env not in FAKE_AUTH_ENVS:
             raise ValueError("PROVIDER_AUTH=fake is not allowed outside dev and test")
         if self.provider_auth == "firebase" and not self.firebase_project_id:
-            raise ValueError("MECHANICA_FIREBASE_PROJECT_ID is required for PROVIDER_AUTH=firebase")
+            raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_AUTH=firebase")
         return self
 
 

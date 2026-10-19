@@ -18,6 +18,6 @@ alwaysApply: false
 - `print` is not a logger. Use the `Logger` port.
 - Tests live in `test/` mirroring the feature. Pump fakes, not the network.
 
-The Dart package name is still `mechanica_app` (imports use `package:mechanica_app/...`). The folder is `app/`.
+The Dart package name is `mechupp_app` (imports use `package:mechupp_app/...`). The folder is `app/`.
 
 Detail: `docs/prd/07-system-architecture.md`, `docs/prd/22-coding-standards.md`.

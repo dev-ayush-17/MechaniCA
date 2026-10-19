@@ -10,7 +10,7 @@ from app.core.logging import configure_logging
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level)
-    app = FastAPI(title="MechaniCA API", version="0.1.0")
+    app = FastAPI(title="MechUpp API", version="0.1.0")
     install_error_handling(app)
     app.include_router(health.router)
     app.include_router(me.router)

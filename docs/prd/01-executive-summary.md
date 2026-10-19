@@ -4,7 +4,7 @@
 
 A vehicle owner in India can get a verified mechanic to their location, watch them arrive, approve the work, pay, and keep the invoice, without handing the vehicle to an unknown workshop.
 
-MechaniCA's MVP is that loop for two-wheelers and four-wheelers in one launch city. The demo city in the current app is Patna. The city is configuration, not a hardcoded assumption in business code. See [assumptions](04-assumptions.md).
+MechUpp's MVP is that loop for two-wheelers and four-wheelers in one launch city. The demo city in the current app is Patna. The city is configuration, not a hardcoded assumption in business code. See [assumptions](04-assumptions.md).
 
 ## Problem
 

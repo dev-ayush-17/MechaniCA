@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "MechaniCA",
+  "appName": "MechUpp",
   "@appName": { "description": "Product name shown on the splash screen." },
   "appTagline": "Your Bike. Our Responsibility.",
   "@appTagline": { "description": "Tagline shown under the product name on the splash screen." }

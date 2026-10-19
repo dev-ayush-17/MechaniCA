@@ -145,7 +145,7 @@ def install_error_handling(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def on_unexpected(request: Request, exc: Exception) -> JSONResponse:
         # Stack goes to the log; the body stays generic.
-        logging.getLogger("mechanica").error(
+        logging.getLogger("mechupp").error(
             "unhandled error", exc_info=exc, extra={"fields": {"request_id": _request_id(request)}}
         )
         return _envelope(request, 500, "internal", "Something went wrong. Try again.")

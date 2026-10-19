@@ -1,6 +1,6 @@
-# MechaniCA — Product and architecture specification
+# MechUpp — Product and architecture specification
 
-MechaniCA is an on-demand mechanic and roadside-assistance product for two-wheeler and four-wheeler owners in India. A customer books a verified mechanic who comes to their location, can be tracked live, gets the work done, pays, and downloads a GST invoice.
+MechUpp is an on-demand mechanic and roadside-assistance product for two-wheeler and four-wheeler owners in India. A customer books a verified mechanic who comes to their location, can be tracked live, gets the work done, pays, and downloads a GST invoice.
 
 This file is the index. The detail lives in the chapters below so a single session can update one area without rewriting the whole spec.
 

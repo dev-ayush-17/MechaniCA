@@ -17,5 +17,6 @@
 | [013](013-sequential-dispatch.md) | Offer a job to one mechanic at a time |
 | [014](014-server-writes.md) | FastAPI is the only writer for status and money |
 | [015](015-swagger-parser.md) | Generate the Dart client with swagger_parser |
+| [016](016-product-name-mechupp.md) | Product name becomes MechUpp |
 
 Each note is the choice a later milestone must follow unless a new ADR replaces it.

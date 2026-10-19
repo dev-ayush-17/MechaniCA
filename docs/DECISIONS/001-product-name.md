@@ -1,6 +1,6 @@
-# ADR-001 — Product name stays MechaniCA
+# ADR-001 — Product name stays MechaniCA (Superseded by ADR-016)
 
-**Status:** accepted. **Date:** 2026-10-19.
+**Status:** superseded by [ADR-016](016-product-name-mechupp.md). **Date:** 2026-10-19.
 
 `main` brands the app MechaniCA. The unmerged `develop` branch renames it to MechUpp.
 

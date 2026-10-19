@@ -6,7 +6,7 @@
 
 | Topic | Choice | Why not the alternative | Change cost |
 | --- | --- | --- | --- |
-| Product name | MechaniCA, as on `main` | `develop` renames the app to MechUpp. That branch is not merged. A rename is a string and application-id change, not an architecture change. | Low. ADR-001. |
+| Product name | MechUpp (ADR-016) | Was MechaniCA until the owner requested a single product name rename. | Low. ADR-016. |
 | Fulfillment | Mechanic comes to the vehicle | The demo's pickup and workshop states describe a different product. Workshop mode is Phase 2, behind a service-mode flag, not a rewrite. | High if we keep both in MVP. We will not. ADR-002. |
 | Booking kinds | Instant and scheduled | The demo already collects a date and time. Dropping scheduled booking would throw away a working wizard step. | Low. |
 | Customer and mechanic apps | One Flutter package, two entrypoints (`main_customer.dart`, `main_mechanic.dart`) | Two packages would duplicate the API client and the design tokens. | Medium. ADR-003. |
@@ -57,6 +57,6 @@
 | Cashfree account, keys, webhook URL | Owner supplies secrets | Fake gateway in dev | Env vars. No code change |
 | Google Maps key | Owner supplies secrets | Fake maps in dev | Env and the Maps adapter config |
 | Production GCP project and Firebase project | Owner | Emulator only until then | Env. Do not create projects from an agent session without asking |
-| Application id `com.example.mechanica_app` | Owner | Leave the example id until release prep | M16. Changing it early breaks nothing we have |
+| Application id `com.mechupp.app` | Owner | Application ID updated per ADR-016 | ADR-016 |
 
 Do not block a milestone on an open decision. Build the fake adapter and the port. Ask the owner only when a secret, a bill, or a production deploy is required.
