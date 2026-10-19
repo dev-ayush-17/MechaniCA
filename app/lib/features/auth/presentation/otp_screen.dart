@@ -6,7 +6,6 @@ import 'package:pinput/pinput.dart';
 import '../../../composition/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../navigation/route_names.dart';
 import '../../../widgets/shared/app_widgets.dart';
 
 class OTPScreen extends ConsumerStatefulWidget {
@@ -46,7 +45,9 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
 
   Future<void> _verify() async {
     final success = await ref.read(authProvider.notifier).verifyOtp(widget.phone, _otpCtrl.text);
-    if (success && mounted) context.go(RouteNames.locationPermission);
+    if (success && mounted) {
+      context.go(ref.read(postOtpRouteProvider));
+    }
   }
 
   @override
