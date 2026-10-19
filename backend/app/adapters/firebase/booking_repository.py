@@ -164,3 +164,7 @@ class FirestoreBookingRepository:
     async def list_by_mechanic(self, mechanic_id: str) -> list[Booking]:
         snaps = self._col().where("mechanicId", "==", mechanic_id).stream()
         return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]
+
+    async def list_by_status(self, status: BookingStatus) -> list[Booking]:
+        snaps = self._col().where("status", "==", status.value).stream()
+        return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]

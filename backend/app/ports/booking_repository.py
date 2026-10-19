@@ -1,6 +1,7 @@
 from typing import Protocol
 
 from app.domain.booking import Booking
+from app.domain.booking_state import BookingStatus
 
 
 class BookingRepository(Protocol):
@@ -13,3 +14,5 @@ class BookingRepository(Protocol):
     async def list_by_customer(self, customer_id: str) -> list[Booking]: ...
 
     async def list_by_mechanic(self, mechanic_id: str) -> list[Booking]: ...
+
+    async def list_by_status(self, status: BookingStatus) -> list[Booking]: ...

@@ -24,6 +24,7 @@ from app.domain.geo import haversine_km
 from app.domain.mechanic import Mechanic
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.job_scheduler import JobScheduler, ScheduledJob
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.offer_repository import OfferRepository
@@ -48,6 +49,7 @@ class SequentialDispatch:
     notifications: NotificationSender
     clock: Clock
     config: DispatchConfig = DispatchConfig()
+    scheduler: JobScheduler | None = None
 
     async def offer(self, booking_id: str) -> Offer | None:
         booking = await self._load_booking(booking_id)
@@ -85,6 +87,7 @@ class SequentialDispatch:
         saved = await self.offers.save(created)
         updated = booking.with_status(BookingStatus.CONFIRMED, now=now, dispatch_attempt=attempt)
         await self.bookings.save(updated)
+        await self._schedule_timeout(saved.id, saved.expires_at)
         await self._notify(
             OutboundNotification(
                 user_id=candidate.mechanic_id,
@@ -287,6 +290,24 @@ class SequentialDispatch:
         if offer is None:
             raise NotFound("We could not find that offer.")
         return offer
+
+    async def _schedule_timeout(self, offer_id: str, expires_at: datetime) -> None:
+        if self.scheduler is None:
+            return
+        try:
+            await self.scheduler.schedule(
+                ScheduledJob(
+                    id=f"offer-timeout-{offer_id}",
+                    run_at=expires_at,
+                    target_path="/v1/internal/jobs/dispatch-timeout",
+                    body={"offerId": offer_id},
+                )
+            )
+        except Exception as exc:
+            _LOG.warning(
+                "schedule_failed",
+                extra={"fields": {"offerId": offer_id, "error": type(exc).__name__}},
+            )
 
     async def _notify(self, message: OutboundNotification) -> None:
         try:

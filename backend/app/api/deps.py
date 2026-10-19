@@ -12,6 +12,7 @@ from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
+from app.adapters.fake.job_scheduler import FakeJobScheduler
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
 from app.adapters.fake.offer_repository import FakeOfferRepository
@@ -32,6 +33,7 @@ from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
 from app.application.verify_mechanic import VerifyMechanic
 from app.core.config import Settings, get_settings
@@ -48,6 +50,7 @@ from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
+from app.ports.job_scheduler import JobScheduler
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_sender import NotificationSender
 from app.ports.offer_repository import OfferRepository
@@ -330,12 +333,43 @@ def notification_sender_dep() -> NotificationSender:
     return _notifications()
 
 
+@lru_cache
+def _scheduler() -> JobScheduler:
+    settings = get_settings()
+    if settings.provider_scheduler == "cloud_tasks":
+        from app.adapters.gcp.cloud_tasks_scheduler import CloudTasksJobScheduler
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        assert settings.cloud_tasks_service_account is not None  # noqa: S101
+        return CloudTasksJobScheduler(
+            project_id=settings.firebase_project_id,
+            location=settings.cloud_tasks_location,
+            queue=settings.cloud_tasks_queue,
+            handler_base_url=settings.cloud_tasks_handler_base_url,
+            service_account_email=settings.cloud_tasks_service_account,
+        )
+    return FakeJobScheduler()
+
+
+def job_scheduler_dep() -> JobScheduler:
+    return _scheduler()
+
+
+async def require_internal_job_dep(
+    x_internal_job_token: Annotated[str | None, Header()] = None,
+) -> None:
+    settings = get_settings()
+    if not x_internal_job_token or x_internal_job_token != settings.internal_job_token:
+        raise Unauthenticated("Internal job token required.")
+
+
 def dispatch_service_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
     mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
     notifications: Annotated[NotificationSender, Depends(notification_sender_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> SequentialDispatch:
     return SequentialDispatch(
         bookings=bookings,
@@ -343,6 +377,7 @@ def dispatch_service_dep(
         mechanics=mechanics,
         notifications=notifications,
         clock=clock,
+        scheduler=scheduler,
     )
 
 
@@ -350,6 +385,22 @@ def expire_offer_dep(
     dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
 ) -> ExpireOffer:
     return ExpireOffer(dispatch=dispatch)
+
+
+def sweep_expired_offers_dep(
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SweepExpiredOffers:
+    return SweepExpiredOffers(
+        offers=offers,
+        bookings=bookings,
+        mechanics=mechanics,
+        dispatch=dispatch,
+        clock=clock,
+    )
 
 
 @lru_cache

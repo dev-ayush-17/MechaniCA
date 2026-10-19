@@ -538,6 +538,20 @@
         "title": "CreateVehicleRequest",
         "type": "object"
       },
+      "DispatchTimeoutRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "title": "Offerid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "offerId"
+        ],
+        "title": "DispatchTimeoutRequest",
+        "type": "object"
+      },
       "DocumentIn": {
         "properties": {
           "kind": {
@@ -657,6 +671,23 @@
         ],
         "title": "Intent",
         "type": "string"
+      },
+      "JobOk": {
+        "additionalProperties": false,
+        "properties": {
+          "expired": {
+            "default": 0,
+            "title": "Expired",
+            "type": "integer"
+          },
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "title": "JobOk",
+        "type": "object"
       },
       "LineDecisionRequest": {
         "additionalProperties": false,
@@ -2401,6 +2432,134 @@
         "summary": "List Services",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/v1/internal/jobs/dispatch-sweep": {
+      "post": {
+        "operationId": "dispatch_sweep_v1_internal_jobs_dispatch_sweep_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-internal-job-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Job-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOk"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Dispatch Sweep",
+        "tags": [
+          "internal"
+        ]
+      }
+    },
+    "/v1/internal/jobs/dispatch-timeout": {
+      "post": {
+        "operationId": "dispatch_timeout_v1_internal_jobs_dispatch_timeout_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-internal-job-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Job-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispatchTimeoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOk"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Dispatch Timeout",
+        "tags": [
+          "internal"
         ]
       }
     },

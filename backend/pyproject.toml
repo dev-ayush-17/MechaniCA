@@ -42,5 +42,5 @@ packages = ["app"]
 
 [[tool.mypy.overrides]]
 # The Admin SDK ships no type information.
-module = ["firebase_admin", "firebase_admin.*"]
+module = ["firebase_admin", "firebase_admin.*", "google.cloud", "google.cloud.*"]
 ignore_missing_imports = true
