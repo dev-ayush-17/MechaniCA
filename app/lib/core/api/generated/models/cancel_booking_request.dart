@@ -4,17 +4,17 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
-part 'cancel_request.g.dart';
+part 'cancel_booking_request.g.dart';
 
 @JsonSerializable()
-class CancelRequest {
-  const CancelRequest({
+class CancelBookingRequest {
+  const CancelBookingRequest({
     this.reason = 'Cancelled',
   });
   
-  factory CancelRequest.fromJson(Map<String, Object?> json) => _$CancelRequestFromJson(json);
+  factory CancelBookingRequest.fromJson(Map<String, Object?> json) => _$CancelBookingRequestFromJson(json);
   
   final String reason;
 
-  Map<String, Object?> toJson() => _$CancelRequestToJson(this);
+  Map<String, Object?> toJson() => _$CancelBookingRequestToJson(this);
 }

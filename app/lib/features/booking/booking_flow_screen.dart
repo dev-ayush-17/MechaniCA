@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../composition/providers.dart';
+import '../../core/error/result.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../models/booking_model.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'domain/booking.dart';
+import 'domain/payment_method.dart';
 import 'presentation/price_step.dart';
 import 'presentation/service_step.dart';
 
@@ -45,12 +50,36 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     }
   }
 
-  Future<void> _confirmBooking() async {
+  Future<String?> _confirmBooking() async {
+    if (!ref.read(networkOnlineProvider)) {
+      return 'Connect to book.';
+    }
     final flow = ref.read(bookingFlowProvider);
-    if (flow.selectedBike == null || flow.selectedService == null) return;
+    if (flow.selectedBike == null || flow.selectedService == null) {
+      return 'Pick a bike and a service first.';
+    }
 
+    final result = await ref.read(bookingApiProvider).create(
+          vehicleId: flow.selectedBike!.id,
+          serviceCode: flow.selectedService!.id,
+          addressId: 'addr_home',
+          paymentMethod: paymentMethodCode(flow.paymentMethod),
+          mode: 'instant',
+          urgency: 'normal',
+          idempotencyKey: const Uuid().v4(),
+        );
+    switch (result) {
+      case Ok(:final value):
+        await _persistCreated(flow, value);
+        return null;
+      case Err(:final failure):
+        return failure.message;
+    }
+  }
+
+  Future<void> _persistCreated(BookingFlowState flow, Booking created) async {
     final booking = BookingModel(
-      id: 'bkg_${DateTime.now().millisecondsSinceEpoch}',
+      id: created.id,
       userId: 'usr_001',
       bikeId: flow.selectedBike!.id,
       bikeName: flow.selectedBike!.name,
@@ -58,7 +87,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
       serviceId: flow.selectedService!.id,
       serviceName: flow.selectedService!.name,
       servicePrice: flow.selectedService!.price,
-      status: BookingStatus.confirmed,
+      status: created.status,
       serviceType: flow.isPickupDrop ? ServiceType.pickupDrop : ServiceType.visitWorkshop,
       scheduledDate: flow.selectedDate ?? DateTime.now().add(const Duration(days: 1)),
       scheduledTime: flow.selectedTime ?? '10:00 AM',
@@ -67,14 +96,13 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
       discount: flow.discount,
       pickupCharges: flow.pickupCharges,
       gst: flow.gst,
-      totalAmount: flow.total,
+      totalAmount: created.totalPaise / 100,
       paymentMethod: flow.paymentMethod,
       createdAt: DateTime.now(),
-      statusTimeline: ['Pickup Assigned'],
+      statusTimeline: [created.status.label],
     );
-
-    final created = await ref.read(bookingProvider.notifier).createBooking(booking);
-    if (created != null && mounted) {
+    await ref.read(bookingProvider.notifier).createBooking(booking);
+    if (mounted) {
       ref.read(bookingFlowProvider.notifier).reset();
       context.pushReplacement(RouteNames.bookingSuccess, extra: created.id);
     }

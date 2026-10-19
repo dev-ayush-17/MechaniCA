@@ -21,7 +21,7 @@ export 'models/booking_mode.dart';
 export 'models/booking_out.dart';
 export 'models/booking_status.dart';
 export 'models/bootstrap_request.dart';
-export 'models/cancel_request.dart';
+export 'models/cancel_booking_request.dart';
 export 'models/create_booking_request.dart';
 export 'models/create_vehicle_request.dart';
 export 'models/document_in.dart';

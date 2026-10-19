@@ -80,7 +80,7 @@ class CreateBookingRequest(_Camel):
     scheduled_start: datetime | None = None
 
 
-class CancelRequest(_Camel):
+class CancelBookingRequest(_Camel):
     reason: str = "Cancelled"
 
 
@@ -169,7 +169,7 @@ async def get_booking(
 @router.post("/{booking_id}/cancel", response_model=BookingOut)
 async def cancel_booking(
     booking_id: str,
-    body: CancelRequest,
+    body: CancelBookingRequest,
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[CancelBooking, Depends(cancel_booking_dep)],
 ) -> BookingOut:

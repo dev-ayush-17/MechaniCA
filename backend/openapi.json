@@ -281,7 +281,7 @@
         "title": "BootstrapRequest",
         "type": "object"
       },
-      "CancelRequest": {
+      "CancelBookingRequest": {
         "additionalProperties": false,
         "properties": {
           "reason": {
@@ -290,7 +290,7 @@
             "type": "string"
           }
         },
-        "title": "CancelRequest",
+        "title": "CancelBookingRequest",
         "type": "object"
       },
       "CreateBookingRequest": {
@@ -1714,7 +1714,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CancelRequest"
+                "$ref": "#/components/schemas/CancelBookingRequest"
               }
             }
           },

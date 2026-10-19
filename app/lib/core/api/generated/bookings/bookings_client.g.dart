@@ -123,7 +123,7 @@ class _BookingsClient implements BookingsClient {
   @override
   Future<BookingOut> cancelBookingV1BookingsBookingIdCancelPost({
     required String bookingId,
-    required InvalidType body,
+    required CancelBookingRequest body,
     String? authorization,
   }) async {
     final _extra = <String, dynamic>{};
@@ -131,7 +131,8 @@ class _BookingsClient implements BookingsClient {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'authorization': authorization};
     _headers.removeWhere((k, v) => v == null);
-    final _data = body;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<BookingOut>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(

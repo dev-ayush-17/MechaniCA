@@ -8,7 +8,7 @@ import 'package:retrofit/retrofit.dart';
 import '../models/booking_create_out.dart';
 import '../models/booking_list_out.dart';
 import '../models/booking_out.dart';
-import '../models/cancel_request.dart';
+import '../models/cancel_booking_request.dart';
 import '../models/create_booking_request.dart';
 import '../models/transition_request.dart';
 
@@ -43,7 +43,7 @@ abstract class BookingsClient {
   @POST('/v1/bookings/{booking_id}/cancel')
   Future<BookingOut> cancelBookingV1BookingsBookingIdCancelPost({
     @Path('booking_id') required String bookingId,
-    @Body() required CancelRequest body,
+    @Body() required CancelBookingRequest body,
     @Header('authorization') String? authorization,
   });
 

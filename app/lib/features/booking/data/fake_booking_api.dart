@@ -1,0 +1,66 @@
+import '../../../core/error/result.dart';
+import '../../../models/booking_model.dart';
+import '../domain/booking.dart';
+import '../domain/booking_api.dart';
+
+class FakeBookingApi implements BookingApi {
+  FakeBookingApi({this.failCreateWith});
+
+  final AppFailure? failCreateWith;
+  final List<Booking> created = [];
+  final List<String> cancelled = [];
+
+  @override
+  Future<Result<Booking>> create({
+    required String vehicleId,
+    required String serviceCode,
+    required String addressId,
+    required String paymentMethod,
+    required String mode,
+    required String urgency,
+    required String idempotencyKey,
+    DateTime? scheduledStart,
+  }) async {
+    if (failCreateWith != null) return Err(failCreateWith!);
+    final existing = created.cast<Booking?>().firstWhere(
+          (item) => item?.id == idempotencyKey,
+          orElse: () => null,
+        );
+    if (existing != null) return Ok(existing);
+    final booking = Booking(
+      id: idempotencyKey,
+      displayNumber: 'MC${idempotencyKey.replaceAll('-', '').substring(0, 8).toUpperCase()}',
+      status: BookingStatus.confirmed,
+      serviceCode: urgency == 'sos' ? 'breakdown' : serviceCode,
+      mode: urgency == 'sos' ? 'instant' : mode,
+      urgency: urgency,
+      totalPaise: 76464,
+      cancelFeePaise: 0,
+      version: 1,
+    );
+    created.add(booking);
+    return Ok(booking);
+  }
+
+  @override
+  Future<Result<Booking>> cancel(String bookingId, {required String reason}) async {
+    cancelled.add('$bookingId:$reason');
+    final match = created.cast<Booking?>().firstWhere(
+          (item) => item?.id == bookingId,
+          orElse: () => null,
+        );
+    final booking = match ??
+        Booking(
+          id: bookingId,
+          displayNumber: 'MC${bookingId.substring(0, 8).toUpperCase()}',
+          status: BookingStatus.cancelled,
+          serviceCode: 'general_service',
+          mode: 'instant',
+          urgency: 'normal',
+          totalPaise: 0,
+          cancelFeePaise: 0,
+          version: 2,
+        );
+    return Ok(booking);
+  }
+}

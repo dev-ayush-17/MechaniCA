@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../widgets/shared/app_widgets.dart';
+import '../booking/domain/sos_payload.dart';
 
 // ─── EMERGENCY SCREEN ─────────────────────────────────────────────────────────
 
@@ -33,7 +34,10 @@ class EmergencyScreen extends StatelessWidget {
           children: [
             // SOS Button
             GestureDetector(
-              onLongPress: () => context.push(RouteNames.emergencyTracking, extra: 'SOS'),
+              onLongPress: () => context.push(
+                RouteNames.emergencyTracking,
+                extra: sosPayloadFor('SOS'),
+              ),
               child: Container(
                 width: 160,
                 height: 160,
@@ -76,7 +80,10 @@ class EmergencyScreen extends StatelessWidget {
               itemBuilder: (_, i) {
                 final type = types[i];
                 return GestureDetector(
-                  onTap: () => context.push(RouteNames.emergencyTracking, extra: type.$1),
+                  onTap: () => context.push(
+                    RouteNames.emergencyTracking,
+                    extra: sosPayloadFor(type.$1),
+                  ),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.cardBackground,
@@ -112,8 +119,8 @@ class EmergencyScreen extends StatelessWidget {
 // ─── EMERGENCY TRACKING SCREEN ────────────────────────────────────────────────
 
 class EmergencyTrackingScreen extends StatefulWidget {
-  final String emergencyType;
-  const EmergencyTrackingScreen({super.key, required this.emergencyType});
+  final SosBookingPayload payload;
+  const EmergencyTrackingScreen({super.key, required this.payload});
   @override
   State<EmergencyTrackingScreen> createState() => _EmergencyTrackingScreenState();
 }
@@ -141,7 +148,7 @@ class _EmergencyTrackingScreenState extends State<EmergencyTrackingScreen> with 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('${widget.emergencyType} Assistance'),
+        title: Text('${widget.payload.reason} Assistance'),
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
       ),
       body: SingleChildScrollView(
@@ -175,6 +182,14 @@ class _EmergencyTrackingScreenState extends State<EmergencyTrackingScreen> with 
                   const Text('Help is on the Way!', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
                   Text('ETA: $_etaMinutes minutes', style: const TextStyle(color: AppColors.primaryRed, fontSize: 16, fontWeight: FontWeight.w700)),
+                  if (widget.payload.showEmergencyServicesCopy) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'If anyone is hurt, call 112 first.',
+                      style: TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w600),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
               ),
             ),

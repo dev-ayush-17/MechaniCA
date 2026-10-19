@@ -18,6 +18,7 @@ import '../features/invoice/invoice_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/offers/offers_screen.dart';
 import '../features/membership/membership_screen.dart';
+import '../features/booking/domain/sos_payload.dart';
 import '../features/emergency/emergency_screen.dart';
 import '../features/documents/documents_screen.dart';
 import '../features/support/support_screen.dart';
@@ -206,8 +207,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.emergencyTracking,
       builder: (_, state) {
-        final type = state.extra as String? ?? 'Breakdown';
-        return EmergencyTrackingScreen(emergencyType: type);
+        final extra = state.extra;
+        final payload = extra is SosBookingPayload
+            ? extra
+            : sosPayloadFor(extra as String? ?? 'Breakdown');
+        return EmergencyTrackingScreen(payload: payload);
       },
     ),
 

@@ -28,6 +28,9 @@ import '../features/auth/data/fake_session_store.dart';
 import '../features/auth/data/http_account_api.dart';
 import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
+import '../features/booking/data/fake_booking_api.dart';
+import '../features/booking/data/http_booking_api.dart';
+import '../features/booking/domain/booking_api.dart';
 import '../features/booking/domain/quote_api.dart';
 import '../features/catalog/data/cached_quote_api.dart';
 import '../features/catalog/data/catalog_local_store.dart';
@@ -41,6 +44,7 @@ import '../features/catalog/domain/catalog_snapshot.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
+import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
 
@@ -201,6 +205,21 @@ final quoteApiProvider = Provider<QuoteApi>((ref) {
     isOnline: () => ref.read(networkOnlineProvider),
     clock: ref.watch(clockProvider),
   );
+});
+
+final bookingApiProvider = Provider<BookingApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeBookingApi(),
+    AuthProviderKind.firebase => HttpBookingApi(
+        client: BookingsClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
 });
 
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
