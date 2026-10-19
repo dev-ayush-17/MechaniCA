@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
-import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 
@@ -61,10 +59,10 @@ class InvoiceScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   const Divider(color: AppColors.divider),
                   const SizedBox(height: 12),
-                  _InvRow('Invoice No', invoice.invoiceNumber),
-                  _InvRow('Date', '${invoice.date.day} May 2024'),
-                  _InvRow('Bike', invoice.bikeNumber),
-                  _InvRow('Payment', invoice.paymentMethod),
+                  _invRow('Invoice No', invoice.invoiceNumber),
+                  _invRow('Date', '${invoice.date.day} May 2024'),
+                  _invRow('Bike', invoice.bikeNumber),
+                  _invRow('Payment', invoice.paymentMethod),
                 ],
               ),
             ).animate().fadeIn(),
@@ -91,13 +89,13 @@ class InvoiceScreen extends ConsumerWidget {
                         Text('₹${item.total.toInt()}', style: const TextStyle(color: Colors.white, fontSize: 13)),
                       ],
                     ),
-                  )).toList(),
+                  )),
                   const Divider(color: AppColors.divider),
-                  _SumRow('Subtotal', '₹${(invoice.serviceCharge + invoice.pickupCharges + invoice.partsCost).toInt()}'),
-                  _SumRow('Discount', '-₹${invoice.discount.toStringAsFixed(0)}', color: AppColors.success),
-                  _SumRow('GST (18%)', '₹${invoice.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
+                  _sumRow('Subtotal', '₹${(invoice.serviceCharge + invoice.pickupCharges + invoice.partsCost).toInt()}'),
+                  _sumRow('Discount', '-₹${invoice.discount.toStringAsFixed(0)}', color: AppColors.success),
+                  _sumRow('GST (18%)', '₹${invoice.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
                   const Divider(color: AppColors.divider),
-                  _SumRow('Total Amount', '₹${invoice.totalAmount.toStringAsFixed(0)}', bold: true),
+                  _sumRow('Total Amount', '₹${invoice.totalAmount.toStringAsFixed(0)}', bold: true),
                 ],
               ),
             ).animate().fadeIn(delay: 200.ms),
@@ -125,7 +123,7 @@ class InvoiceScreen extends ConsumerWidget {
   }
 }
 
-Widget _InvRow(String label, String value) {
+Widget _invRow(String label, String value) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(
@@ -138,7 +136,7 @@ Widget _InvRow(String label, String value) {
   );
 }
 
-Widget _SumRow(String label, String value, {Color? color, bool bold = false}) {
+Widget _sumRow(String label, String value, {Color? color, bool bold = false}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),
     child: Row(

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
 import '../../models/booking_model.dart';
-import '../../models/bike_model.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
@@ -91,7 +89,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: _prev,
         ),
-        title: Text('Book Service', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        title: const Text('Book Service', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Column(
@@ -567,6 +565,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
     if (_couponCtrl.text.isEmpty) return;
     setState(() => _checkingCoupon = true);
     await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
     final code = _couponCtrl.text.toUpperCase();
     if (code == 'FLAT20' || code == 'ARC049' || code == 'WASH110') {
       final flow = ref.read(bookingFlowProvider);
@@ -631,7 +630,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
                         ],
                       ),
                     ),
-                  )).toList(),
+                  )),
                   const SizedBox(height: 20),
                 ],
                 const Text('Apply Coupon', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
@@ -706,12 +705,12 @@ class _Step6PaymentState extends ConsumerState<_Step6Payment> {
                   decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     children: [
-                      _PriceRow('Service', '₹${flow.selectedService?.price.toInt() ?? 0}'),
-                      if (flow.isPickupDrop) _PriceRow('Pickup & Drop', '₹${flow.pickupCharges.toInt()}'),
-                      if (flow.discount > 0) _PriceRow('Discount', '-₹${flow.discount.toStringAsFixed(0)}', color: AppColors.success),
-                      _PriceRow('GST (18%)', '₹${flow.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
+                      _priceRow('Service', '₹${flow.selectedService?.price.toInt() ?? 0}'),
+                      if (flow.isPickupDrop) _priceRow('Pickup & Drop', '₹${flow.pickupCharges.toInt()}'),
+                      if (flow.discount > 0) _priceRow('Discount', '-₹${flow.discount.toStringAsFixed(0)}', color: AppColors.success),
+                      _priceRow('GST (18%)', '₹${flow.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
                       const Divider(color: AppColors.divider, height: 24),
-                      _PriceRow('Total Amount', '₹${flow.total.toStringAsFixed(0)}', bold: true),
+                      _priceRow('Total Amount', '₹${flow.total.toStringAsFixed(0)}', bold: true),
                     ],
                   ),
                 ),
@@ -742,7 +741,7 @@ class _Step6PaymentState extends ConsumerState<_Step6Payment> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -764,13 +763,13 @@ class _Step6PaymentState extends ConsumerState<_Step6Payment> {
   }
 }
 
-Widget _PriceRow(String label, String value, {Color? color, bool bold = false}) {
+Widget _priceRow(String label, String value, {Color? color, bool bold = false}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
         Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
       ],
     ),

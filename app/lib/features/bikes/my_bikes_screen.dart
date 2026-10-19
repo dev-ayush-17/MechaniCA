@@ -335,7 +335,7 @@ class BikeDetailsScreen extends ConsumerWidget {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(gradient: AppColors.bikeCardGradient),
+                decoration: const BoxDecoration(gradient: AppColors.bikeCardGradient),
                 child: Center(
                   child: Icon(Icons.motorcycle, size: 120, color: Colors.white.withValues(alpha: 0.15)),
                 ),
@@ -366,20 +366,20 @@ class BikeDetailsScreen extends ConsumerWidget {
                   // Stats Row
                   Row(
                     children: [
-                      _StatCard('Odometer', '${bike.odometer} km', Icons.speed_rounded),
+                      _statCard('Odometer', '${bike.odometer} km', Icons.speed_rounded),
                       const SizedBox(width: 10),
-                      _StatCard('Year', '${bike.year}', Icons.calendar_today_rounded),
+                      _statCard('Year', '${bike.year}', Icons.calendar_today_rounded),
                       const SizedBox(width: 10),
-                      _StatCard('Fuel', bike.fuelType, Icons.local_gas_station_rounded),
+                      _statCard('Fuel', bike.fuelType, Icons.local_gas_station_rounded),
                     ],
                   ),
                   const SizedBox(height: 20),
                   // Documents section
                   const Text('Documents', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
                   const SizedBox(height: 12),
-                  _DocRow('Insurance', bike.insuranceExpiry ?? 'N/A', Icons.shield_outlined, AppColors.success, context),
-                  _DocRow('PUC Certificate', bike.pucExpiry ?? 'N/A', Icons.task_alt_rounded, AppColors.warning, context),
-                  _DocRow('RC Book', 'Valid', Icons.description_outlined, AppColors.info, context),
+                  _docRow('Insurance', bike.insuranceExpiry ?? 'N/A', Icons.shield_outlined, AppColors.success, context),
+                  _docRow('PUC Certificate', bike.pucExpiry ?? 'N/A', Icons.task_alt_rounded, AppColors.warning, context),
+                  _docRow('RC Book', 'Valid', Icons.description_outlined, AppColors.info, context),
                   const SizedBox(height: 20),
                   // Action Buttons
                   Row(
@@ -404,7 +404,7 @@ class BikeDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _StatCard(String label, String value, IconData icon) {
+  Widget _statCard(String label, String value, IconData icon) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -424,7 +424,7 @@ class BikeDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _DocRow(String name, String value, IconData icon, Color color, BuildContext context) {
+  Widget _docRow(String name, String value, IconData icon, Color color, BuildContext context) {
     return GestureDetector(
       onTap: () => context.push(RouteNames.documents),
       child: Container(

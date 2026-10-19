@@ -72,29 +72,29 @@ class BookingDetailsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             // Details
-            _InfoCard('Booking Info', [
-              _DetailRow('Booking ID', booking.bookingNumber),
-              _DetailRow('Date', DateFormat('dd MMM yyyy').format(booking.scheduledDate)),
-              _DetailRow('Time', booking.scheduledTime),
-              _DetailRow('Type', booking.serviceType == ServiceType.pickupDrop ? 'Pickup & Drop' : 'Visit Workshop'),
-              if (booking.pickupAddress != null) _DetailRow('Address', booking.pickupAddress!),
+            _infoCard('Booking Info', [
+              _detailRow('Booking ID', booking.bookingNumber),
+              _detailRow('Date', DateFormat('dd MMM yyyy').format(booking.scheduledDate)),
+              _detailRow('Time', booking.scheduledTime),
+              _detailRow('Type', booking.serviceType == ServiceType.pickupDrop ? 'Pickup & Drop' : 'Visit Workshop'),
+              if (booking.pickupAddress != null) _detailRow('Address', booking.pickupAddress!),
             ]),
             const SizedBox(height: 12),
-            _InfoCard('Payment Info', [
-              _DetailRow('Service', '₹${booking.servicePrice.toInt()}'),
-              if (booking.pickupCharges > 0) _DetailRow('Pickup Charges', '₹${booking.pickupCharges.toInt()}'),
-              if (booking.discount > 0) _DetailRow('Discount', '-₹${booking.discount.toStringAsFixed(0)}', color: AppColors.success),
-              _DetailRow('GST', '₹${booking.gst.toStringAsFixed(0)}'),
-              _DetailRow('Total', '₹${booking.totalAmount.toStringAsFixed(0)}', bold: true),
-              _DetailRow('Payment', booking.paymentMethod),
+            _infoCard('Payment Info', [
+              _detailRow('Service', '₹${booking.servicePrice.toInt()}'),
+              if (booking.pickupCharges > 0) _detailRow('Pickup Charges', '₹${booking.pickupCharges.toInt()}'),
+              if (booking.discount > 0) _detailRow('Discount', '-₹${booking.discount.toStringAsFixed(0)}', color: AppColors.success),
+              _detailRow('GST', '₹${booking.gst.toStringAsFixed(0)}'),
+              _detailRow('Total', '₹${booking.totalAmount.toStringAsFixed(0)}', bold: true),
+              _detailRow('Payment', booking.paymentMethod),
             ]),
 
             if (booking.mechanicName != null) ...[
               const SizedBox(height: 12),
-              _InfoCard('Mechanic Details', [
-                _DetailRow('Name', booking.mechanicName!),
-                _DetailRow('Rating', '⭐ ${booking.mechanicRating}'),
-                _DetailRow('Phone', booking.mechanicPhone ?? 'N/A'),
+              _infoCard('Mechanic Details', [
+                _detailRow('Name', booking.mechanicName!),
+                _detailRow('Rating', '⭐ ${booking.mechanicRating}'),
+                _detailRow('Phone', booking.mechanicPhone ?? 'N/A'),
               ]),
             ],
 
@@ -168,7 +168,7 @@ class BookingDetailsScreen extends ConsumerWidget {
                     ]),
                   ),
                 ),
-              ).toList(),
+              ),
               const SizedBox(height: 16),
               AppButton(
                 label: 'Confirm Cancel',
@@ -210,7 +210,7 @@ class BookingDetailsScreen extends ConsumerWidget {
   }
 }
 
-Widget _InfoCard(String title, List<Widget> rows) {
+Widget _infoCard(String title, List<Widget> rows) {
   return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
@@ -225,7 +225,7 @@ Widget _InfoCard(String title, List<Widget> rows) {
   );
 }
 
-Widget _DetailRow(String label, String value, {Color? color, bool bold = false}) {
+Widget _detailRow(String label, String value, {Color? color, bool bold = false}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(
@@ -314,7 +314,7 @@ class _RescheduleScreenState extends ConsumerState<RescheduleScreen> {
               onPressed: _time == null ? null : () async {
                 setState(() => _isLoading = true);
                 await ref.read(bookingRepositoryProvider).rescheduleBooking(widget.bookingId, _date, _time!);
-                if (mounted) {
+                if (context.mounted) {
                   setState(() => _isLoading = false);
                   showAppSnackbar(context, 'Booking rescheduled successfully!');
                   context.pop();

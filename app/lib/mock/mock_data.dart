@@ -63,7 +63,7 @@ final mockBikes = [
 // ─── SERVICES ────────────────────────────────────────────────────────────────
 
 final mockServices = [
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_001',
     name: 'General Service',
     description: 'Complete bike service with oil change & tune-up',
@@ -74,7 +74,7 @@ final mockServices = [
     isPopular: true,
     includes: ['Engine oil change', 'Air filter clean', 'Chain lubrication', 'Brake check', 'Tyre pressure'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_002',
     name: 'Premium Service',
     description: 'Complete overhaul with genuine parts',
@@ -85,7 +85,7 @@ final mockServices = [
     isPopular: true,
     includes: ['All General Service items', 'Spark plug replacement', 'Carburetor cleaning', 'Full washing'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_003',
     name: 'Washing',
     description: 'Professional bike washing & detailing',
@@ -96,7 +96,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Foam wash', 'Wax polish', 'Chain cleaning'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_004',
     name: 'Chain Cleaning',
     description: 'Deep chain cleaning and lubrication',
@@ -107,7 +107,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Chain degreasing', 'Cleaning', 'Lubrication'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_005',
     name: 'Engine Repair',
     description: 'Diagnose and fix engine issues',
@@ -118,7 +118,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Full engine diagnosis', 'Parts replacement (extra)', 'Test ride'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_006',
     name: 'Brake Repair',
     description: 'Brake pads replacement & adjustment',
@@ -129,7 +129,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Brake pad check', 'Pad replacement', 'Brake fluid check'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_007',
     name: 'Clutch Repair',
     description: 'Clutch plate & cable adjustment',
@@ -140,7 +140,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Clutch diagnosis', 'Cable adjustment', 'Plate replacement (extra)'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_008',
     name: 'Battery',
     description: 'Battery testing & replacement',
@@ -151,7 +151,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Battery load test', 'Terminal clean', 'Replacement if needed (extra)'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_009',
     name: 'Tyre/Puncture',
     description: 'Tyre change, puncture repair',
@@ -162,7 +162,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Puncture repair', 'Tyre balancing', 'Air pressure set'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_010',
     name: 'Accessories',
     description: 'Accessories installation & fitting',
@@ -173,7 +173,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Accessory installation', 'Wiring check'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_011',
     name: 'Help',
     description: 'Technical consultation & advice',
@@ -184,7 +184,7 @@ final mockServices = [
     isPopular: false,
     includes: ['Expert consultation', 'Diagnostic report'],
   ),
-  ServiceModel(
+  const ServiceModel(
     id: 'svc_012',
     name: 'Accident Repair',
     description: 'Complete accident damage assessment & repair',
@@ -402,7 +402,7 @@ final mockOffers = [
 // ─── MEMBERSHIP PLANS ────────────────────────────────────────────────────────
 
 final mockMembershipPlans = [
-  MembershipPlanModel(
+  const MembershipPlanModel(
     id: 'plan_silver',
     name: 'Silver',
     price: 299.0,
@@ -419,7 +419,7 @@ final mockMembershipPlans = [
     hasFreePickup: false,
     badgeColor: '#C0C0C0',
   ),
-  MembershipPlanModel(
+  const MembershipPlanModel(
     id: 'plan_gold',
     name: 'Gold',
     price: 499.0,
@@ -438,7 +438,7 @@ final mockMembershipPlans = [
     hasFreePickup: true,
     badgeColor: '#FFD700',
   ),
-  MembershipPlanModel(
+  const MembershipPlanModel(
     id: 'plan_platinum',
     name: 'Platinum',
     price: 999.0,
@@ -700,7 +700,7 @@ final mockTickets = [
 // ─── ADDRESSES ─────────────────────────────────────────────────────────────────
 
 final mockAddresses = [
-  AddressModel(
+  const AddressModel(
     id: 'addr_001',
     label: 'Home',
     fullAddress: 'Rajendra Nagar, Patna, Bihar - 800016',
@@ -709,7 +709,7 @@ final mockAddresses = [
     city: 'Patna',
     isDefault: true,
   ),
-  AddressModel(
+  const AddressModel(
     id: 'addr_002',
     label: 'Work',
     fullAddress: 'Boring Road, Patna, Bihar - 800001',

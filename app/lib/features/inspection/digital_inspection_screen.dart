@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -25,7 +24,7 @@ class DigitalInspectionScreen extends ConsumerWidget {
       ),
       body: inspAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryRed)),
-        error: (_, __) => ErrorState(message: 'Failed to load inspection'),
+        error: (_, __) => const ErrorState(message: 'Failed to load inspection'),
         data: (insp) => SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -46,13 +45,13 @@ class DigitalInspectionScreen extends ConsumerWidget {
               // Observations
               const Text('Observations', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              ...insp.observations.map((o) => _BulletPoint(o, AppColors.info)),
+              ...insp.observations.map((o) => _bulletPoint(o, AppColors.info)),
               const SizedBox(height: 20),
 
               // Recommendations
               const Text('Recommendations', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              ...insp.recommendations.map((r) => _BulletPoint(r, AppColors.warning)),
+              ...insp.recommendations.map((r) => _bulletPoint(r, AppColors.warning)),
               const SizedBox(height: 20),
 
               // Parts Changed
@@ -72,7 +71,7 @@ class DigitalInspectionScreen extends ConsumerWidget {
                     Text('₹${p.price.toInt()}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                   ],
                 ),
-              )).toList(),
+              )),
               const SizedBox(height: 20),
 
               // Mechanic notes
@@ -138,7 +137,7 @@ class _PhotoGrid extends StatelessWidget {
   }
 }
 
-Widget _BulletPoint(String text, Color color) {
+Widget _bulletPoint(String text, Color color) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: Row(

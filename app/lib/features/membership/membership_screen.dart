@@ -39,19 +39,19 @@ class MembershipScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: AppColors.gold, size: 32),
-                    const SizedBox(width: 12),
-                    const Column(
+                    Icon(Icons.star_rounded, color: AppColors.gold, size: 32),
+                    SizedBox(width: 12),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Gold Member', style: TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.w700)),
                         Text('Active until Dec 2024', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                       ],
                     ),
-                    const Spacer(),
-                    const StatusBadge(label: 'Active', color: AppColors.success),
+                    Spacer(),
+                    StatusBadge(label: 'Active', color: AppColors.success),
                   ],
                 ),
               ),
@@ -90,7 +90,7 @@ class MembershipScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Text(b, style: const TextStyle(color: Colors.white, fontSize: 13)),
                         ]),
-                      )).toList(),
+                      )),
                       const SizedBox(height: 16),
                       AppButton(
                         label: mockUser.membershipPlan.toLowerCase() == plan.name.toLowerCase()
@@ -107,7 +107,7 @@ class MembershipScreen extends ConsumerWidget {
                     ],
                   ),
                 ).animate().fadeIn(delay: Duration(milliseconds: e.key * 100));
-              }).toList(),
+              }),
               const SizedBox(height: 40),
             ],
           ),
@@ -214,10 +214,10 @@ class ReferEarnScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             // Earnings summary
-            Row(
+            const Row(
               children: [
                 Expanded(child: _ReferStat('₹350', 'Your Savings')),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(child: _ReferStat('12', 'Friends Joined')),
               ],
             ),
@@ -246,7 +246,7 @@ class ReferEarnScreen extends StatelessWidget {
                   Icon(e.value.$2, color: AppColors.primaryRed, size: 20),
                 ],
               ),
-            )).toList(),
+            )),
             const SizedBox(height: 40),
           ],
         ),

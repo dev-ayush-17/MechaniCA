@@ -121,7 +121,7 @@ class EmergencyTrackingScreen extends StatefulWidget {
 class _EmergencyTrackingScreenState extends State<EmergencyTrackingScreen> with TickerProviderStateMixin {
   late AnimationController _pulse;
   late Animation<double> _pulseAnim;
-  int _etaMinutes = 12;
+  final int _etaMinutes = 12;
 
   @override
   void initState() {
@@ -201,7 +201,7 @@ class _EmergencyTrackingScreenState extends State<EmergencyTrackingScreen> with 
                   Text(step.$1, style: TextStyle(color: step.$2 ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: step.$2 ? FontWeight.w600 : FontWeight.w400)),
                 ],
               ),
-            )).toList(),
+            )),
 
             const SizedBox(height: 20),
             AppButton(
