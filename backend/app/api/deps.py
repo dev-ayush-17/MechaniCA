@@ -7,6 +7,7 @@ from fastapi import Depends, Header
 
 from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
+from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.readiness import FakeReadiness
@@ -14,6 +15,7 @@ from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
 from app.application.bootstrap_user import BootstrapUser
 from app.application.create_mechanic_draft import CreateMechanicDraft
+from app.application.create_quote import CreateQuote
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.set_mechanic_availability import SetMechanicAvailability
@@ -21,10 +23,13 @@ from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
 from app.application.verify_mechanic import VerifyMechanic
 from app.core.config import Settings, get_settings
+from app.domain.catalog import PricingConfig
 from app.domain.errors import PermissionDenied, Unauthenticated
+from app.domain.pricing import PricingService
 from app.domain.user import Principal, Role
 from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
+from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.mechanic_repository import MechanicRepository
@@ -123,6 +128,41 @@ def _vehicles() -> VehicleRepository:
 
 def vehicle_repository_dep() -> VehicleRepository:
     return _vehicles()
+
+
+@lru_cache
+def _catalog() -> CatalogRepository:
+    settings = get_settings()
+    if settings.provider_catalog == "firestore":
+        from app.adapters.firebase.catalog_repository import FirestoreCatalogRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreCatalogRepository(settings.firebase_project_id)
+    return FakeCatalogRepository()
+
+
+def catalog_repository_dep() -> CatalogRepository:
+    return _catalog()
+
+
+def pricing_service_dep(
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> PricingService:
+    return PricingService(
+        PricingConfig(
+            convenience_fee_paise=settings.convenience_fee_paise,
+            four_wheeler_labor_bps=settings.four_wheeler_labor_bps,
+            gst_bps=settings.gst_bps,
+        )
+    )
+
+
+def create_quote_dep(
+    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
+) -> CreateQuote:
+    return CreateQuote(catalog=catalog, vehicles=vehicles, pricing=pricing)
 
 
 def manage_vehicles_dep(

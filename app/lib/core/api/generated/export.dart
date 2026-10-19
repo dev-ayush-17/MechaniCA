@@ -5,8 +5,10 @@
 // Clients
 export 'fallback/fallback_client.dart';
 export 'admin/admin_client.dart';
+export 'catalog/catalog_client.dart';
 export 'me/me_client.dart';
 export 'mechanic/mechanic_client.dart';
+export 'quotes/quotes_client.dart';
 export 'uploads/uploads_client.dart';
 export 'vehicles/vehicles_client.dart';
 // Data classes
@@ -21,8 +23,12 @@ export 'models/error_envelope.dart';
 export 'models/intent.dart';
 export 'models/mechanic_out.dart';
 export 'models/patch_vehicle_request.dart';
+export 'models/quote_out.dart';
+export 'models/quote_request.dart';
 export 'models/service_area_in.dart';
 export 'models/service_area_out.dart';
+export 'models/service_list_out.dart';
+export 'models/service_out.dart';
 export 'models/sign_upload_out.dart';
 export 'models/sign_upload_request.dart';
 export 'models/user_out.dart';

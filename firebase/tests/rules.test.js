@@ -47,6 +47,13 @@ beforeEach(async () => {
       registrationNumber: 'BR01AB1234',
       vehicleType: 'two_wheeler',
     });
+    await setDoc(doc(db, 'serviceCatalog/general_service'), {
+      name: 'General Service',
+      baseLaborPaise: 59900,
+      durationMin: 60,
+      active: true,
+      sortOrder: 1,
+    });
   });
 });
 
@@ -108,5 +115,21 @@ describe('firestore rules', () => {
   it('client_cannot_write_verified', async () => {
     const db = env.authenticatedContext('mech').firestore();
     await assertFails(updateDoc(doc(db, 'mechanics/mech'), { verified: true }));
+  });
+
+  it('signed_in_can_read_catalog', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'serviceCatalog/general_service')),
+    );
+  });
+
+  it('client_cannot_write_catalog', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(
+      setDoc(doc(db, 'serviceCatalog/oil_change'), { name: 'Oil Change', active: true }),
+    );
+    await assertFails(
+      updateDoc(doc(db, 'serviceCatalog/general_service'), { baseLaborPaise: 1 }),
+    );
   });
 });
