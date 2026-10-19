@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore,database --project demo-mechanica \"node --test tests/\""
+    "test": "firebase emulators:exec --only firestore,database --project demo-mechanica \"node --test tests/*.test.js\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",

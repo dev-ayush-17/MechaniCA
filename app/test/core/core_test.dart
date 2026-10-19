@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mechanica_app/composition/providers.dart';
-import 'package:mechanica_app/core/error/result.dart';
-import 'package:mechanica_app/core/flags/feature_flags.dart';
-import 'package:mechanica_app/core/logging/logger.dart';
-import 'package:mechanica_app/core/time/clock.dart';
+import 'package:mechupp_app/composition/providers.dart';
+import 'package:mechupp_app/core/error/result.dart';
+import 'package:mechupp_app/core/flags/feature_flags.dart';
+import 'package:mechupp_app/core/logging/logger.dart';
+import 'package:mechupp_app/core/time/clock.dart';
 
 void main() {
   test('result_when_maps_ok_and_err', () {

@@ -124,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             SliverToBoxAdapter(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Banner Slider
                   _BannerSlider(
@@ -279,7 +279,7 @@ class _BannerSlider extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.only(left: 20, top: 20, bottom: 20, right: 110),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
