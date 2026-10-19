@@ -1,65 +1,274 @@
 {
-  "openapi": "3.1.0",
+  "components": {
+    "schemas": {
+      "BootstrapRequest": {
+        "description": "`role` is deliberately not a field: the server derives it from `intent`.",
+        "properties": {
+          "intent": {
+            "$ref": "#/components/schemas/Intent"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "intent"
+        ],
+        "title": "BootstrapRequest",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "requestId": {
+            "title": "Requestid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "fields",
+          "requestId"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "description": "Documents the error body in OpenAPI so the generated client can read it.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "Intent": {
+        "enum": [
+          "customer",
+          "mechanic"
+        ],
+        "title": "Intent",
+        "type": "string"
+      },
+      "UserOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phoneE164": {
+            "title": "Phonee164",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "name",
+          "phoneE164",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "UserOut",
+        "type": "object"
+      }
+    }
+  },
   "info": {
     "title": "MechUpp API",
     "version": "0.1.0"
   },
+  "openapi": "3.1.0",
   "paths": {
     "/health": {
       "get": {
-        "summary": "Health",
         "description": "Liveness. Touches nothing else.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "additionalProperties": {
                     "type": "string"
                   },
-                  "type": "object",
-                  "title": "Response Health Health Get"
+                  "title": "Response Health Health Get",
+                  "type": "object"
                 }
               }
-            }
+            },
+            "description": "Successful Response"
           }
-        }
+        },
+        "summary": "Health"
       }
     },
     "/health/ready": {
       "get": {
-        "summary": "Ready",
         "description": "Readiness. 503 when any dependency is unhealthy.",
         "operationId": "ready_health_ready_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "title": "Response Ready Health Ready Get"
+                  "additionalProperties": true,
+                  "title": "Response Ready Health Ready Get",
+                  "type": "object"
                 }
               }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready"
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "me_v1_me_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
-        }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "me"
+        ]
       }
     },
     "/v1/me/bootstrap": {
       "post": {
-        "tags": [
-          "me"
-        ],
-        "summary": "Bootstrap",
         "description": "Create the caller's user document on first sign-in. Safe to repeat.",
         "operationId": "bootstrap_v1_me_bootstrap_post",
         "parameters": [
           {
-            "name": "authorization",
             "in": "header",
+            "name": "authorization",
             "required": false,
             "schema": {
               "anyOf": [
@@ -75,75 +284,25 @@
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BootstrapRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserOut"
                 }
               }
-            }
-          },
-          "400": {
-            "description": "Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
+            },
+            "description": "Successful Response"
           },
           "201": {
             "content": {
@@ -154,219 +313,62 @@
               }
             },
             "description": "Created"
-          }
-        }
-      }
-    },
-    "/v1/me": {
-      "get": {
-        "tags": [
-          "me"
-        ],
-        "summary": "Me",
-        "operationId": "me_v1_me_get",
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            }
           },
           "400": {
-            "description": "Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Error"
           },
           "401": {
-            "description": "Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Error"
           },
           "403": {
-            "description": "Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Error"
           },
           "404": {
-            "description": "Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Error"
           },
           "409": {
-            "description": "Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "BootstrapRequest": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "intent": {
-            "$ref": "#/components/schemas/Intent"
+            },
+            "description": "Error"
           }
         },
-        "type": "object",
-        "required": [
-          "intent"
-        ],
-        "title": "BootstrapRequest",
-        "description": "`role` is deliberately not a field: the server derives it from `intent`."
-      },
-      "ErrorBody": {
-        "properties": {
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "fields": {
-            "type": "object",
-            "title": "Fields"
-          },
-          "requestId": {
-            "type": "string",
-            "title": "Requestid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "message",
-          "fields",
-          "requestId"
-        ],
-        "title": "ErrorBody"
-      },
-      "ErrorEnvelope": {
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/ErrorBody"
-          }
-        },
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "title": "ErrorEnvelope",
-        "description": "Documents the error body in OpenAPI so the generated client can read it."
-      },
-      "Intent": {
-        "type": "string",
-        "enum": [
-          "customer",
-          "mechanic"
-        ],
-        "title": "Intent"
-      },
-      "UserOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "phoneE164": {
-            "type": "string",
-            "title": "Phonee164"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updatedat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "role",
-          "name",
-          "phoneE164",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "UserOut"
+        "summary": "Bootstrap",
+        "tags": [
+          "me"
+        ]
       }
     }
   }
