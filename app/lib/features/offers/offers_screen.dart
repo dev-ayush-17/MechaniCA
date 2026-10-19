@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
+import '../../composition/providers.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'domain/coupon_offer.dart';
 
 // ─── OFFERS SCREEN ────────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ class OffersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final offersAsync = ref.watch(offersProvider);
+    final offersAsync = ref.watch(couponsProvider);
 
     return DefaultTabController(
       length: 3,
@@ -71,7 +71,7 @@ class OffersScreen extends ConsumerWidget {
 }
 
 class _OfferCard extends StatelessWidget {
-  final dynamic offer;
+  final CouponOffer offer;
   const _OfferCard({required this.offer});
 
   @override
@@ -119,7 +119,7 @@ class _OfferCard extends StatelessWidget {
 }
 
 class _CouponCard extends StatelessWidget {
-  final dynamic offer;
+  final CouponOffer offer;
   const _CouponCard({required this.offer});
 
   @override
@@ -243,11 +243,20 @@ class OfferDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final offersAsync = ref.watch(offersProvider);
+    final offersAsync = ref.watch(couponsProvider);
     final offer = offersAsync.whenOrNull(data: (list) {
-      try { return list.firstWhere((o) => o.id == offerId); }
-      catch (_) { return mockOffers.first; }
-    }) ?? mockOffers.first;
+      try {
+        return list.firstWhere((o) => o.id == offerId);
+      } catch (_) {
+        return null;
+      }
+    });
+    if (offer == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: ErrorState(message: 'Offer not found'),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,

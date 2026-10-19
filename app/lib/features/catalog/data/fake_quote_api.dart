@@ -20,17 +20,29 @@ class FakeQuoteApi implements QuoteApi {
     required VehicleType vehicleType,
     String couponCode = '',
   }) async {
-    if (couponCode.trim().isNotEmpty) {
-      return const Err(InvalidInput('Coupons arrive in M10.'));
-    }
     final loaded = await _catalog.getService(serviceCode);
     return loaded.when(
       onOk: (service) {
         if (service == null) {
           return const Err(NotFound('We could not find that service.'));
         }
+        final code = couponCode.trim().toUpperCase();
+        var discountPaise = 0;
+        if (code.isNotEmpty) {
+          if (code == 'EXPIRED') {
+            return const Err(InvalidInput('Code expired'));
+          }
+          if (code != 'FLAT50') {
+            return const Err(InvalidInput('Invalid coupon code'));
+          }
+          discountPaise = 5000;
+        }
         return pricing.quote(
-          QuoteInput(service: service, vehicleType: vehicleType),
+          QuoteInput(
+            service: service,
+            vehicleType: vehicleType,
+            discountPaise: discountPaise,
+          ),
         );
       },
       onErr: Err.new,

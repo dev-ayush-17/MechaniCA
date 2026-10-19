@@ -14,6 +14,7 @@ import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 import 'domain/booking.dart';
 import 'domain/payment_method.dart';
+import 'presentation/coupon_apply_field.dart';
 import 'presentation/price_step.dart';
 import 'presentation/service_step.dart';
 
@@ -67,6 +68,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
           mode: 'instant',
           urgency: 'normal',
           idempotencyKey: const Uuid().v4(),
+          couponCode: flow.couponCode ?? '',
         );
     switch (result) {
       case Ok(:final value):
@@ -499,33 +501,11 @@ class _Step5Address extends ConsumerStatefulWidget {
 
 class _Step5AddressState extends ConsumerState<_Step5Address> {
   final _addrCtrl = TextEditingController(text: 'Rajendra Nagar, Patna, Bihar');
-  final _couponCtrl = TextEditingController();
-  bool _couponApplied = false;
-  bool _checkingCoupon = false;
 
   @override
   void dispose() {
     _addrCtrl.dispose();
-    _couponCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _applyCoupon() async {
-    if (_couponCtrl.text.isEmpty) return;
-    setState(() => _checkingCoupon = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    final code = _couponCtrl.text.toUpperCase();
-    if (code == 'FLAT20' || code == 'ARC049' || code == 'WASH110') {
-      final flow = ref.read(bookingFlowProvider);
-      final discount = flow.subtotal * 0.20;
-      ref.read(bookingFlowProvider.notifier).applyCoupon(code, discount);
-      setState(() { _couponApplied = true; _checkingCoupon = false; });
-      showAppSnackbar(context, 'Coupon applied! You saved ₹${discount.toStringAsFixed(0)}');
-    } else {
-      setState(() => _checkingCoupon = false);
-      showAppSnackbar(context, 'Invalid coupon code', isError: true);
-    }
   }
 
   @override
@@ -582,26 +562,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
                   )),
                   const SizedBox(height: 20),
                 ],
-                const Text('Apply Coupon', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        hint: 'Enter coupon code',
-                        controller: _couponCtrl,
-                        suffix: _couponApplied ? const Icon(Icons.check_circle, color: AppColors.success) : null,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    AppButton(
-                      label: _checkingCoupon ? '' : 'Apply',
-                      isLoading: _checkingCoupon,
-                      onPressed: _couponApplied ? null : _applyCoupon,
-                      height: 54,
-                    ),
-                  ],
-                ),
+                const CouponApplyField(),
               ],
             ),
           ),

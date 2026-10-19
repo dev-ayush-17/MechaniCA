@@ -20,6 +20,7 @@ class FakeBookingApi implements BookingApi {
     required String urgency,
     required String idempotencyKey,
     DateTime? scheduledStart,
+    String couponCode = '',
   }) async {
     if (failCreateWith != null) return Err(failCreateWith!);
     final existing = created.cast<Booking?>().firstWhere(
