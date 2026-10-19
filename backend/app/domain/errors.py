@@ -19,6 +19,10 @@ class Unauthenticated(DomainError):
     code = "unauthenticated"
 
 
+class InvalidWebhookSignature(Unauthenticated):
+    code = "invalid_webhook_signature"
+
+
 class PermissionDenied(DomainError):
     code = "permission_denied"
 
@@ -47,8 +51,24 @@ class IdempotencyConflict(Conflict):
     code = "idempotency_conflict"
 
 
+class TotalChanged(Conflict):
+    code = "total_changed"
+
+
+class AlreadyRefunded(Conflict):
+    code = "already_refunded"
+
+
 class IdempotencyKeyRequired(InvalidInput):
     code = "idempotency_key_required"
+
+
+class InsufficientWallet(DomainError):
+    code = "insufficient_wallet"
+
+
+class CouponRejected(DomainError):
+    code = "coupon_rejected"
 
 
 class Unavailable(DomainError):
