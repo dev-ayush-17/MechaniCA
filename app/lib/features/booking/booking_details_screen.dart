@@ -187,25 +187,15 @@ class BookingDetailsScreen extends ConsumerWidget {
     );
   }
 
-  String _statusLabel(BookingStatus s) {
-    switch (s) {
-      case BookingStatus.confirmed: return 'Confirmed';
-      case BookingStatus.mechanicAssigned: return 'Mechanic Assigned';
-      case BookingStatus.pickedUp: return 'Bike Picked Up';
-      case BookingStatus.inWorkshop: return 'At Workshop';
-      case BookingStatus.inProgress: return 'In Progress';
-      case BookingStatus.qualityCheck: return 'Quality Check';
-      case BookingStatus.outForDelivery: return 'Out for Delivery';
-      case BookingStatus.completed: return 'Completed';
-      case BookingStatus.cancelled: return 'Cancelled';
-      case BookingStatus.rescheduled: return 'Rescheduled';
-      default: return 'Pending';
-    }
-  }
+  String _statusLabel(BookingStatus s) => s.label;
 
   Color _statusColor(BookingStatus s) {
-    if (s == BookingStatus.completed) return AppColors.success;
-    if (s == BookingStatus.cancelled) return AppColors.error;
+    if (s == BookingStatus.completed || s == BookingStatus.paid) {
+      return AppColors.success;
+    }
+    if (s == BookingStatus.cancelled || s == BookingStatus.failed) {
+      return AppColors.error;
+    }
     return AppColors.primaryRed;
   }
 }

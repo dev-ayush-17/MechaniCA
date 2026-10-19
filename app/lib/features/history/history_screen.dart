@@ -40,37 +40,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   }
 
   Color _statusColor(BookingStatus s) {
-    if (s == BookingStatus.completed) return AppColors.success;
-    if (s == BookingStatus.cancelled) return AppColors.error;
+    if (s == BookingStatus.completed || s == BookingStatus.paid) {
+      return AppColors.success;
+    }
+    if (s == BookingStatus.cancelled || s == BookingStatus.failed) {
+      return AppColors.error;
+    }
     return AppColors.primaryRed;
   }
 
-  String _statusLabel(BookingStatus s) {
-    switch (s) {
-      case BookingStatus.confirmed:
-        return 'Confirmed';
-      case BookingStatus.mechanicAssigned:
-        return 'Assigned';
-      case BookingStatus.pickedUp:
-        return 'Picked Up';
-      case BookingStatus.inWorkshop:
-        return 'At Workshop';
-      case BookingStatus.inProgress:
-        return 'In Progress';
-      case BookingStatus.qualityCheck:
-        return 'Quality Check';
-      case BookingStatus.outForDelivery:
-        return 'Out For Delivery';
-      case BookingStatus.completed:
-        return 'Completed';
-      case BookingStatus.cancelled:
-        return 'Cancelled';
-      case BookingStatus.rescheduled:
-        return 'Rescheduled';
-      default:
-        return 'Pending';
-    }
-  }
+  String _statusLabel(BookingStatus s) => s.label;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +78,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
           final all = bookings;
           final active = bookings.where((b) => b.isActive).toList();
           final completed = bookings
-              .where((b) => b.status == BookingStatus.completed)
+              .where((b) =>
+                  b.status == BookingStatus.completed ||
+                  b.status == BookingStatus.paid)
               .toList();
 
           return TabBarView(

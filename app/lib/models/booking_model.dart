@@ -1,15 +1,52 @@
 enum BookingStatus {
-  pending,
+  requested,
   confirmed,
   mechanicAssigned,
-  pickedUp,
-  inWorkshop,
-  inProgress,
-  qualityCheck,
-  outForDelivery,
+  enRoute,
+  arrived,
+  inService,
   completed,
+  paid,
   cancelled,
-  rescheduled,
+  failed,
+  disputed;
+
+  String get label => switch (this) {
+        requested => 'Sending your request',
+        confirmed => 'Finding a mechanic',
+        mechanicAssigned => 'Mechanic assigned',
+        enRoute => 'Mechanic is on the way',
+        arrived => 'Mechanic arrived',
+        inService => 'Service in progress',
+        completed => 'Waiting for payment',
+        paid => 'Paid',
+        cancelled => 'Cancelled',
+        failed => 'No mechanic available',
+        disputed => 'In review',
+      };
+
+  bool get isOpen => switch (this) {
+        requested ||
+        confirmed ||
+        mechanicAssigned ||
+        enRoute ||
+        arrived ||
+        inService =>
+          true,
+        completed || paid || cancelled || failed || disputed => false,
+      };
+
+  bool get canCancel => switch (this) {
+        requested || confirmed || mechanicAssigned || enRoute => true,
+        arrived ||
+        inService ||
+        completed ||
+        paid ||
+        cancelled ||
+        failed ||
+        disputed =>
+          false,
+      };
 }
 
 enum ServiceType {
@@ -84,15 +121,7 @@ class BookingModel {
 
   String get bookingNumber => 'MC${id.substring(0, 8).toUpperCase()}';
 
-  bool get isActive => [
-        BookingStatus.confirmed,
-        BookingStatus.mechanicAssigned,
-        BookingStatus.pickedUp,
-        BookingStatus.inWorkshop,
-        BookingStatus.inProgress,
-        BookingStatus.qualityCheck,
-        BookingStatus.outForDelivery,
-      ].contains(status);
+  bool get isActive => status.isOpen;
 
   BookingModel copyWith({
     String? id,

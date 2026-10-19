@@ -66,7 +66,6 @@ class MockBookingRepository implements BookingRepository {
       _bookings[index] = _bookings[index].copyWith(
         scheduledDate: newDate,
         scheduledTime: newTime,
-        status: BookingStatus.rescheduled,
       );
       return _bookings[index];
     }
