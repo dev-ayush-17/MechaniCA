@@ -1,0 +1,13 @@
+from typing import Protocol
+
+from app.domain.vehicle import Vehicle
+
+
+class VehicleRepository(Protocol):
+    async def list_by_owner(self, owner_id: str) -> list[Vehicle]: ...
+
+    async def get(self, vehicle_id: str, owner_id: str) -> Vehicle | None: ...
+
+    async def save(self, vehicle: Vehicle) -> Vehicle: ...
+
+    async def delete(self, vehicle_id: str, owner_id: str) -> None: ...

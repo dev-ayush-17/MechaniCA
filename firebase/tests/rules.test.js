@@ -33,6 +33,11 @@ beforeEach(async () => {
       totalPaise: 70000,
     });
     await setDoc(doc(db, 'payments/p1'), { bookingId: 'b1', status: 'pending' });
+    await setDoc(doc(db, 'users/cust/vehicles/v1'), {
+      ownerId: 'cust',
+      registrationNumber: 'BR01AB1234',
+      vehicleType: 'two_wheeler',
+    });
   });
 });
 
@@ -67,6 +72,18 @@ describe('firestore rules', () => {
   it('signed_out_users_read_nothing', async () => {
     const db = env.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(db, 'bookings/b1')));
+  });
+
+  it('rules_deny_client_vehicle_write', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(setDoc(doc(db, 'users/cust/vehicles/v2'), { ownerId: 'cust' }));
+    await assertFails(updateDoc(doc(db, 'users/cust/vehicles/v1'), { color: 'Red' }));
+  });
+
+  it('owner_can_read_own_vehicle', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'users/cust/vehicles/v1')),
+    );
   });
 
   it('unknown_collections_are_denied', async () => {

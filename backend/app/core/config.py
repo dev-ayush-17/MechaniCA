@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     provider_readiness: Literal["fake"] = "fake"
     # Which AuthVerifier and RoleClaims adapter deps.py binds.
     provider_auth: Literal["fake", "firebase"] = "fake"
+    provider_vehicles: Literal["fake", "firestore"] = "fake"
     firebase_project_id: str | None = None
 
     @model_validator(mode="after")
@@ -29,6 +30,10 @@ class Settings(BaseSettings):
             raise ValueError("PROVIDER_AUTH=fake is not allowed outside dev and test")
         if self.provider_auth == "firebase" and not self.firebase_project_id:
             raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_AUTH=firebase")
+        if self.provider_vehicles == "firestore" and not self.firebase_project_id:
+            raise ValueError(
+                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_VEHICLES=firestore"
+            )
         return self
 
 
