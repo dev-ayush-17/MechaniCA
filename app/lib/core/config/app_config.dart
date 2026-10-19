@@ -1,5 +1,14 @@
 enum AppEnv { dev, staging, prod }
 
+/// Which `AuthService` adapter the composition root binds.
+enum AuthProviderKind {
+  fake,
+  firebase;
+
+  static AuthProviderKind parse(String value) => AuthProviderKind.values
+      .firstWhere((k) => k.name == value, orElse: () => AuthProviderKind.fake);
+}
+
 /// Build-time configuration. Business code reads this, never `String.fromEnvironment`.
 ///
 /// Set with `--dart-define-from-file=config/dev.json`.
@@ -8,18 +17,24 @@ class AppConfig {
     required this.env,
     required this.apiBaseUrl,
     required this.useFirebaseEmulator,
+    this.providerAuth = AuthProviderKind.fake,
   });
 
   factory AppConfig.fromEnvironment() => AppConfig(
-        env: _parseEnv(const String.fromEnvironment('APP_ENV', defaultValue: 'dev')),
+        env: _parseEnv(
+            const String.fromEnvironment('APP_ENV', defaultValue: 'dev')),
         apiBaseUrl: const String.fromEnvironment(
           'API_BASE_URL',
           defaultValue: 'http://10.0.2.2:8000',
         ),
-        useFirebaseEmulator:
-            const bool.fromEnvironment('USE_FIREBASE_EMULATOR', defaultValue: true),
+        useFirebaseEmulator: const bool.fromEnvironment('USE_FIREBASE_EMULATOR',
+            defaultValue: true),
+        providerAuth: AuthProviderKind.parse(
+          const String.fromEnvironment('PROVIDER_AUTH', defaultValue: 'fake'),
+        ),
       );
 
+  final AuthProviderKind providerAuth;
   final AppEnv env;
   final String apiBaseUrl;
   final bool useFirebaseEmulator;

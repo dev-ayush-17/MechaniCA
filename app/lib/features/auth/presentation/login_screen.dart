@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../core/theme/app_colors.dart';
-import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
-import '../../widgets/shared/app_widgets.dart';
+import '../../../composition/providers.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../navigation/route_names.dart';
+import '../../../widgets/shared/app_widgets.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +16,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _phoneValid = false;
 
   @override
   void dispose() {
@@ -26,8 +27,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = ref.read(authProvider.notifier);
-    await auth.sendOtp(_phoneCtrl.text.trim());
-    if (mounted) {
+    final sent = await auth.sendOtp(_phoneCtrl.text.trim());
+    if (sent && mounted) {
       context.push(RouteNames.otp, extra: _phoneCtrl.text.trim());
     }
   }
@@ -35,6 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final googleEnabled = ref.watch(featureFlagsProvider).isEnabled('auth_google_enabled');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -101,6 +103,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       hint: '+91  9206 06199',
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
+                      onChanged: (v) => setState(() => _phoneValid = v.trim().length >= 10),
                       prefix: const Padding(
                         padding: EdgeInsets.all(14),
                         child: Text('+91', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
@@ -114,9 +117,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     AppButton(
                       label: 'Continue',
                       isLoading: authState.isLoading,
-                      onPressed: _sendOtp,
+                      onPressed: _phoneValid ? _sendOtp : null,
                     ).animate().fadeIn(delay: 400.ms),
+                    if (authState.error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(authState.error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                    ],
                     const SizedBox(height: 24),
+                    if (googleEnabled) ...[
                     const Row(
                       children: [
                         Expanded(child: Divider(color: AppColors.divider)),
@@ -153,6 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ).animate().fadeIn(delay: 500.ms),
+                    ],
                     const SizedBox(height: 32),
                     Center(
                       child: RichText(

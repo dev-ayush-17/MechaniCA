@@ -59,6 +59,13 @@ final class Unavailable extends AppFailure {
   const Unavailable([super.message = 'Service is unavailable. Try again.']);
 }
 
+final class RateLimited extends AppFailure {
+  const RateLimited(super.message, {this.retryAfter});
+
+  /// How long until the caller may try again, when known.
+  final Duration? retryAfter;
+}
+
 final class Unauthenticated extends AppFailure {
   const Unauthenticated([super.message = 'Sign in again.']);
 }

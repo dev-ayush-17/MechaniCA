@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
-import '../../core/theme/app_colors.dart';
-import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
-import '../../widgets/shared/app_widgets.dart';
+import '../../../composition/providers.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../navigation/route_names.dart';
+import '../../../widgets/shared/app_widgets.dart';
 
 class OTPScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -51,6 +52,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final showDemoHint = ref.watch(appConfigProvider).env == AppEnv.dev;
 
     final defaultPinTheme = PinTheme(
       width: 54,
@@ -93,7 +95,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('Use 123456 for demo', style: TextStyle(color: AppColors.primaryRed, fontSize: 12)),
+            if (showDemoHint)
+              const Text('Use 123456 for demo', style: TextStyle(color: AppColors.primaryRed, fontSize: 12)),
             const SizedBox(height: 40),
             Center(
               child: Pinput(
