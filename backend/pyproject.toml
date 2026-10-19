@@ -1,0 +1,40 @@
+[project]
+name = "mechanica-backend"
+version = "0.1.0"
+description = "MechaniCA FastAPI service"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.146.0",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.0",
+    "uvicorn[standard]==0.54.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx==0.28.1",
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.17.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["app"]
