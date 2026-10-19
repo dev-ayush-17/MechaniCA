@@ -8,9 +8,10 @@ Living log. Update this at the end of every session.
 | --- | --- |
 | Phase | 0 — specification |
 | Branch | `docs/prd-and-milestones` |
-| Milestone in progress | None. Phase 0 docs are the active task |
+| Milestone in progress | None. Phase 0 spec is written on this branch |
 | Next implementation milestone | M00 foundation, after this PR merges |
 | Demo | Unchanged. `mechanica_app` still mock-only. Widget test still broken on purpose until M01 |
+| Coverage check | Every `FR-*` id is in [MILESTONES.md](MILESTONES.md). FR-USR-008 is explicitly not built. The dependency graph has no cycle |
 
 ## Completed
 
