@@ -23,6 +23,35 @@ class LocalVehicles extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+class LocalCatalogServices extends Table {
+  TextColumn get code => text()();
+  TextColumn get name => text()();
+  TextColumn get description => text()();
+  IntColumn get baseLaborPaise => integer()();
+  IntColumn get durationMin => integer()();
+  BoolColumn get active => boolean()();
+  IntColumn get sortOrder => integer()();
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {code};
+}
+
+class LocalQuotes extends Table {
+  TextColumn get cacheKey => text()();
+  IntColumn get laborPaise => integer()();
+  IntColumn get partsPaise => integer()();
+  IntColumn get feePaise => integer()();
+  IntColumn get discountPaise => integer()();
+  IntColumn get cgstPaise => integer()();
+  IntColumn get sgstPaise => integer()();
+  IntColumn get totalPaise => integer()();
+  DateTimeColumn get cachedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {cacheKey};
+}
+
 class SyncQueueEntries extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();

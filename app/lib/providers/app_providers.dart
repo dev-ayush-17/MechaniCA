@@ -15,7 +15,8 @@ export '../features/auth/presentation/auth_controller.dart';
 // ─── REPOSITORY PROVIDERS ─────────────────────────────────────────────────────
 
 final bikeRepositoryProvider = Provider<BikeRepository>((ref) => MockBikeRepository());
-final serviceRepositoryProvider = Provider<ServiceRepository>((ref) => MockServiceRepository());
+final serviceRepositoryProvider =
+    Provider<ServiceRepository>((ref) => FakeCatalogServiceRepository());
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) => MockBookingRepository());
 final walletRepositoryProvider = Provider<WalletRepository>((ref) => MockWalletRepository());
 final offerRepositoryProvider = Provider<OfferRepository>((ref) => MockOfferRepository());
