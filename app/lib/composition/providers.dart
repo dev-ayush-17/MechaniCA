@@ -44,6 +44,9 @@ import '../features/catalog/domain/catalog_snapshot.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
+import '../features/parts_proof/data/fake_parts_proof_repository.dart';
+import '../features/parts_proof/data/http_parts_proof_repository.dart';
+import '../features/parts_proof/domain/parts_proof.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
@@ -205,6 +208,16 @@ final quoteApiProvider = Provider<QuoteApi>((ref) {
     isOnline: () => ref.read(networkOnlineProvider),
     clock: ref.watch(clockProvider),
   );
+});
+
+final partsProofRepositoryProvider = Provider<PartsProofRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakePartsProofRepository(),
+    AuthProviderKind.firebase => HttpPartsProofRepository(
+        client: ref.watch(restClientProvider),
+      ),
+  };
 });
 
 final bookingApiProvider = Provider<BookingApi>((ref) {
