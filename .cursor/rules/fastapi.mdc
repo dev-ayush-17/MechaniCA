@@ -1,6 +1,6 @@
 ---
 description: FastAPI layers, settings, and idempotent money routes
-globs: "{backend,mechanica_api}/**/*.py"
+globs: "backend/**/*.py"
 alwaysApply: false
 ---
 
@@ -17,6 +17,6 @@ alwaysApply: false
 - pytest with dependency overrides. Payment and booking tests use the fake gateway.
 - ruff and mypy must pass for files you touch. Do not silence a payment-module type error.
 
-Until M00, the only server file is `mechanica_api/main.py`. M00 replaces that stub. Do not extend the stub's fake JWT login.
+The server lives in `backend/`. The old fake JWT login stub was removed in M00.
 
 Detail: `docs/prd/10-hybrid-backend.md`.

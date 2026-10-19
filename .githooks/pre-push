@@ -1,0 +1,28 @@
+#!/bin/sh
+# Local safety net: no pushes to main/master, no deletions of remote branches,
+# no non-fast-forward (force) pushes. A determined person can skip a hook;
+# GitHub branch protection is the real control.
+zero=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      echo "pre-push: pushing to ${remote_ref#refs/heads/} is blocked. Use a branch and a PR." >&2
+      exit 1
+      ;;
+  esac
+
+  if [ "$local_sha" = "$zero" ]; then
+    echo "pre-push: deleting remote branches is blocked. Ask the owner." >&2
+    exit 1
+  fi
+
+  if [ "$remote_sha" != "$zero" ]; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+      echo "pre-push: non-fast-forward push to $remote_ref (force push) is blocked." >&2
+      exit 1
+    fi
+  fi
+done
+
+exit 0
