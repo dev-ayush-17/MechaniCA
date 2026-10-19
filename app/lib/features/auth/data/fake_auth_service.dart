@@ -2,12 +2,18 @@ import '../../../core/config/app_config.dart';
 import '../../../core/error/result.dart';
 import '../../../core/time/clock.dart';
 import '../domain/auth_service.dart';
+import 'fake_session_store.dart';
 
 /// Dev and test stand-in for the vendor OTP service. It accepts the demo code
 /// [demoOtp] only when the app is not running as prod, and it enforces the
 /// same abuse limits as the real flow (docs/prd/11-authentication.md).
 class FakeAuthService implements AuthService {
-  FakeAuthService({required this.env, required Clock clock}) : _clock = clock;
+  FakeAuthService({
+    required this.env,
+    required Clock clock,
+    FakeSessionStore? store,
+  })  : _clock = clock,
+        _store = store ?? MemoryFakeSessionStore();
 
   static const demoOtp = '123456';
   static const resendCooldown = Duration(seconds: 30);
@@ -17,6 +23,7 @@ class FakeAuthService implements AuthService {
 
   final AppEnv env;
   final Clock _clock;
+  final FakeSessionStore _store;
 
   final Map<String, List<DateTime>> _sends = {};
   final Map<String, int> _failures = {};
@@ -50,8 +57,8 @@ class FakeAuthService implements AuthService {
 
   @override
   Future<Result<Session>> verifyOtp(String phoneE164, String code) async {
-    if (env == AppEnv.prod) {
-      // The demo code must never work in a prod build.
+    if (env != AppEnv.dev) {
+      // The demo code must never work outside dev (backend FakeAuth agrees).
       return const Err(Unavailable('Sign-in is not available right now.'));
     }
     final now = _clock.now();
@@ -77,15 +84,21 @@ class FakeAuthService implements AuthService {
     }
     _failures.remove(phoneE164);
     _lockedUntil.remove(phoneE164);
-    final session = Session(
-      userId: 'fake_${phoneE164.replaceAll('+', '')}',
+    final session = _sessionFor(phoneE164);
+    _session = session;
+    await _store.writePhone(phoneE164);
+    return Ok(session);
+  }
+
+  Session _sessionFor(String phoneE164) {
+    final userId = 'fake_${phoneE164.replaceAll('+', '')}';
+    return Session(
+      userId: userId,
       // Same shape the backend FakeAuth accepts. Carries no secret.
-      idToken: 'fake:fake_${phoneE164.replaceAll('+', '')}:$phoneE164',
-      expiresAt: now.add(const Duration(hours: 1)),
+      idToken: 'fake:$userId:$phoneE164',
+      expiresAt: _clock.now().add(const Duration(hours: 1)),
       role: 'customer',
     );
-    _session = session;
-    return Ok(session);
   }
 
   @override
@@ -95,10 +108,22 @@ class FakeAuthService implements AuthService {
   @override
   Future<Result<void>> signOut() async {
     _session = null;
+    await _store.clear();
     return const Ok(null);
   }
 
   @override
-  Future<Session?> currentSession({bool forceRefresh = false}) async =>
-      _session;
+  Future<Session?> currentSession({bool forceRefresh = false}) async {
+    if (env != AppEnv.dev) return null;
+    if (_session == null) {
+      final phone = await _store.readPhone();
+      if (phone != null) _session = _sessionFor(phone);
+    } else if (forceRefresh) {
+      _session = _sessionFor(_phoneOf(_session!));
+    }
+    return _session;
+  }
+
+  String _phoneOf(Session session) =>
+      '+${session.userId.replaceFirst('fake_', '')}';
 }

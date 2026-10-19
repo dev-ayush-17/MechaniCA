@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../composition/providers.dart';
+import '../../../core/error/result.dart';
 import '../domain/account_api.dart';
 import '../domain/auth_service.dart';
 
@@ -84,6 +85,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
     return _completeSignIn(session);
+  }
+
+  /// Called once at launch. Returns true when a valid session was restored.
+  ///
+  /// The account is re-read from the API. A missing account is bootstrapped
+  /// again (idempotent). An offline launch keeps the local session so the app
+  /// still opens; any other failure signs out locally.
+  Future<bool> restore() async {
+    final session = await _service.currentSession();
+    if (session == null) return false;
+
+    final me = await _accounts.me(session);
+    final failure = me.when(onOk: (_) => null, onErr: (f) => f);
+    if (failure == null) {
+      state = AuthState(
+        session: session,
+        account: me.when(onOk: (a) => a, onErr: (_) => null),
+      );
+      return true;
+    }
+    if (failure is Unavailable) {
+      state = AuthState(session: session);
+      return true;
+    }
+    if (failure is NotFound) {
+      return _completeSignIn(session);
+    }
+    await _service.signOut();
+    state = const AuthState();
+    return false;
   }
 
   Future<bool> _completeSignIn(Session session) async {

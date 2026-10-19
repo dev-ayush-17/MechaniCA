@@ -1,17 +1,18 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../navigation/route_names.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _logoCtrl;
   late AnimationController _bikeCtrl;
 
@@ -26,9 +27,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       if (mounted) _bikeCtrl.forward();
     });
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) context.go(RouteNames.onboarding);
-    });
+    _routeAfterRestore();
+  }
+
+  /// Shows the brand for 3 seconds while the stored session is restored, then
+  /// opens home for a signed-in user and onboarding for everyone else.
+  Future<void> _routeAfterRestore() async {
+    final restoring = ref.read(authProvider.notifier).restore();
+    await Future<void>.delayed(const Duration(seconds: 3));
+    final signedIn = await restoring;
+    if (!mounted) return;
+    context.go(signedIn ? RouteNames.home : RouteNames.onboarding);
   }
 
   @override

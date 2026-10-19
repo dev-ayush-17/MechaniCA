@@ -15,6 +15,7 @@ import '../core/time/clock.dart';
 import '../features/auth/data/adapters/firebase_auth_service.dart';
 import '../features/auth/data/fake_account_api.dart';
 import '../features/auth/data/fake_auth_service.dart';
+import '../features/auth/data/fake_session_store.dart';
 import '../features/auth/data/http_account_api.dart';
 import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
@@ -35,8 +36,11 @@ final featureFlagsProvider =
 final authServiceProvider = Provider<AuthService>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
-    AuthProviderKind.fake =>
-      FakeAuthService(env: config.env, clock: ref.watch(clockProvider)),
+    AuthProviderKind.fake => FakeAuthService(
+        env: config.env,
+        clock: ref.watch(clockProvider),
+        store: SharedPrefsFakeSessionStore(ref.watch(loggerProvider)),
+      ),
     AuthProviderKind.firebase =>
       FirebaseAuthService(config: config, clock: ref.watch(clockProvider)),
   };
