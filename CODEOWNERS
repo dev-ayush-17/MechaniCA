@@ -1,0 +1,7 @@
+# Default owner is the origin repository owner.
+# Add teammates here when they should be requested on every review.
+* @dev-ayush-17
+
+/docs/ @dev-ayush-17
+/AGENTS.md @dev-ayush-17
+/.cursor/rules/ @dev-ayush-17

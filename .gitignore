@@ -32,7 +32,9 @@ $RECYCLE.BIN/
 .settings/
 *.sublime-project
 *.sublime-workspace
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .zed/
 
 # Logs

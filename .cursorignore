@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+serviceAccount*.json
+*firebase-adminsdk*.json
+*.pem
+*.p12
+*.keystore
+*.jks
+**/google-services.json
+**/GoogleService-Info.plist
