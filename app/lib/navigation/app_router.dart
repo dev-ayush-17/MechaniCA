@@ -5,7 +5,7 @@ import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/otp_screen.dart';
-import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/presentation/permission_screens.dart';
 import '../features/home/main_shell.dart';
 import '../features/home/home_screen.dart';
 import '../features/home/notifications_screen.dart';
@@ -67,10 +67,6 @@ final appRouter = GoRouter(
         final phone = state.extra as String? ?? '';
         return OTPScreen(phone: phone);
       },
-    ),
-    GoRoute(
-      path: RouteNames.forgotPassword,
-      builder: (_, __) => const ForgotPasswordScreen(),
     ),
     GoRoute(
       path: RouteNames.locationPermission,
