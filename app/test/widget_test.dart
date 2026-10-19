@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mechanica_app/main.dart';
@@ -13,6 +13,6 @@ void main() {
     // Let the splash timers and navigation finish so none stay pending.
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
-    expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget); // onboarding follows splash
   });
 }
