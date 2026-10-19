@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     provider_vehicles: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
     provider_bookings: Literal["fake", "firestore"] = "fake"
+    provider_payments: Literal["fake", "cashfree"] = "fake"
+    payments_webhook_secret: str = "mechupp_test_webhook_secret"  # noqa: S105 - fake gateway default
+    cashfree_app_id: str | None = None
+    cashfree_secret: str | None = None
+    cashfree_api_url: str = "https://sandbox.cashfree.com/pg"
+    mechanic_labor_share_bps: int = 8000
     firebase_project_id: str | None = None
     convenience_fee_paise: int = 4900
     four_wheeler_labor_bps: int = 15000
@@ -51,6 +57,14 @@ class Settings(BaseSettings):
         if self.provider_bookings == "firestore" and not self.firebase_project_id:
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_BOOKINGS=firestore"
+            )
+        if self.provider_payments == "fake" and self.app_env not in FAKE_AUTH_ENVS:
+            raise ValueError("PROVIDER_PAYMENTS=fake is not allowed outside dev and test")
+        if self.provider_payments == "cashfree" and (
+            not self.cashfree_app_id or not self.cashfree_secret
+        ):
+            raise ValueError(
+                "Cashfree app id and secret are required for PROVIDER_PAYMENTS=cashfree"
             )
         return self
 

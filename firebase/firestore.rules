@@ -29,6 +29,9 @@ service cloud.firestore {
 
     match /payments/{id} { allow read, write: if false; }
     match /coupons/{id} { allow read, write: if false; }
+    match /couponRedemptions/{id} { allow read, write: if false; }
+    match /ledger/{id} { allow read, write: if false; }
+    match /wallets/{id} { allow read, write: if false; }
     match /auditLog/{id} { allow read, write: if false; }
 
     match /mechanics/{mechanicId} {

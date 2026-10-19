@@ -9,8 +9,10 @@ from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.clock import FakeClock
+from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.vehicle_repository import FakeVehicleRepository
+from app.adapters.fake.wallet_service import FakeWalletService
 from app.api.deps import (
     add_extra_line_dep,
     address_repository_dep,
@@ -84,6 +86,8 @@ class _Env:
         self.idempotency = FakeIdempotencyStore()
         self.clock = FakeClock(datetime(2026, 6, 1, 10, 0, tzinfo=UTC))
         self.policy = BookingPolicy()
+        self.coupons = FakeCouponService()
+        self.wallet = FakeWalletService()
         _seed_vehicle(self.vehicles)
         pricing = PricingService(DEFAULT_PRICING_CONFIG)
         create = CreateBooking(
@@ -95,6 +99,8 @@ class _Env:
             pricing=pricing,
             clock=self.clock,
             policy=self.policy,
+            coupons=self.coupons,
+            wallet=self.wallet,
         )
         app = create_app()
         app.dependency_overrides[auth_verifier_dep] = lambda: self.auth
@@ -107,7 +113,7 @@ class _Env:
         app.dependency_overrides[clock_dep] = lambda: self.clock
         app.dependency_overrides[create_booking_dep] = lambda: create
         app.dependency_overrides[cancel_booking_dep] = lambda: CancelBooking(
-            bookings=self.bookings, clock=self.clock, policy=self.policy
+            bookings=self.bookings, clock=self.clock, policy=self.policy, wallet=self.wallet
         )
         app.dependency_overrides[transition_booking_dep] = lambda: TransitionBooking(
             bookings=self.bookings, clock=self.clock

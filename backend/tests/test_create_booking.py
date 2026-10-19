@@ -6,8 +6,10 @@ from app.adapters.fake.address_repository import FakeAddressRepository
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.clock import FakeClock
+from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.vehicle_repository import FakeVehicleRepository
+from app.adapters.fake.wallet_service import FakeWalletService
 from app.application.create_booking import CreateBooking
 from app.domain.booking import BookingMode, BookingPolicy, PaymentMethod, Urgency
 from app.domain.catalog import DEFAULT_PRICING_CONFIG
@@ -58,6 +60,8 @@ def _use_case() -> CreateBooking:
         pricing=PricingService(DEFAULT_PRICING_CONFIG),
         clock=FakeClock(datetime(2026, 6, 1, 10, 0, tzinfo=UTC)),
         policy=BookingPolicy(),
+        coupons=FakeCouponService(),
+        wallet=FakeWalletService(),
     )
 
 

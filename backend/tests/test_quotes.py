@@ -5,7 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.adapters.fake.auth import FakeAuth
+from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
+from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.vehicle_repository import FakeVehicleRepository
 from app.api.deps import (
     auth_verifier_dep,
@@ -60,7 +62,13 @@ class _Env:
         self.bookings: list[object] = []
         _seed_vehicle(self.vehicles)
         pricing = PricingService(DEFAULT_PRICING_CONFIG)
-        use_case = CreateQuote(catalog=self.catalog, vehicles=self.vehicles, pricing=pricing)
+        use_case = CreateQuote(
+            catalog=self.catalog,
+            vehicles=self.vehicles,
+            pricing=pricing,
+            coupons=FakeCouponService(),
+            bookings=FakeBookingRepository(),
+        )
         app = create_app()
         app.dependency_overrides[auth_verifier_dep] = lambda: self.auth
         app.dependency_overrides[role_claims_dep] = lambda: self.auth
@@ -140,7 +148,7 @@ def test_empty_coupon_is_no_discount(env: _Env) -> None:
     assert response.json()["discountPaise"] == 0
 
 
-def test_non_empty_coupon_waits_for_m10(env: _Env) -> None:
+def test_flat50_applies_labor_discount(env: _Env) -> None:
     response = env.client.post(
         "/v1/quotes",
         json={
@@ -150,8 +158,8 @@ def test_non_empty_coupon_waits_for_m10(env: _Env) -> None:
         },
         headers=_headers(),
     )
-    assert response.status_code == 400
-    assert response.json()["error"]["message"] == "Coupons arrive in M10."
+    assert response.status_code == 200
+    assert response.json()["discountPaise"] == 5000
 
 
 def test_catalog_lists_five_seed_services(env: _Env) -> None:

@@ -102,6 +102,7 @@ class Booking:
     created_at: datetime
     updated_at: datetime
     version: int
+    coupon_code: str = ""
 
     def with_status(
         self,
