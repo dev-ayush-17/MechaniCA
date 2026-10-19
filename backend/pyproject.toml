@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "MechaniCA FastAPI service"
 requires-python = ">=3.12"
 dependencies = [
+    "firebase-admin==7.7.0",
     "fastapi==0.146.0",
     "pydantic==2.14.1",
     "pydantic-settings==2.16.0",
@@ -38,3 +39,8 @@ select = ["E", "F", "I", "B", "UP", "S", "T20"]
 python_version = "3.12"
 strict = true
 packages = ["app"]
+
+[[tool.mypy.overrides]]
+# The Admin SDK ships no type information.
+module = ["firebase_admin", "firebase_admin.*"]
+ignore_missing_imports = true
