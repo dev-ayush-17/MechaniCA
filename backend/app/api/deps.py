@@ -10,10 +10,12 @@ from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
+from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
+from app.adapters.fake.notification_sender import RecordingNotificationSender
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -27,6 +29,8 @@ from app.application.get_booking import GetBooking
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.notify import Notify
+from app.application.register_device import RegisterDevice
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
@@ -44,10 +48,12 @@ from app.ports.auth_verifier import AuthVerifier
 from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
+from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_repository import NotificationRepository
+from app.ports.notification_sender import NotificationSender
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -410,3 +416,53 @@ def manage_notifications_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> ManageNotifications:
     return ManageNotifications(notifications=notifications, clock=clock)
+
+
+@lru_cache
+def _devices() -> DeviceTokenRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.device_token_repository import FirestoreDeviceTokenRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreDeviceTokenRepository(settings.firebase_project_id)
+    return FakeDeviceTokenRepository()
+
+
+def device_token_repository_dep() -> DeviceTokenRepository:
+    return _devices()
+
+
+@lru_cache
+def _notification_sender() -> NotificationSender:
+    settings = get_settings()
+    if settings.provider_notify == "fcm":
+        from app.adapters.fcm import FcmNotificationSender
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FcmNotificationSender(
+            settings.firebase_project_id,
+            notifications=_notifications(),
+            devices=_devices(),
+            clock=_clock(),
+        )
+    return RecordingNotificationSender(notifications=_notifications(), clock=_clock())
+
+
+def notification_sender_dep() -> NotificationSender:
+    return _notification_sender()
+
+
+def notify_dep(
+    sender: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> Notify:
+    return Notify(sender=sender, devices=devices, sms_enabled=settings.sms_enabled)
+
+
+def register_device_dep(
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> RegisterDevice:
+    return RegisterDevice(devices=devices, clock=clock)
