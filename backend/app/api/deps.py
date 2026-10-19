@@ -13,6 +13,8 @@ from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
+from app.adapters.fake.notification_sender import RecordingNotificationSender
+from app.adapters.fake.offer_repository import FakeOfferRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -21,6 +23,8 @@ from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
+from app.application.dispatch import SequentialDispatch
+from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
@@ -45,6 +49,8 @@ from app.ports.clock import Clock
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.mechanic_repository import MechanicRepository
+from app.ports.notification_sender import NotificationSender
+from app.ports.offer_repository import OfferRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -306,6 +312,47 @@ def booking_repository_dep() -> BookingRepository:
 
 
 @lru_cache
+def _offers() -> FakeOfferRepository:
+    return FakeOfferRepository()
+
+
+def offer_repository_dep() -> OfferRepository:
+    return _offers()
+
+
+@lru_cache
+def _notifications() -> RecordingNotificationSender:
+    # M09 owns real FCM. This fake records send() and never throws.
+    return RecordingNotificationSender()
+
+
+def notification_sender_dep() -> NotificationSender:
+    return _notifications()
+
+
+def dispatch_service_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    notifications: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SequentialDispatch:
+    return SequentialDispatch(
+        bookings=bookings,
+        offers=offers,
+        mechanics=mechanics,
+        notifications=notifications,
+        clock=clock,
+    )
+
+
+def expire_offer_dep(
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+) -> ExpireOffer:
+    return ExpireOffer(dispatch=dispatch)
+
+
+@lru_cache
 def _idempotency() -> IdempotencyStore:
     settings = get_settings()
     if settings.provider_bookings == "firestore":
@@ -338,6 +385,7 @@ def create_booking_dep(
     pricing: Annotated[PricingService, Depends(pricing_service_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
 ) -> CreateBooking:
     return CreateBooking(
         catalog=catalog,
@@ -348,6 +396,7 @@ def create_booking_dep(
         pricing=pricing,
         clock=clock,
         policy=policy,
+        dispatch=dispatch,
     )
 
 
