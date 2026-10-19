@@ -1,12 +1,12 @@
 # AGENTS.md
 
-MechaniCA is an on-demand mechanic service for India. Spec: [docs/PRD.md](docs/PRD.md). Build order: [docs/MILESTONES.md](docs/MILESTONES.md). Resume from [docs/AGENT_PROGRESS.md](docs/AGENT_PROGRESS.md).
+MechUpp is an on-demand mechanic service for India. Spec: [docs/PRD.md](docs/PRD.md). Build order: [docs/MILESTONES.md](docs/MILESTONES.md). Resume from [docs/AGENT_PROGRESS.md](docs/AGENT_PROGRESS.md).
 
 ## Stack
 
 Flutter (Dart 3) customer, mechanic, and admin-web entrypoints. FastAPI (Python 3.12) on Cloud Run. Firebase Auth, Firestore, Realtime Database (live location only), Storage, FCM. Cashfree and Google Maps behind adapters. No Cloud Functions.
 
-Layout: `app/` (Flutter; the Dart package is still named `mechanica_app`), `backend/` (FastAPI), `firebase/` (rules, emulator config), `tool/` (repo checks).
+Layout: `app/` (Flutter; the Dart package is named `mechupp_app`), `backend/` (FastAPI), `firebase/` (rules, emulator config), `tool/` (repo checks).
 
 ## Architecture
 

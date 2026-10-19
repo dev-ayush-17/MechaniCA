@@ -1,7 +1,7 @@
 ﻿import os
 import re
 
-main_path = r"c:\Users\l\AppDev\Aethenox\mechanica_api\main.py"
+main_path = r"c:\Users\l\AppDev\Aethenox\backend\app\main.py"
 with open(main_path, 'r', encoding='utf-8') as f:
     content = f.read()
 

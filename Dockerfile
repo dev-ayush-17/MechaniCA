@@ -6,9 +6,9 @@ FROM ghcr.io/cirruslabs/flutter:stable AS flutter_builder
 WORKDIR /app
 
 # Copy the Flutter project
-COPY mechanica_app/ ./mechanica_app/
+COPY app/ ./app/
 
-WORKDIR /app/mechanica_app
+WORKDIR /app/app
 # Get Flutter dependencies
 RUN flutter pub get
 
@@ -21,10 +21,10 @@ FROM python:3.11-slim AS final
 WORKDIR /app
 
 # Copy the FastAPI source code
-COPY mechanica_api/ ./mechanica_api/
+COPY backend/ ./backend/
 
 # Copy the built Flutter web files from the previous stage
-COPY --from=flutter_builder /app/mechanica_app/build/web ./mechanica_api/static
+COPY --from=flutter_builder /app/app/build/web ./backend/app/static
 
 # Install Python dependencies
 RUN pip install --no-cache-dir fastapi uvicorn pydantic
@@ -33,4 +33,4 @@ RUN pip install --no-cache-dir fastapi uvicorn pydantic
 EXPOSE 8000
 
 # Command to run the FastAPI server
-CMD ["uvicorn", "mechanica_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
