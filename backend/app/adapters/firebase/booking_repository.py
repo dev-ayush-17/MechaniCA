@@ -97,6 +97,8 @@ def _to_doc(booking: Booking) -> dict[str, object]:
         "createdAt": booking.created_at,
         "updatedAt": booking.updated_at,
         "version": booking.version,
+        "failureReason": booking.failure_reason,
+        "dispatchAttempt": booking.dispatch_attempt,
     }
 
 
@@ -105,9 +107,7 @@ def _from_doc(booking_id: str, data: dict[str, object]) -> Booking:
     address = _address_from_doc(address_raw if isinstance(address_raw, dict) else {})
     lines_raw = data.get("lines")
     raw_items = lines_raw if isinstance(lines_raw, list) else []
-    lines = tuple(
-        _line_from_doc(item) for item in raw_items if isinstance(item, dict)
-    )
+    lines = tuple(_line_from_doc(item) for item in raw_items if isinstance(item, dict))
     return Booking(
         id=booking_id,
         display_number=str(data["displayNumber"]),
@@ -129,14 +129,14 @@ def _from_doc(booking_id: str, data: dict[str, object]) -> Booking:
         total_paise=int(str(data["totalPaise"])),
         cancel_fee_paise=int(str(data.get("cancelFeePaise", 0))),
         cancel_reason=str(data["cancelReason"]) if data.get("cancelReason") else None,
-        scheduled_start=_parse_time(data["scheduledStart"])
-        if data.get("scheduledStart")
-        else None,
+        scheduled_start=_parse_time(data["scheduledStart"]) if data.get("scheduledStart") else None,
         mechanic_id=str(data["mechanicId"]) if data.get("mechanicId") else None,
         lines=lines,
         created_at=_parse_time(data["createdAt"]),
         updated_at=_parse_time(data["updatedAt"]),
         version=int(str(data.get("version", 1))),
+        failure_reason=str(data["failureReason"]) if data.get("failureReason") else None,
+        dispatch_attempt=int(str(data.get("dispatchAttempt", 0))),
     )
 
 
@@ -159,4 +159,8 @@ class FirestoreBookingRepository:
 
     async def list_by_customer(self, customer_id: str) -> list[Booking]:
         snaps = self._col().where("customerId", "==", customer_id).stream()
+        return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]
+
+    async def list_by_mechanic(self, mechanic_id: str) -> list[Booking]:
+        snaps = self._col().where("mechanicId", "==", mechanic_id).stream()
         return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]
