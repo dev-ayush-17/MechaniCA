@@ -46,7 +46,16 @@ import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/notifications/notifications_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
+import '../features/notifications/data/fake_notification_inbox.dart';
+import '../features/notifications/data/fake_push_permission.dart';
+import '../features/notifications/data/http_notification_inbox.dart';
+import '../features/notifications/domain/inbox_notification.dart';
+import '../features/notifications/domain/notification_inbox.dart';
+import '../features/notifications/domain/pending_deep_link.dart';
+import '../features/notifications/domain/push_permission.dart';
+import '../features/notifications/presentation/notifications_controller.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -222,8 +231,36 @@ final bookingApiProvider = Provider<BookingApi>((ref) {
   };
 });
 
+final notificationInboxProvider = Provider<NotificationInbox>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeNotificationInbox(),
+    AuthProviderKind.firebase => HttpNotificationInbox(
+        client: NotificationsClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final notificationsControllerProvider = StateNotifierProvider<
+    NotificationsController, AsyncValue<List<InboxNotification>>>(
+  (ref) => NotificationsController(ref.watch(notificationInboxProvider)),
+);
+
+final pushPermissionProvider =
+    Provider<PushPermission>((ref) => FakePushPermission());
+
+final pendingDeepLinkProvider = Provider<PendingDeepLinkStore>(
+  (ref) => PendingDeepLinkStore(),
+);
+
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
-  final result = await ref.watch(catalogRepositoryProvider).listActiveServices();
+  final result =
+      await ref.watch(catalogRepositoryProvider).listActiveServices();
   final updatedAt = await ref.watch(catalogLocalStoreProvider).lastCachedAt();
   return result.when(
     onOk: (items) => CatalogSnapshot(services: items, updatedAt: updatedAt),
