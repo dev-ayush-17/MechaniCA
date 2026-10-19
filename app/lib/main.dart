@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 import 'navigation/app_router.dart';
 
 void main() {
@@ -28,6 +29,8 @@ class MechaniCAApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'MechaniCA',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,
     );
