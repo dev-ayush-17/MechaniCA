@@ -9,32 +9,32 @@ part of 'patch_vehicle_request.dart';
 PatchVehicleRequest _$PatchVehicleRequestFromJson(Map<String, dynamic> json) =>
     PatchVehicleRequest(
       version: (json['version'] as num).toInt(),
+      brand: json['brand'] as String?,
+      color: json['color'] as String?,
+      fuelType: json['fuelType'] as String?,
+      isPrimary: json['isPrimary'] as bool?,
+      model: json['model'] as String?,
+      odometerKm: (json['odometerKm'] as num?)?.toInt(),
+      registrationNumber: json['registrationNumber'] as String?,
       vehicleType: json['vehicleType'] == null
           ? null
           : VehicleType.fromJson(json['vehicleType'] as String),
-      brand: json['brand'] as String?,
-      model: json['model'] as String?,
       year: (json['year'] as num?)?.toInt(),
-      registrationNumber: json['registrationNumber'] as String?,
-      fuelType: json['fuelType'] as String?,
-      color: json['color'] as String?,
-      odometerKm: (json['odometerKm'] as num?)?.toInt(),
-      isPrimary: json['isPrimary'] as bool?,
     );
 
 Map<String, dynamic> _$PatchVehicleRequestToJson(
         PatchVehicleRequest instance) =>
     <String, dynamic>{
-      'version': instance.version,
-      'vehicleType': _$VehicleTypeEnumMap[instance.vehicleType],
       'brand': instance.brand,
-      'model': instance.model,
-      'year': instance.year,
-      'registrationNumber': instance.registrationNumber,
-      'fuelType': instance.fuelType,
       'color': instance.color,
-      'odometerKm': instance.odometerKm,
+      'fuelType': instance.fuelType,
       'isPrimary': instance.isPrimary,
+      'model': instance.model,
+      'odometerKm': instance.odometerKm,
+      'registrationNumber': instance.registrationNumber,
+      'vehicleType': _$VehicleTypeEnumMap[instance.vehicleType],
+      'version': instance.version,
+      'year': instance.year,
     };
 
 const _$VehicleTypeEnumMap = {

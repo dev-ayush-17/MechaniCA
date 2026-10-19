@@ -9,38 +9,38 @@ part 'vehicle_out.g.dart';
 @JsonSerializable()
 class VehicleOut {
   const VehicleOut({
-    required this.id,
-    required this.ownerId,
-    required this.vehicleType,
     required this.brand,
-    required this.model,
-    required this.year,
-    required this.registrationNumber,
-    required this.fuelType,
     required this.color,
-    required this.odometerKm,
-    required this.isPrimary,
     required this.createdAt,
+    required this.fuelType,
+    required this.id,
+    required this.isPrimary,
+    required this.model,
+    required this.odometerKm,
+    required this.ownerId,
+    required this.registrationNumber,
     required this.updatedAt,
+    required this.vehicleType,
     required this.version,
+    required this.year,
   });
   
   factory VehicleOut.fromJson(Map<String, Object?> json) => _$VehicleOutFromJson(json);
   
-  final String id;
-  final String ownerId;
-  final String vehicleType;
   final String brand;
-  final String model;
-  final int year;
-  final String registrationNumber;
-  final String? fuelType;
   final String? color;
-  final int? odometerKm;
-  final bool isPrimary;
   final DateTime createdAt;
+  final String? fuelType;
+  final String id;
+  final bool isPrimary;
+  final String model;
+  final int? odometerKm;
+  final String ownerId;
+  final String registrationNumber;
   final DateTime updatedAt;
+  final String vehicleType;
   final int version;
+  final int year;
 
   Map<String, Object?> toJson() => _$VehicleOutToJson(this);
 }

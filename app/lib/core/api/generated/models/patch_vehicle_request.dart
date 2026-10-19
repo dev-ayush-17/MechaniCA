@@ -12,29 +12,29 @@ part 'patch_vehicle_request.g.dart';
 class PatchVehicleRequest {
   const PatchVehicleRequest({
     required this.version,
-    this.vehicleType,
     this.brand,
-    this.model,
-    this.year,
-    this.registrationNumber,
-    this.fuelType,
     this.color,
-    this.odometerKm,
+    this.fuelType,
     this.isPrimary,
+    this.model,
+    this.odometerKm,
+    this.registrationNumber,
+    this.vehicleType,
+    this.year,
   });
   
   factory PatchVehicleRequest.fromJson(Map<String, Object?> json) => _$PatchVehicleRequestFromJson(json);
   
-  final int version;
-  final VehicleType? vehicleType;
   final String? brand;
-  final String? model;
-  final int? year;
-  final String? registrationNumber;
-  final String? fuelType;
   final String? color;
-  final int? odometerKm;
+  final String? fuelType;
   final bool? isPrimary;
+  final String? model;
+  final int? odometerKm;
+  final String? registrationNumber;
+  final VehicleType? vehicleType;
+  final int version;
+  final int? year;
 
   Map<String, Object?> toJson() => _$PatchVehicleRequestToJson(this);
 }

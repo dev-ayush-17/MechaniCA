@@ -11,29 +11,29 @@ CreateVehicleRequest _$CreateVehicleRequestFromJson(
     CreateVehicleRequest(
       brand: json['brand'] as String,
       model: json['model'] as String,
-      year: (json['year'] as num).toInt(),
       registrationNumber: json['registrationNumber'] as String,
-      fuelType: json['fuelType'] as String?,
-      color: json['color'] as String?,
-      odometerKm: (json['odometerKm'] as num?)?.toInt(),
+      year: (json['year'] as num).toInt(),
+      isPrimary: json['isPrimary'] as bool? ?? false,
       vehicleType: json['vehicleType'] == null
           ? VehicleType.twoWheeler
           : VehicleType.fromJson(json['vehicleType'] as String),
-      isPrimary: json['isPrimary'] as bool? ?? false,
+      color: json['color'] as String?,
+      fuelType: json['fuelType'] as String?,
+      odometerKm: (json['odometerKm'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CreateVehicleRequestToJson(
         CreateVehicleRequest instance) =>
     <String, dynamic>{
-      'vehicleType': _$VehicleTypeEnumMap[instance.vehicleType]!,
       'brand': instance.brand,
-      'model': instance.model,
-      'year': instance.year,
-      'registrationNumber': instance.registrationNumber,
-      'fuelType': instance.fuelType,
       'color': instance.color,
-      'odometerKm': instance.odometerKm,
+      'fuelType': instance.fuelType,
       'isPrimary': instance.isPrimary,
+      'model': instance.model,
+      'odometerKm': instance.odometerKm,
+      'registrationNumber': instance.registrationNumber,
+      'vehicleType': _$VehicleTypeEnumMap[instance.vehicleType]!,
+      'year': instance.year,
     };
 
 const _$VehicleTypeEnumMap = {

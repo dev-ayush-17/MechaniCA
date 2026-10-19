@@ -30,18 +30,18 @@ abstract class VehiclesClient {
     @Header('authorization') String? authorization,
   });
 
+  /// Delete Vehicle
+  @DELETE('/v1/vehicles/{vehicle_id}')
+  Future<void> deleteVehicleV1VehiclesVehicleIdDelete({
+    @Path('vehicle_id') required String vehicleId,
+    @Header('authorization') String? authorization,
+  });
+
   /// Patch Vehicle
   @PATCH('/v1/vehicles/{vehicle_id}')
   Future<VehicleOut> patchVehicleV1VehiclesVehicleIdPatch({
     @Path('vehicle_id') required String vehicleId,
     @Body() required PatchVehicleRequest body,
-    @Header('authorization') String? authorization,
-  });
-
-  /// Delete Vehicle
-  @DELETE('/v1/vehicles/{vehicle_id}')
-  Future<void> deleteVehicleV1VehiclesVehicleIdDelete({
-    @Path('vehicle_id') required String vehicleId,
     @Header('authorization') String? authorization,
   });
 }

@@ -13,26 +13,26 @@ class CreateVehicleRequest {
   const CreateVehicleRequest({
     required this.brand,
     required this.model,
-    required this.year,
     required this.registrationNumber,
-    this.fuelType,
-    this.color,
-    this.odometerKm,
-    this.vehicleType = VehicleType.twoWheeler,
+    required this.year,
     this.isPrimary = false,
+    this.vehicleType = VehicleType.twoWheeler,
+    this.color,
+    this.fuelType,
+    this.odometerKm,
   });
   
   factory CreateVehicleRequest.fromJson(Map<String, Object?> json) => _$CreateVehicleRequestFromJson(json);
   
-  final VehicleType vehicleType;
   final String brand;
-  final String model;
-  final int year;
-  final String registrationNumber;
-  final String? fuelType;
   final String? color;
-  final int? odometerKm;
+  final String? fuelType;
   final bool isPrimary;
+  final String model;
+  final int? odometerKm;
+  final String registrationNumber;
+  final VehicleType vehicleType;
+  final int year;
 
   Map<String, Object?> toJson() => _$CreateVehicleRequestToJson(this);
 }

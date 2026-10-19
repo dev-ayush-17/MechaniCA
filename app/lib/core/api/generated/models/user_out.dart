@@ -9,23 +9,23 @@ part 'user_out.g.dart';
 @JsonSerializable()
 class UserOut {
   const UserOut({
+    required this.createdAt,
     required this.id,
-    required this.role,
     required this.name,
     required this.phoneE164,
+    required this.role,
     required this.status,
-    required this.createdAt,
     required this.updatedAt,
   });
   
   factory UserOut.fromJson(Map<String, Object?> json) => _$UserOutFromJson(json);
   
+  final DateTime createdAt;
   final String id;
-  final String role;
   final String name;
   final String phoneE164;
+  final String role;
   final String status;
-  final DateTime createdAt;
   final DateTime updatedAt;
 
   Map<String, Object?> toJson() => _$UserOutToJson(this);

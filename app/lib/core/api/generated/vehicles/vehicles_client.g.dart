@@ -89,6 +89,30 @@ class _VehiclesClient implements VehiclesClient {
   }
 
   @override
+  Future<void> deleteVehicleV1VehiclesVehicleIdDelete({
+    required String vehicleId,
+    String? authorization,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'authorization': authorization};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<void>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/v1/vehicles/${vehicleId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    await _dio.fetch<void>(_options);
+  }
+
+  @override
   Future<VehicleOut> patchVehicleV1VehiclesVehicleIdPatch({
     required String vehicleId,
     required PatchVehicleRequest body,
@@ -120,30 +144,6 @@ class _VehiclesClient implements VehiclesClient {
       rethrow;
     }
     return _value;
-  }
-
-  @override
-  Future<void> deleteVehicleV1VehiclesVehicleIdDelete({
-    required String vehicleId,
-    String? authorization,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    queryParameters.removeWhere((k, v) => v == null);
-    final _headers = <String, dynamic>{r'authorization': authorization};
-    _headers.removeWhere((k, v) => v == null);
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
-      Options(method: 'DELETE', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/v1/vehicles/${vehicleId}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    await _dio.fetch<void>(_options);
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

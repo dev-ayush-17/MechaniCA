@@ -9,18 +9,18 @@ part 'service_area_out.g.dart';
 @JsonSerializable()
 class ServiceAreaOut {
   const ServiceAreaOut({
+    required this.geohash,
     required this.lat,
     required this.lng,
     required this.radiusKm,
-    required this.geohash,
   });
   
   factory ServiceAreaOut.fromJson(Map<String, Object?> json) => _$ServiceAreaOutFromJson(json);
   
+  final String geohash;
   final num lat;
   final num lng;
   final num radiusKm;
-  final String geohash;
 
   Map<String, Object?> toJson() => _$ServiceAreaOutToJson(this);
 }

@@ -4,11 +4,11 @@
 
 // Clients
 export 'fallback/fallback_client.dart';
+export 'admin/admin_client.dart';
 export 'me/me_client.dart';
-export 'vehicles/vehicles_client.dart';
 export 'mechanic/mechanic_client.dart';
 export 'uploads/uploads_client.dart';
-export 'admin/admin_client.dart';
+export 'vehicles/vehicles_client.dart';
 // Data classes
 export 'models/application_request.dart';
 export 'models/availability_request.dart';

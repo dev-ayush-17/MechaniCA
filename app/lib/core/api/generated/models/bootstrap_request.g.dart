@@ -14,8 +14,8 @@ BootstrapRequest _$BootstrapRequestFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$BootstrapRequestToJson(BootstrapRequest instance) =>
     <String, dynamic>{
-      'name': instance.name,
       'intent': _$IntentEnumMap[instance.intent]!,
+      'name': instance.name,
     };
 
 const _$IntentEnumMap = {

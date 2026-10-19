@@ -18,8 +18,8 @@ class BootstrapRequest {
   
   factory BootstrapRequest.fromJson(Map<String, Object?> json) => _$BootstrapRequestFromJson(json);
   
-  final String? name;
   final Intent intent;
+  final String? name;
 
   Map<String, Object?> toJson() => _$BootstrapRequestToJson(this);
 }

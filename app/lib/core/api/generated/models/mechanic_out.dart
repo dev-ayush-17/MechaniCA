@@ -11,38 +11,38 @@ part 'mechanic_out.g.dart';
 @JsonSerializable()
 class MechanicOut {
   const MechanicOut({
-    required this.id,
     required this.displayName,
-    required this.photoPath,
-    required this.yearsExperience,
+    required this.id,
     required this.languages,
-    required this.serviceArea,
-    required this.verified,
-    required this.verificationStatus,
-    required this.online,
     required this.lastHeartbeatAt,
+    required this.online,
+    required this.photoPath,
     required this.ratingAvg,
     required this.ratingCount,
+    required this.serviceArea,
+    required this.verificationStatus,
+    required this.verified,
     required this.version,
+    required this.yearsExperience,
     this.rejectionReason,
   });
   
   factory MechanicOut.fromJson(Map<String, Object?> json) => _$MechanicOutFromJson(json);
   
-  final String id;
   final String displayName;
-  final String photoPath;
-  final int yearsExperience;
+  final String id;
   final List<String> languages;
-  final ServiceAreaOut? serviceArea;
-  final bool verified;
-  final String verificationStatus;
-  final bool online;
   final DateTime? lastHeartbeatAt;
+  final bool online;
+  final String photoPath;
   final num ratingAvg;
   final int ratingCount;
-  final int version;
   final String? rejectionReason;
+  final ServiceAreaOut? serviceArea;
+  final String verificationStatus;
+  final bool verified;
+  final int version;
+  final int yearsExperience;
 
   Map<String, Object?> toJson() => _$MechanicOutToJson(this);
 }

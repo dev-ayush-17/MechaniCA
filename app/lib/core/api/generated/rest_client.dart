@@ -5,11 +5,11 @@
 import 'package:dio/dio.dart';
 
 import 'fallback/fallback_client.dart';
+import 'admin/admin_client.dart';
 import 'me/me_client.dart';
-import 'vehicles/vehicles_client.dart';
 import 'mechanic/mechanic_client.dart';
 import 'uploads/uploads_client.dart';
-import 'admin/admin_client.dart';
+import 'vehicles/vehicles_client.dart';
 
 /// MechUpp API `v0.1.0`
 class RestClient {
@@ -25,21 +25,21 @@ class RestClient {
   static String get version => '0.1.0';
 
   FallbackClient? _fallback;
+  AdminClient? _admin;
   MeClient? _me;
-  VehiclesClient? _vehicles;
   MechanicClient? _mechanic;
   UploadsClient? _uploads;
-  AdminClient? _admin;
+  VehiclesClient? _vehicles;
 
   FallbackClient get fallback => _fallback ??= FallbackClient(_dio, baseUrl: _baseUrl);
 
-  MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
+  AdminClient get admin => _admin ??= AdminClient(_dio, baseUrl: _baseUrl);
 
-  VehiclesClient get vehicles => _vehicles ??= VehiclesClient(_dio, baseUrl: _baseUrl);
+  MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
 
   MechanicClient get mechanic => _mechanic ??= MechanicClient(_dio, baseUrl: _baseUrl);
 
   UploadsClient get uploads => _uploads ??= UploadsClient(_dio, baseUrl: _baseUrl);
 
-  AdminClient get admin => _admin ??= AdminClient(_dio, baseUrl: _baseUrl);
+  VehiclesClient get vehicles => _vehicles ??= VehiclesClient(_dio, baseUrl: _baseUrl);
 }
