@@ -42,7 +42,10 @@ class _OfferRouteScreenState extends ConsumerState<OfferRouteScreen> {
     final result = await ref.read(offerApiProvider).accept(widget.offerId);
     if (!mounted) return;
     result.when(
-      onOk: (_) => context.go(MechanicRouteNames.home),
+      onOk: (_) {
+        final bookingId = _offer?.bookingId ?? '';
+        context.go(MechanicRouteNames.jobPath(bookingId));
+      },
       onErr: (failure) => setState(() {
         _busy = false;
         _error = failure.message;
