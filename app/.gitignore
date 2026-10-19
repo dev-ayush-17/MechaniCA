@@ -112,3 +112,6 @@ desktop.ini
 # ── Test Output ───────────────────────────
 test/reports/
 *.lcov
+
+# The generated API client is committed (ADR-015).
+!lib/core/api/generated/**/*.g.dart
