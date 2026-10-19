@@ -10,7 +10,8 @@ import '../domain/pricing.dart';
 class PriceStep extends ConsumerStatefulWidget {
   const PriceStep({super.key, required this.onConfirm, this.quote});
 
-  final Future<void> Function() onConfirm;
+  /// Null means success. A message is shown on the step and the draft stays.
+  final Future<String?> Function() onConfirm;
   final PriceQuote? quote;
 
   @override
@@ -22,6 +23,7 @@ class _PriceStepState extends ConsumerState<PriceStep> {
   bool _quoteLoading = true;
   PriceQuote? _quote;
   String? _quoteError;
+  String? _confirmError;
 
   @override
   void initState() {
@@ -164,18 +166,40 @@ class _PriceStepState extends ConsumerState<PriceStep> {
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: AppButton(
-            label: quote == null
-                ? 'Pay'
-                : 'Pay ${formatPaise(quote.totalPaise)}',
-            isLoading: _isLoading,
-            onPressed: quote == null
-                ? null
-                : () async {
-                    setState(() => _isLoading = true);
-                    await widget.onConfirm();
-                    if (mounted) setState(() => _isLoading = false);
-                  },
+          child: Column(
+            children: [
+              if (_confirmError != null) ...[
+                Text(
+                  _confirmError!,
+                  style: const TextStyle(color: AppColors.error, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+              ],
+              AppButton(
+                label: quote == null
+                    ? 'Pay'
+                    : 'Pay ${formatPaise(quote.totalPaise)}',
+                isLoading: _isLoading,
+                onPressed: quote == null
+                    ? null
+                    : () async {
+                        if (!ref.read(networkOnlineProvider)) {
+                          setState(() => _confirmError = 'Connect to book.');
+                          return;
+                        }
+                        setState(() {
+                          _isLoading = true;
+                          _confirmError = null;
+                        });
+                        final error = await widget.onConfirm();
+                        if (!mounted) return;
+                        setState(() {
+                          _isLoading = false;
+                          _confirmError = error;
+                        });
+                      },
+              ),
+            ],
           ),
         ),
       ],

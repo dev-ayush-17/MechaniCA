@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 
 import 'fallback/fallback_client.dart';
 import 'admin/admin_client.dart';
+import 'bookings/bookings_client.dart';
 import 'catalog/catalog_client.dart';
 import 'me/me_client.dart';
 import 'mechanic/mechanic_client.dart';
@@ -28,6 +29,7 @@ class RestClient {
 
   FallbackClient? _fallback;
   AdminClient? _admin;
+  BookingsClient? _bookings;
   CatalogClient? _catalog;
   MeClient? _me;
   MechanicClient? _mechanic;
@@ -38,6 +40,8 @@ class RestClient {
   FallbackClient get fallback => _fallback ??= FallbackClient(_dio, baseUrl: _baseUrl);
 
   AdminClient get admin => _admin ??= AdminClient(_dio, baseUrl: _baseUrl);
+
+  BookingsClient get bookings => _bookings ??= BookingsClient(_dio, baseUrl: _baseUrl);
 
   CatalogClient get catalog => _catalog ??= CatalogClient(_dio, baseUrl: _baseUrl);
 

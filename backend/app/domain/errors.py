@@ -35,5 +35,21 @@ class RoleExists(Conflict):
     code = "role_exists"
 
 
+class InvalidTransition(Conflict):
+    code = "invalid_transition"
+
+
+class BookingInProgress(Conflict):
+    code = "booking_in_progress"
+
+
+class IdempotencyConflict(Conflict):
+    code = "idempotency_conflict"
+
+
+class IdempotencyKeyRequired(InvalidInput):
+    code = "idempotency_key_required"
+
+
 class Unavailable(DomainError):
     code = "unavailable"

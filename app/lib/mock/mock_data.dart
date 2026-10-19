@@ -209,7 +209,7 @@ final mockBookings = [
     serviceId: 'svc_001',
     serviceName: 'General Service',
     servicePrice: 599.0,
-    status: BookingStatus.inProgress,
+    status: BookingStatus.inService,
     serviceType: ServiceType.pickupDrop,
     scheduledDate: DateTime(2024, 5, 15),
     scheduledTime: '10:30 AM',

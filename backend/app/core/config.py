@@ -23,10 +23,16 @@ class Settings(BaseSettings):
     provider_auth: Literal["fake", "firebase"] = "fake"
     provider_vehicles: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
+    provider_bookings: Literal["fake", "firestore"] = "fake"
     firebase_project_id: str | None = None
     convenience_fee_paise: int = 4900
     four_wheeler_labor_bps: int = 15000
     gst_bps: int = 1800
+    booking_auto_confirm: bool = True
+    cancel_fee_enroute_paise: int = 9900
+    service_area_lat: float = 25.5941
+    service_area_lng: float = 85.1376
+    service_area_radius_km: float = 50.0
 
     @model_validator(mode="after")
     def _check_auth_provider(self) -> "Settings":
@@ -41,6 +47,10 @@ class Settings(BaseSettings):
         if self.provider_catalog == "firestore" and not self.firebase_project_id:
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_CATALOG=firestore"
+            )
+        if self.provider_bookings == "firestore" and not self.firebase_project_id:
+            raise ValueError(
+                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_BOOKINGS=firestore"
             )
         return self
 
