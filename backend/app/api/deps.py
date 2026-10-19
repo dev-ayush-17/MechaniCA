@@ -24,6 +24,7 @@ from app.adapters.system_clock import SystemClock
 from app.application.apply_payment import ApplyGatewayEvent
 from app.application.bootstrap_user import BootstrapUser
 from app.application.cancel_booking import CancelBooking
+from app.application.cash_confirm import ConfirmCash, MarkCashCollected, StaffConfirmCash
 from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_payment import CreatePayment
@@ -535,3 +536,28 @@ def list_earnings_dep(
     return ListEarnings(
         bookings=bookings, payments=payments, share_bps=settings.mechanic_labor_share_bps
     )
+
+
+def mark_cash_collected_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    notifier: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> MarkCashCollected:
+    return MarkCashCollected(payments=payments, bookings=bookings, notifier=notifier, clock=clock)
+
+
+def confirm_cash_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ConfirmCash:
+    return ConfirmCash(payments=payments, bookings=bookings, clock=clock)
+
+
+def staff_confirm_cash_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> StaffConfirmCash:
+    return StaffConfirmCash(payments=payments, bookings=bookings, clock=clock)

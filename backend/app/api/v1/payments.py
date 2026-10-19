@@ -7,19 +7,23 @@ from pydantic.alias_generators import to_camel
 
 from app.api.deps import (
     apply_gateway_event_dep,
+    confirm_cash_dep,
     coupon_service_dep,
     create_payment_dep,
     create_wallet_topup_dep,
     list_earnings_dep,
+    mark_cash_collected_dep,
     payment_gateway_dep,
     payment_repository_dep,
     principal_dep,
     refund_payment_dep,
     require_mechanic_dep,
+    staff_confirm_cash_dep,
     wallet_service_dep,
 )
 from app.api.errors import error_responses
 from app.application.apply_payment import ApplyGatewayEvent
+from app.application.cash_confirm import ConfirmCash, MarkCashCollected, StaffConfirmCash
 from app.application.create_payment import CreatePayment
 from app.application.list_earnings import ListEarnings
 from app.application.refund_payment import RefundPayment
@@ -58,6 +62,14 @@ class _Camel(BaseModel):
 class CreatePaymentRequest(_Camel):
     booking_id: str
     method: PaymentMethod
+
+
+class CashDecisionRequest(_Camel):
+    paid: bool = True
+
+
+class StaffCashRequest(_Camel):
+    note: str
 
 
 class CashfreeSessionOut(_Camel):
@@ -197,6 +209,25 @@ async def cashfree_webhook(
     return WebhookAck()
 
 
+@router.post("/{payment_id}/cash-collected", response_model=PaymentOut)
+async def cash_collected(
+    payment_id: str,
+    principal: Annotated[Principal, Depends(require_mechanic_dep)],
+    use_case: Annotated[MarkCashCollected, Depends(mark_cash_collected_dep)],
+) -> PaymentOut:
+    return PaymentOut.of(await use_case.execute(principal, payment_id))
+
+
+@router.post("/{payment_id}/cash-confirm", response_model=PaymentOut)
+async def cash_confirm(
+    payment_id: str,
+    body: CashDecisionRequest,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[ConfirmCash, Depends(confirm_cash_dep)],
+) -> PaymentOut:
+    return PaymentOut.of(await use_case.execute(principal, payment_id, paid=body.paid))
+
+
 @router.get("/{payment_id}", response_model=PaymentOut)
 async def get_payment(
     payment_id: str,
@@ -267,6 +298,16 @@ async def validate_coupon(
     return CouponQuoteOut(
         code=quoted.code, discount_paise=quoted.discount_paise, message=quoted.message
     )
+
+
+@admin_router.post("/payments/{payment_id}/cash-confirm", response_model=PaymentOut)
+async def staff_cash_confirm(
+    payment_id: str,
+    body: StaffCashRequest,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[StaffConfirmCash, Depends(staff_confirm_cash_dep)],
+) -> PaymentOut:
+    return PaymentOut.of(await use_case.execute(principal, payment_id, note=body.note))
 
 
 @admin_router.post("/refunds", response_model=PaymentOut)

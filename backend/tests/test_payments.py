@@ -12,6 +12,7 @@ from app.adapters.fake.payment_gateway import FakePaymentGateway
 from app.adapters.fake.payment_repository import FakePaymentRepository
 from app.adapters.fake.wallet_service import FakeWalletService
 from app.application.apply_payment import ApplyGatewayEvent
+from app.application.cash_confirm import ConfirmCash, MarkCashCollected
 from app.domain.booking import (
     AddressSnapshot,
     Booking,
@@ -28,6 +29,7 @@ from app.domain.payment import (
     PaymentReason,
     PaymentStatus,
 )
+from app.domain.user import Principal, Role
 from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 
 NOW = datetime(2026, 6, 1, 10, 0, tzinfo=UTC)
@@ -202,6 +204,33 @@ async def test_wallet_debit_cannot_go_negative(env: _Env) -> None:
     else:
         raise AssertionError("debit below zero must raise InsufficientWallet")
     assert (await env.wallet.balance("cust")).paise == 0
+
+
+@pytest.mark.asyncio
+async def test_cash_requires_both_marks(env: _Env) -> None:
+    await env.bookings.save(_booking())
+    payment = _payment(
+        method=PaymentMethod.CASH,
+        gateway=PaymentGatewayKind.CASH,
+        gateway_order_id=None,
+        payment_session_id=None,
+    )
+    await env.payments.insert(payment)
+    mechanic = Principal(user_id="mech", role=Role.MECHANIC, phone_e164="+919811111111")
+    customer = Principal(user_id="cust", role=Role.CUSTOMER, phone_e164="+919876543210")
+    marked = await MarkCashCollected(
+        payments=env.payments,
+        bookings=env.bookings,
+        notifier=env.notifier,
+        clock=env.clock,
+    ).execute(mechanic, payment.id)
+    assert marked.status is PaymentStatus.PENDING
+    assert env.bookings.bookings["b1"].status is BookingStatus.COMPLETED
+    paid = await ConfirmCash(payments=env.payments, bookings=env.bookings, clock=env.clock).execute(
+        customer, payment.id, paid=True
+    )
+    assert paid.status is PaymentStatus.PAID
+    assert env.bookings.bookings["b1"].status is BookingStatus.PAID
 
 
 @pytest.mark.asyncio
