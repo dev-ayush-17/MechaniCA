@@ -21,6 +21,7 @@ from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
+from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
@@ -369,3 +370,18 @@ def get_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
 ) -> GetBooking:
     return GetBooking(bookings=bookings)
+
+
+def add_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> AddExtraLine:
+    return AddExtraLine(bookings=bookings, clock=clock, gst_bps=settings.gst_bps)
+
+
+def decide_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> DecideExtraLine:
+    return DecideExtraLine(bookings=bookings, clock=clock)

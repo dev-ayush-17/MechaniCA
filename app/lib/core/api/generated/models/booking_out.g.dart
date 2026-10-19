@@ -11,6 +11,9 @@ BookingOut _$BookingOutFromJson(Map<String, dynamic> json) => BookingOut(
       displayNumber: json['displayNumber'] as String,
       estimate: EstimateOut.fromJson(json['estimate'] as Map<String, dynamic>),
       id: json['id'] as String,
+      lines: (json['lines'] as List<dynamic>)
+          .map((e) => BookingLineOut.fromJson(e as Map<String, dynamic>))
+          .toList(),
       mechanicId: json['mechanicId'] as String?,
       mode: json['mode'] as String,
       paymentMethod: json['paymentMethod'] as String,
@@ -33,6 +36,7 @@ Map<String, dynamic> _$BookingOutToJson(BookingOut instance) =>
       'displayNumber': instance.displayNumber,
       'estimate': instance.estimate,
       'id': instance.id,
+      'lines': instance.lines,
       'mechanicId': instance.mechanicId,
       'mode': instance.mode,
       'paymentMethod': instance.paymentMethod,

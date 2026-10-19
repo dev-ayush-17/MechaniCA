@@ -13,9 +13,11 @@ export 'quotes/quotes_client.dart';
 export 'uploads/uploads_client.dart';
 export 'vehicles/vehicles_client.dart';
 // Data classes
+export 'models/add_line_request.dart';
 export 'models/application_request.dart';
 export 'models/availability_request.dart';
 export 'models/booking_create_out.dart';
+export 'models/booking_line_out.dart';
 export 'models/booking_list_out.dart';
 export 'models/booking_mode.dart';
 export 'models/booking_out.dart';
@@ -30,6 +32,8 @@ export 'models/error_body.dart';
 export 'models/error_envelope.dart';
 export 'models/estimate_out.dart';
 export 'models/intent.dart';
+export 'models/line_decision_request.dart';
+export 'models/line_kind.dart';
 export 'models/mechanic_out.dart';
 export 'models/patch_vehicle_request.dart';
 export 'models/payment_method.dart';
@@ -49,6 +53,7 @@ export 'models/vehicle_out.dart';
 export 'models/vehicle_type.dart';
 export 'models/verification_decision.dart';
 export 'models/verification_request.dart';
+export 'models/line_decision_request_decision.dart';
 // Root client
 export 'rest_client.dart';
 

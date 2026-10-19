@@ -12,6 +12,7 @@ from app.adapters.fake.clock import FakeClock
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.vehicle_repository import FakeVehicleRepository
 from app.api.deps import (
+    add_extra_line_dep,
     address_repository_dep,
     auth_verifier_dep,
     booking_repository_dep,
@@ -19,6 +20,7 @@ from app.api.deps import (
     catalog_repository_dep,
     clock_dep,
     create_booking_dep,
+    decide_extra_line_dep,
     get_booking_dep,
     idempotency_store_dep,
     role_claims_dep,
@@ -27,12 +29,14 @@ from app.api.deps import (
 )
 from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
+from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.transition_booking import TransitionBooking
 from app.domain.booking import BookingPolicy
 from app.domain.booking_state import BookingStatus
 from app.domain.catalog import DEFAULT_PRICING_CONFIG
 from app.domain.pricing import PricingService
+from app.domain.user import Role
 from app.domain.vehicle import Vehicle, VehicleType
 from app.main import create_app
 
@@ -109,6 +113,12 @@ class _Env:
             bookings=self.bookings, clock=self.clock
         )
         app.dependency_overrides[get_booking_dep] = lambda: GetBooking(self.bookings)
+        app.dependency_overrides[add_extra_line_dep] = lambda: AddExtraLine(
+            bookings=self.bookings, clock=self.clock, gst_bps=1800
+        )
+        app.dependency_overrides[decide_extra_line_dep] = lambda: DecideExtraLine(
+            bookings=self.bookings, clock=self.clock
+        )
         self.client = TestClient(app)
 
     def create(self, key: str = KEY, **overrides: object):
@@ -205,3 +215,34 @@ def test_idempotency_conflict_different_body(env: _Env) -> None:
     second = env.create(serviceCode="oil_change")
     assert second.status_code == 409
     assert second.json()["error"]["code"] == "idempotency_conflict"
+
+
+MECH_UID = "uid_mech"
+MECH_TOKEN = f"fake:{MECH_UID}:+919811122233"
+
+
+def test_extra_line_reject(env: _Env) -> None:
+    created = env.create()
+    booking_id = created.json()["id"]
+    stored = env.bookings.bookings[booking_id]
+    env.bookings.bookings[booking_id] = stored.with_status(
+        BookingStatus.IN_SERVICE, now=env.clock.now(), mechanic_id=MECH_UID
+    )
+    env.auth._claims[MECH_UID] = Role.MECHANIC
+    added = env.client.post(
+        f"/v1/bookings/{booking_id}/lines",
+        json={"name": "Brake pads", "amountPaise": 12000},
+        headers={"Authorization": f"Bearer {MECH_TOKEN}"},
+    )
+    assert added.status_code == 201
+    pending = [line for line in added.json()["lines"] if line["status"] == "pending_approval"]
+    assert len(pending) == 1
+    line_id = pending[0]["id"]
+    decided = env.client.post(
+        f"/v1/bookings/{booking_id}/lines/{line_id}/decision",
+        json={"decision": "reject"},
+        headers={"Authorization": f"Bearer {TOKEN}"},
+    )
+    assert decided.status_code == 200
+    statuses = {line["id"]: line["status"] for line in decided.json()["lines"]}
+    assert statuses[line_id] == "rejected"

@@ -4,6 +4,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'booking_line_out.dart';
 import 'estimate_out.dart';
 
 part 'booking_out.g.dart';
@@ -15,6 +16,7 @@ class BookingOut {
     required this.displayNumber,
     required this.estimate,
     required this.id,
+    required this.lines,
     required this.mechanicId,
     required this.mode,
     required this.paymentMethod,
@@ -35,6 +37,7 @@ class BookingOut {
   final String displayNumber;
   final EstimateOut estimate;
   final String id;
+  final List<BookingLineOut> lines;
   final String? mechanicId;
   final String mode;
   final String paymentMethod;

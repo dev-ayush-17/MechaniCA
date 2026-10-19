@@ -121,8 +121,9 @@ def test_quote_does_not_write_a_booking(env: _Env) -> None:
     assert first.json() == second.json()
     assert env.catalog.writes == writes_before
     assert env.bookings == []
-    missing = env.client.get("/v1/bookings", headers=_headers())
-    assert missing.status_code == 404
+    listed = env.client.get("/v1/bookings", headers=_headers())
+    assert listed.status_code == 200
+    assert listed.json()["items"] == []
 
 
 def test_empty_coupon_is_no_discount(env: _Env) -> None:

@@ -5,11 +5,13 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
+import '../models/add_line_request.dart';
 import '../models/booking_create_out.dart';
 import '../models/booking_list_out.dart';
 import '../models/booking_out.dart';
 import '../models/cancel_booking_request.dart';
 import '../models/create_booking_request.dart';
+import '../models/line_decision_request.dart';
 import '../models/transition_request.dart';
 
 part 'bookings_client.g.dart';
@@ -44,6 +46,23 @@ abstract class BookingsClient {
   Future<BookingOut> cancelBookingV1BookingsBookingIdCancelPost({
     @Path('booking_id') required String bookingId,
     @Body() required CancelBookingRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// Add Extra Line
+  @POST('/v1/bookings/{booking_id}/lines')
+  Future<BookingOut> addExtraLineV1BookingsBookingIdLinesPost({
+    @Path('booking_id') required String bookingId,
+    @Body() required AddLineRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// Decide Extra Line
+  @POST('/v1/bookings/{booking_id}/lines/{line_id}/decision')
+  Future<BookingOut> decideExtraLineV1BookingsBookingIdLinesLineIdDecisionPost({
+    @Path('booking_id') required String bookingId,
+    @Path('line_id') required String lineId,
+    @Body() required LineDecisionRequest body,
     @Header('authorization') String? authorization,
   });
 

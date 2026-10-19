@@ -1,13 +1,15 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 from app.api.deps import (
+    add_extra_line_dep,
     cancel_booking_dep,
     create_booking_dep,
+    decide_extra_line_dep,
     get_booking_dep,
     principal_dep,
     transition_booking_dep,
@@ -15,9 +17,10 @@ from app.api.deps import (
 from app.api.errors import error_responses
 from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
+from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.transition_booking import TransitionBooking
-from app.domain.booking import Booking, BookingMode, PaymentMethod, Urgency
+from app.domain.booking import Booking, BookingLine, BookingMode, LineKind, PaymentMethod, Urgency
 from app.domain.booking_state import BookingStatus
 from app.domain.user import Principal
 
@@ -56,6 +59,26 @@ class BookingCreateOut(_Camel):
     service_code: str
 
 
+class BookingLineOut(_Camel):
+    id: str
+    kind: str
+    name: str
+    amount_paise: int
+    gst_paise: int
+    status: str
+
+    @classmethod
+    def of(cls, line: BookingLine) -> "BookingLineOut":
+        return cls(
+            id=line.id,
+            kind=line.kind.value,
+            name=line.name,
+            amount_paise=line.amount_paise,
+            gst_paise=line.gst_paise,
+            status=line.status.value,
+        )
+
+
 class BookingOut(BookingCreateOut):
     vehicle_id: str
     service_name: str
@@ -63,6 +86,7 @@ class BookingOut(BookingCreateOut):
     mechanic_id: str | None
     scheduled_start: datetime | None
     cancel_reason: str | None
+    lines: list[BookingLineOut]
 
 
 class BookingListOut(_Camel):
@@ -87,6 +111,16 @@ class CancelBookingRequest(_Camel):
 class TransitionRequest(_Camel):
     to: BookingStatus
     expected_version: int | None = None
+
+
+class AddLineRequest(_Camel):
+    name: str
+    amount_paise: int
+    kind: LineKind = LineKind.PART
+
+
+class LineDecisionRequest(_Camel):
+    decision: Literal["approve", "reject"]
 
 
 def _estimate(booking: Booking) -> EstimateOut:
@@ -124,6 +158,7 @@ def _out(booking: Booking) -> BookingOut:
         mechanic_id=booking.mechanic_id,
         scheduled_start=booking.scheduled_start,
         cancel_reason=booking.cancel_reason,
+        lines=[BookingLineOut.of(line) for line in booking.lines],
     )
 
 
@@ -189,5 +224,41 @@ async def transition_booking(
             booking_id,
             target=body.to,
             expected_version=body.expected_version,
+        )
+    )
+
+
+@router.post("/{booking_id}/lines", response_model=BookingOut, status_code=201)
+async def add_extra_line(
+    booking_id: str,
+    body: AddLineRequest,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[AddExtraLine, Depends(add_extra_line_dep)],
+) -> BookingOut:
+    return _out(
+        await use_case.execute(
+            principal,
+            booking_id,
+            name=body.name,
+            amount_paise=body.amount_paise,
+            kind=body.kind,
+        )
+    )
+
+
+@router.post("/{booking_id}/lines/{line_id}/decision", response_model=BookingOut)
+async def decide_extra_line(
+    booking_id: str,
+    line_id: str,
+    body: LineDecisionRequest,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[DecideExtraLine, Depends(decide_extra_line_dep)],
+) -> BookingOut:
+    return _out(
+        await use_case.execute(
+            principal,
+            booking_id,
+            line_id,
+            approve=body.decision == "approve",
         )
     )
