@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     cashfree_secret: str | None = None
     cashfree_api_url: str = "https://sandbox.cashfree.com/pg"
     mechanic_labor_share_bps: int = 8000
+    internal_job_token: str = "dev-internal-job"  # noqa: S105 - scheduler shared secret for jobs
     firebase_project_id: str | None = None
     convenience_fee_paise: int = 4900
     four_wheeler_labor_bps: int = 15000

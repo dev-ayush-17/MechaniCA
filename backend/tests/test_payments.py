@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -13,6 +13,7 @@ from app.adapters.fake.payment_repository import FakePaymentRepository
 from app.adapters.fake.wallet_service import FakeWalletService
 from app.application.apply_payment import ApplyGatewayEvent
 from app.application.cash_confirm import ConfirmCash, MarkCashCollected
+from app.application.reconcile_payments import ReconcilePendingPayments
 from app.domain.booking import (
     AddressSnapshot,
     Booking,
@@ -24,6 +25,7 @@ from app.domain.booking_state import BookingStatus
 from app.domain.coupon import CouponContext
 from app.domain.errors import CouponRejected, InsufficientWallet, InvalidWebhookSignature
 from app.domain.payment import (
+    GatewayOrder,
     Payment,
     PaymentGatewayKind,
     PaymentReason,
@@ -230,6 +232,29 @@ async def test_cash_requires_both_marks(env: _Env) -> None:
         customer, payment.id, paid=True
     )
     assert paid.status is PaymentStatus.PAID
+    assert env.bookings.bookings["b1"].status is BookingStatus.PAID
+
+
+@pytest.mark.asyncio
+async def test_reconcile_pending_rows(env: _Env) -> None:
+    await _seed_pending(env)
+    env.gateway.fetch_overrides["order_abc"] = GatewayOrder(
+        gateway_order_id="order_abc",
+        payment_session_id="session_abc",
+        amount_paise=76464,
+        status="paid",
+    )
+    env.clock.advance(timedelta(minutes=6))
+    applied = await ReconcilePendingPayments(
+        payments=env.payments,
+        gateway=env.gateway,
+        apply=env.apply,
+        clock=env.clock,
+    ).execute()
+    assert applied == 1
+    stored = await env.payments.get("pay1")
+    assert stored is not None
+    assert stored.status is PaymentStatus.PAID
     assert env.bookings.bookings["b1"].status is BookingStatus.PAID
 
 

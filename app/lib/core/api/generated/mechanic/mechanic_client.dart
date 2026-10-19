@@ -7,6 +7,7 @@ import 'package:retrofit/retrofit.dart';
 
 import '../models/application_request.dart';
 import '../models/availability_request.dart';
+import '../models/earnings_list_out.dart';
 import '../models/mechanic_out.dart';
 
 part 'mechanic_client.g.dart';
@@ -32,6 +33,12 @@ abstract class MechanicClient {
   @POST('/v1/mechanic/availability')
   Future<MechanicOut> setAvailabilityV1MechanicAvailabilityPost({
     @Body() required AvailabilityRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// List Mechanic Earnings
+  @GET('/v1/mechanic/earnings')
+  Future<EarningsListOut> listMechanicEarningsV1MechanicEarningsGet({
     @Header('authorization') String? authorization,
   });
 

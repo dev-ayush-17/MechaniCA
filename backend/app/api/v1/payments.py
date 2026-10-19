@@ -16,7 +16,9 @@ from app.api.deps import (
     payment_gateway_dep,
     payment_repository_dep,
     principal_dep,
+    reconcile_pending_dep,
     refund_payment_dep,
+    require_internal_job_dep,
     require_mechanic_dep,
     staff_confirm_cash_dep,
     wallet_service_dep,
@@ -26,6 +28,7 @@ from app.application.apply_payment import ApplyGatewayEvent
 from app.application.cash_confirm import ConfirmCash, MarkCashCollected, StaffConfirmCash
 from app.application.create_payment import CreatePayment
 from app.application.list_earnings import ListEarnings
+from app.application.reconcile_payments import ReconcilePendingPayments
 from app.application.refund_payment import RefundPayment
 from app.application.wallet_topup import CreateWalletTopup
 from app.domain.booking import PaymentMethod
@@ -52,6 +55,9 @@ admin_router = APIRouter(
 )
 earnings_router = APIRouter(
     prefix="/v1/mechanic", tags=["mechanic"], responses=error_responses(401, 403)
+)
+internal_router = APIRouter(
+    prefix="/v1/internal/jobs", tags=["internal"], responses=error_responses(401)
 )
 
 
@@ -345,3 +351,19 @@ async def list_mechanic_earnings(
             for row in rows
         ]
     )
+
+
+class ReconcileOut(_Camel):
+    applied: int
+
+
+@internal_router.post(
+    "/reconcile-payments",
+    response_model=ReconcileOut,
+    dependencies=[Depends(require_internal_job_dep)],
+)
+async def reconcile_payments(
+    use_case: Annotated[ReconcilePendingPayments, Depends(reconcile_pending_dep)],
+) -> ReconcileOut:
+    applied = await use_case.execute()
+    return ReconcileOut(applied=applied)

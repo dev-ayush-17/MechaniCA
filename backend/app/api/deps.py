@@ -34,6 +34,7 @@ from app.application.get_booking import GetBooking
 from app.application.list_earnings import ListEarnings
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.reconcile_payments import ReconcilePendingPayments
 from app.application.refund_payment import RefundPayment
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
@@ -553,6 +554,23 @@ def confirm_cash_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> ConfirmCash:
     return ConfirmCash(payments=payments, bookings=bookings, clock=clock)
+
+
+def reconcile_pending_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
+    apply: Annotated[ApplyGatewayEvent, Depends(apply_gateway_event_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ReconcilePendingPayments:
+    return ReconcilePendingPayments(payments=payments, gateway=gateway, apply=apply, clock=clock)
+
+
+async def require_internal_job_dep(
+    settings: Annotated[Settings, Depends(settings_dep)],
+    x_internal_token: Annotated[str | None, Header()] = None,
+) -> None:
+    if not settings.internal_job_token or x_internal_token != settings.internal_job_token:
+        raise Unauthenticated("Internal job token required.")
 
 
 def staff_confirm_cash_dep(

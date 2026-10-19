@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(payments.coupons_router)
     app.include_router(payments.admin_router)
     app.include_router(payments.earnings_router)
+    app.include_router(payments.internal_router)
     return app
 
 
