@@ -31,7 +31,9 @@ import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
 import '../features/booking/data/fake_booking_api.dart';
 import '../features/booking/data/http_booking_api.dart';
+import '../features/booking/domain/booking.dart';
 import '../features/booking/domain/booking_api.dart';
+import '../features/home/presentation/home_controller.dart';
 import '../features/booking/domain/quote_api.dart';
 import '../features/catalog/data/cached_quote_api.dart';
 import '../features/catalog/data/catalog_local_store.dart';
@@ -384,6 +386,11 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
       ),
   };
 });
+
+final homeBookingsProvider =
+    StateNotifierProvider<HomeController, AsyncValue<List<Booking>>>(
+  (ref) => HomeController(ref.watch(bookingApiProvider)),
+);
 
 final bookingApiProvider = Provider<BookingApi>((ref) {
   final config = ref.watch(appConfigProvider);

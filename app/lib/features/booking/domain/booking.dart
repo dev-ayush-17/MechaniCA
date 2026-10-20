@@ -11,6 +11,11 @@ class Booking {
     required this.totalPaise,
     required this.cancelFeePaise,
     required this.version,
+    this.vehicleId = '',
+    this.serviceName = '',
+    this.addressId = '',
+    this.scheduledStart,
+    this.paymentMethod = '',
   });
 
   final String id;
@@ -22,6 +27,11 @@ class Booking {
   final int totalPaise;
   final int cancelFeePaise;
   final int version;
+  final String vehicleId;
+  final String serviceName;
+  final String addressId;
+  final DateTime? scheduledStart;
+  final String paymentMethod;
 }
 
 BookingStatus bookingStatusFromApi(String value) {

@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mechupp_app/composition/providers.dart';
 import 'package:mechupp_app/core/theme/app_theme.dart';
+import 'package:mechupp_app/features/booking/data/fake_booking_api.dart';
 import 'package:mechupp_app/features/history/history_screen.dart';
+import 'package:mechupp_app/features/home/domain/home_copy.dart';
 import 'package:mechupp_app/features/home/home_screen.dart';
+import 'package:mechupp_app/features/wallet/data/fake_wallet_api.dart';
 import 'package:mechupp_app/models/booking_model.dart';
 import 'package:mechupp_app/repositories/booking_repository.dart';
 
@@ -64,7 +67,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          bookingRepositoryProvider.overrideWithValue(_EmptyBookingRepository()),
+          bookingApiProvider.overrideWithValue(FakeBookingApi()),
+          walletApiProvider.overrideWithValue(FakeWalletApi()),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
@@ -79,9 +83,17 @@ void main() {
   testWidgets('empty home does not show a mock job', (tester) async {
     await pumpHome(tester);
 
+    expect(find.text(kBookAService), findsOneWidget);
     expect(find.text('Upcoming Booking'), findsNothing);
     expect(find.text('General Service'), findsNothing);
     expect(find.text('Track Booking'), findsNothing);
+  });
+
+  testWidgets('home_does_not_invent_a_wallet_total', (tester) async {
+    await pumpHome(tester);
+
+    expect(find.textContaining('₹250'), findsNothing);
+    expect(find.text('Wallet'), findsOneWidget);
   });
 
   testWidgets('empty history shows the current empty copy', (tester) async {
