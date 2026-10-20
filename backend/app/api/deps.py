@@ -10,14 +10,22 @@ from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
+from app.adapters.fake.chat_service import FakeChatService
 from app.adapters.fake.coupon_service import FakeCouponService
+from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
+from app.adapters.fake.job_scheduler import FakeJobScheduler
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
-from app.adapters.fake.notification_sender import RecordingNotifier
+from app.adapters.fake.notification_repository import FakeNotificationRepository
+from app.adapters.fake.notification_sender import RecordingNotificationSender
+from app.adapters.fake.offer_repository import FakeOfferRepository
+from app.adapters.fake.parts_proof_repository import FakePartsProofRepository
 from app.adapters.fake.payment_gateway import FakePaymentGateway
 from app.adapters.fake.payment_repository import FakePaymentRepository
 from app.adapters.fake.readiness import FakeReadiness
+from app.adapters.fake.review_repository import FakeReviewRepository
+from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.fake.wallet_service import FakeWalletService
 from app.adapters.system_clock import SystemClock
@@ -29,16 +37,28 @@ from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_payment import CreatePayment
 from app.application.create_quote import CreateQuote
+from app.application.dispatch import SequentialDispatch
+from app.application.expire_extra_line import ExpireExtraLine
+from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.list_earnings import ListEarnings
+from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
+from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.notify import Notify
+from app.application.parts_proofs import CreatePartsProof, HidePartsProof, ListPartsProofs
 from app.application.reconcile_payments import ReconcilePendingPayments
 from app.application.refund_payment import RefundPayment
+from app.application.register_device import RegisterDevice
+from app.application.reviews import EditReview, HideReview, ListReviews, SubmitReview
+from app.application.send_message import SendMessage
 from app.application.set_mechanic_availability import SetMechanicAvailability
+from app.application.sign_chat_media import SignChatMedia
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
 from app.application.verify_mechanic import VerifyMechanic
 from app.application.wallet_topup import CreateWalletTopup
@@ -53,16 +73,24 @@ from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
 from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
+from app.ports.chat_service import ChatService
 from app.ports.clock import Clock
 from app.ports.coupon_service import CouponService
+from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
+from app.ports.job_scheduler import JobScheduler
 from app.ports.mechanic_repository import MechanicRepository
+from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
+from app.ports.offer_repository import OfferRepository
+from app.ports.parts_proof_repository import PartsProofRepository
 from app.ports.payment_gateway import PaymentGateway
 from app.ports.payment_repository import PaymentRepository
 from app.ports.readiness import ReadinessCheck
+from app.ports.review_repository import ReviewRepository
 from app.ports.role_claims import RoleClaims
+from app.ports.telephony import TelephonyPort
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
 from app.ports.wallet_service import WalletService
@@ -234,15 +262,6 @@ def payment_gateway_dep() -> PaymentGateway:
     return _payment_gateway()
 
 
-@lru_cache
-def _notifier() -> NotificationSender:
-    return RecordingNotifier()
-
-
-def notification_sender_dep() -> NotificationSender:
-    return _notifier()
-
-
 def manage_vehicles_dep(
     vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
@@ -388,6 +407,144 @@ def create_quote_dep(
 
 
 @lru_cache
+def _offers() -> FakeOfferRepository:
+    return FakeOfferRepository()
+
+
+def offer_repository_dep() -> OfferRepository:
+    return _offers()
+
+
+@lru_cache
+def _notifications() -> NotificationRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.notification_repository import FirestoreNotificationRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreNotificationRepository(settings.firebase_project_id)
+    return FakeNotificationRepository()
+
+
+def notification_repository_dep() -> NotificationRepository:
+    return _notifications()
+
+
+@lru_cache
+def _devices() -> DeviceTokenRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.device_token_repository import FirestoreDeviceTokenRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreDeviceTokenRepository(settings.firebase_project_id)
+    return FakeDeviceTokenRepository()
+
+
+def device_token_repository_dep() -> DeviceTokenRepository:
+    return _devices()
+
+
+@lru_cache
+def _notification_sender() -> NotificationSender:
+    settings = get_settings()
+    if settings.provider_notify == "fcm":
+        from app.adapters.fcm import FcmNotificationSender
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FcmNotificationSender(
+            settings.firebase_project_id,
+            notifications=_notifications(),
+            devices=_devices(),
+            clock=_clock(),
+        )
+    return RecordingNotificationSender(notifications=_notifications(), clock=_clock())
+
+
+def notification_sender_dep() -> NotificationSender:
+    return _notification_sender()
+
+
+@lru_cache
+def _scheduler() -> JobScheduler:
+    settings = get_settings()
+    if settings.provider_scheduler == "cloud_tasks":
+        from app.adapters.gcp.cloud_tasks_scheduler import CloudTasksJobScheduler
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        assert settings.cloud_tasks_service_account is not None  # noqa: S101
+        return CloudTasksJobScheduler(
+            project_id=settings.firebase_project_id,
+            location=settings.cloud_tasks_location,
+            queue=settings.cloud_tasks_queue,
+            handler_base_url=settings.cloud_tasks_handler_base_url,
+            service_account_email=settings.cloud_tasks_service_account,
+        )
+    return FakeJobScheduler()
+
+
+def job_scheduler_dep() -> JobScheduler:
+    return _scheduler()
+
+
+async def require_internal_job_dep(
+    x_internal_job_token: Annotated[str | None, Header()] = None,
+) -> None:
+    settings = get_settings()
+    if not x_internal_job_token or x_internal_job_token != settings.internal_job_token:
+        raise Unauthenticated("Internal job token required.")
+
+
+def dispatch_service_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    notifications: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
+) -> SequentialDispatch:
+    return SequentialDispatch(
+        bookings=bookings,
+        offers=offers,
+        mechanics=mechanics,
+        notifications=notifications,
+        clock=clock,
+        scheduler=scheduler,
+    )
+
+
+def expire_offer_dep(
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+) -> ExpireOffer:
+    return ExpireOffer(dispatch=dispatch)
+
+
+def expire_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ExpireExtraLine:
+    return ExpireExtraLine(bookings=bookings, clock=clock)
+
+
+def sweep_expired_offers_dep(
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    extra_lines: Annotated[ExpireExtraLine, Depends(expire_extra_line_dep)],
+) -> SweepExpiredOffers:
+    return SweepExpiredOffers(
+        offers=offers,
+        bookings=bookings,
+        mechanics=mechanics,
+        dispatch=dispatch,
+        clock=clock,
+        extra_lines=extra_lines,
+    )
+
+
+@lru_cache
 def _idempotency() -> IdempotencyStore:
     settings = get_settings()
     if settings.provider_bookings == "firestore":
@@ -422,6 +579,7 @@ def create_booking_dep(
     policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
     coupons: Annotated[CouponService, Depends(coupon_service_dep)],
     wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
 ) -> CreateBooking:
     return CreateBooking(
         catalog=catalog,
@@ -434,23 +592,40 @@ def create_booking_dep(
         policy=policy,
         coupons=coupons,
         wallet=wallet,
+        dispatch=dispatch,
     )
 
 
-def cancel_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
-    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
-) -> CancelBooking:
-    return CancelBooking(bookings=bookings, clock=clock, policy=policy, wallet=wallet)
+@lru_cache
+def _proofs() -> PartsProofRepository:
+    return FakePartsProofRepository()
 
 
-def transition_booking_dep(
+def parts_proof_repository_dep() -> PartsProofRepository:
+    return _proofs()
+
+
+def create_parts_proof_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
-) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock)
+) -> CreatePartsProof:
+    return CreatePartsProof(bookings=bookings, proofs=proofs, storage=storage, clock=clock)
+
+
+def list_parts_proofs_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> ListPartsProofs:
+    return ListPartsProofs(bookings=bookings, proofs=proofs)
+
+
+def hide_parts_proof_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> HidePartsProof:
+    return HidePartsProof(bookings=bookings, proofs=proofs)
 
 
 def get_booking_dep(
@@ -463,8 +638,11 @@ def add_extra_line_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     settings: Annotated[Settings, Depends(settings_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> AddExtraLine:
-    return AddExtraLine(bookings=bookings, clock=clock, gst_bps=settings.gst_bps)
+    return AddExtraLine(
+        bookings=bookings, clock=clock, gst_bps=settings.gst_bps, scheduler=scheduler
+    )
 
 
 def decide_extra_line_dep(
@@ -565,17 +743,161 @@ def reconcile_pending_dep(
     return ReconcilePendingPayments(payments=payments, gateway=gateway, apply=apply, clock=clock)
 
 
-async def require_internal_job_dep(
-    settings: Annotated[Settings, Depends(settings_dep)],
-    x_internal_token: Annotated[str | None, Header()] = None,
-) -> None:
-    if not settings.internal_job_token or x_internal_token != settings.internal_job_token:
-        raise Unauthenticated("Internal job token required.")
-
-
 def staff_confirm_cash_dep(
     payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> StaffConfirmCash:
     return StaffConfirmCash(payments=payments, bookings=bookings, clock=clock)
+
+
+@lru_cache
+def _reviews() -> ReviewRepository:
+    return FakeReviewRepository()
+
+
+def review_repository_dep() -> ReviewRepository:
+    return _reviews()
+
+
+def _blocked_words(settings: Settings) -> tuple[str, ...]:
+    return tuple(word.strip() for word in settings.review_blocked_words.split(",") if word.strip())
+
+
+def submit_review_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> SubmitReview:
+    return SubmitReview(
+        bookings=bookings,
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def edit_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> EditReview:
+    return EditReview(
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def list_reviews_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+) -> ListReviews:
+    return ListReviews(reviews=reviews)
+
+
+def hide_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+) -> HideReview:
+    return HideReview(reviews=reviews, mechanics=mechanics)
+
+
+@lru_cache
+def _chat() -> ChatService:
+    settings = get_settings()
+    if settings.provider_chat == "firestore":
+        from app.adapters.firebase.chat_service import FirestoreChatService
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreChatService(settings.firebase_project_id)
+    return FakeChatService()
+
+
+def chat_service_dep() -> ChatService:
+    return _chat()
+
+
+def send_message_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    chat: Annotated[ChatService, Depends(chat_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SendMessage:
+    return SendMessage(bookings=bookings, chat=chat, clock=clock)
+
+
+def sign_chat_media_dep(
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+) -> SignChatMedia:
+    return SignChatMedia(storage=storage, bookings=bookings)
+
+
+def telephony_port_dep(
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> TelephonyPort:
+    if settings.provider_telephony == "unavailable":
+        from app.adapters.telephony.unavailable import UnavailableTelephony
+
+        return UnavailableTelephony()
+    return FakeTelephony(clock)
+
+
+def mask_call_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    telephony: Annotated[TelephonyPort, Depends(telephony_port_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> MaskCall:
+    return MaskCall(
+        bookings=bookings,
+        telephony=telephony,
+        enabled=settings.is_masked_call_enabled(),
+    )
+
+
+def manage_notifications_dep(
+    notifications: Annotated[NotificationRepository, Depends(notification_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ManageNotifications:
+    return ManageNotifications(notifications=notifications, clock=clock)
+
+
+def notify_dep(
+    sender: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> Notify:
+    return Notify(sender=sender, devices=devices, sms_enabled=settings.sms_enabled)
+
+
+def cancel_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> CancelBooking:
+    return CancelBooking(
+        bookings=bookings, clock=clock, policy=policy, wallet=wallet, notify=notify
+    )
+
+
+def transition_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> TransitionBooking:
+    return TransitionBooking(bookings=bookings, clock=clock, proofs=proofs, notify=notify)
+
+
+def register_device_dep(
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> RegisterDevice:
+    return RegisterDevice(devices=devices, clock=clock)

@@ -92,6 +92,13 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
               onTap: () => context.push(MechanicRouteNames.earnings),
             ),
             const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => context.push(
+                MechanicRouteNames.partsProof,
+                extra: const {'bookingId': 'demo-booking', 'lineId': 'demo-line'},
+              ),
+              child: const Text('Parts photos'),
+            ),
             SwitchListTile(
               title: const Text('Go online'),
               subtitle: Text(

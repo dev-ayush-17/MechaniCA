@@ -7,13 +7,13 @@ from dataclasses import dataclass, replace
 from app.domain.audit import AuditEvent
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.errors import NotFound
-from app.domain.notification import NotificationChannel, OutboundNotification
+from app.domain.notification_templates import Channel
 from app.domain.payment import GatewayEvent, Payment, PaymentReason, PaymentStatus
 from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 from app.ports.audit_log import AuditLog
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
-from app.ports.notification_sender import NotificationSender
+from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.payment_repository import PaymentRepository
 from app.ports.wallet_service import WalletService
 
@@ -117,8 +117,10 @@ class ApplyGatewayEvent:
             await self.notifier.send(
                 OutboundNotification(
                     user_id=payment.payer_id,
-                    channel=NotificationChannel.IN_APP,
+                    channel=Channel.IN_APP,
                     template_id=template_id,
+                    title="Payment update",
+                    body="Your payment was updated.",
                     data={"paymentId": payment.id},
                     deep_link="/booking/details",
                 )

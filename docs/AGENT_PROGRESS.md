@@ -102,3 +102,126 @@ Follow-ups:
 - M09 NotificationSender swap in `deps.py` when that PR merges.
 - Invoice PDF is M11.
 - Live Cashfree SDK checkout on device.
+
+## M13 notes
+
+| Field | Value |
+| --- | --- |
+| Branch | `feat/m13-parts-reviews` |
+| Status | Done. PR opening. |
+| Requirements | FR-MEC-008, FR-REV-001..004 |
+
+Done:
+
+- Complete is blocked when a part-replacement line exists and fewer than three proofs are stored. Jobs with no part lines still complete.
+- Proof paths are server-chosen (`partsProof/{bookingId}/{lineId}/{kind}/{uuid}.jpg`) with booking/line/timestamp metadata.
+- Mechanic capture + offline queue (`image_picker` 1.2.3, reason: capture parts photos).
+- Customer inspection route shows server proofs (before/after/old part). Old mock stays at `/inspection/mock` behind a debug button.
+- Reviews: one per booking, phone numbers rejected, staff hide via API, aggregates recomputed on the server.
+- Firestore rules: reviews and proofs are not client-writable; proofs are not deletable by the mechanic; `ratingAvg`/`ratingCount` stay server-only.
+
+Left / follow-ups:
+
+- Firestore adapters for `ReviewRepository` and `PartsProofRepository` (fakes are bound; real adapters next).
+- Pixel-level recompression beyond `image_picker` maxWidth/quality 80.
+- Review photo upload UI (API already accepts up to 3 paths).
+- Wire submit-review from the paid booking details screen (M10 payment status).
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): this machine has no Java. CI installs Java 21.
+- App not built for Android or iOS here.
+
+Next: wait for CI on the M13 PR. Do not start another milestone in this worktree.
+
+## M12 notes
+
+Branch: `feat/m12-chat`. FR-COM-001–004.
+
+**Done**
+
+- Chat lifecycle: send from `mechanicAssigned` until 24 hours after a terminal status. Named test `message_after_24h_is_rejected`.
+- Rate limit 20 / 10 min / booking. Named test `twenty_first_message_is_rate_limited`.
+- `POST/GET /v1/bookings/{id}/messages`, chat image sign via `FileStorage` (`POST .../messages/uploads`). API is the only writer.
+- Firestore rules: parties read `bookings/{id}/messages`; client writes denied.
+- Job chat UI (`features/job_chat/`), polling every 4s, empty-thread copy, failed-message retry, in-memory offline text queue (`offline_text_queues`).
+- Chat entry on booking details when a mechanic is assigned. Support FAQ chat is unchanged.
+- `TelephonyPort` fake + unavailable adapter. `masked_call_enabled` on in dev, off in prod. Call hidden when off. Adapter never returns a user phone.
+
+**Left / follow-ups, not done here**
+
+- Persist the chat outbox in Drift (`chat_send` kind). Session queue only.
+- Firestore snapshot listener. Polling is the writer-safe fallback.
+- Image picker on the thread. The API already accepts `mediaPath` after a signed upload.
+- Real masked-call vendor. `UnavailableTelephony` stands in until a contract exists.
+
+**Not verified locally**
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- `FirestoreChatService` was not run against the emulator.
+- The app was not built for Android or iOS here.
+
+**Next**
+
+PR against `main`. Do not merge from this session. M07/M09/M10/M13 are parallel and out of this branch.
+
+## M07 notes
+
+Branch: `feat/m07-dispatch` from `origin/main` (M06 merged). Isolated worktree `C:/Users/l/AppDev/Aethenox-m07`.
+
+Done:
+
+- Sequential dispatch: one open offer per booking, max three attempts, ranking from chapter 14 / ADR-013.
+- Offer accept/reject HTTP. Second accept loses (`offer_gone`). ExpireOffer and extra-line timeout are safe to run twice.
+- Fake `JobScheduler` in dev (`MECHUPP_PROVIDER_SCHEDULER=fake`). Cloud Tasks adapter exists and is never bound in fake/dev.
+- Sweep expires leftover offers and pending extra lines if a task was not placed.
+- Recording `NotificationSender` fake: `send()` is recorded and never throws into the booking path. No FCM.
+- Mechanic offer screen (accept/reject) and legal status buttons. Complete allowed when there are no part lines; part-replacement lines still block (M13).
+- Extra-work 10-minute timeout auto-rejects the pending line without changing totals.
+- Customer booking-details copy: finding / still looking / failed / SOS failed (chapter 14).
+- Named tests: `dispatch_second_accept_loses`, `dispatch_third_miss_fails`, `sos_timeout_is_20_seconds`, `mechanic_with_active_job_is_skipped`, `expired_offer_is_idempotent`, `outside_service_area_excluded`. Widget tests for the offer screen and failed copy.
+
+Left / follow-ups (not this PR):
+
+- Real FCM adapter (M09).
+- Map tiles and live tracking (M08). Tracking may still use the old animation.
+- Parts photos required to complete (M13).
+- Production Cloud Tasks project (owner). Do not block on GCP.
+
+Next: M08 tracking after this PR merges. Parallel milestones (M09, M10, M12, M13) stay on their own branches.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- Firebase emulators.
+- Cloud Tasks against a GCP project.
+- Android / iOS device builds. Widget tests cover offer UI, status buttons, and failed copy.
+
+## M09 notes
+
+M09 notifications is done on `feat/m09-notifications` from `origin/main` (a6f48ed). Isolated worktree `C:/Users/l/AppDev/Aethenox-m09`.
+
+Done:
+
+- Chapter 17 matrix lives in `backend/app/domain/notification_templates.py`. Every event id has a non-empty title.
+- In-app docs at `users/{userId}/notifications/{id}`. Owner list/read/delete via API. Clients cannot write notification docs (rules + test).
+- `NotificationSender` port, recording fake, FCM adapter (`backend/app/adapters/fcm.py`). `POST /v1/me/devices` is idempotent by token.
+- SMS stays behind `MECHUPP_SMS_ENABLED`, default off. `sms_not_called_when_flag_off` passes.
+- Existing notifications screen bound to `features/notifications/`. Empty copy "No notifications yet." Denied banner copy on home. Permission screen calls `requestOnce` once.
+- Assigned / arrived / cancelled emit after the booking write. `failed_push_does_not_roll_back_booking` passes.
+- Payment and verification templates are sender functions unit-tested with a direct call. M10/M04 can hook them later.
+
+Left / follow-ups:
+
+- No debug FCM token on this machine. Recording fake plus the in-app row is the proof. Do not stall on a Firebase project.
+- Real FCM send needs `MECHUPP_PROVIDER_NOTIFY=fcm` and a Firebase project (owner).
+- SMS vendor is still out of scope. Flag stays off.
+- Offer/extra-work/payment events wait for M07/M10 to call the same `Notify.emit` / `notify_payment_paid`.
+
+Next: open the M09 PR. Do not start another milestone in this worktree.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`) were **not run**. This machine has no Java. CI installs Java 21.
+- `FcmNotificationSender` has not sent a real push.
+- The app was not built for Android or iOS here. Widget tests cover empty copy, denied banner copy, and a single OS prompt.

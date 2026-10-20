@@ -3,12 +3,12 @@ from dataclasses import dataclass, replace
 from app.domain.booking import Booking
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.errors import InvalidInput, InvalidTransition, NotFound, PermissionDenied
-from app.domain.notification import NotificationChannel, OutboundNotification
+from app.domain.notification_templates import Channel
 from app.domain.payment import Payment, PaymentGatewayKind, PaymentStatus
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
-from app.ports.notification_sender import NotificationSender
+from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.payment_repository import PaymentRepository
 
 
@@ -38,8 +38,10 @@ class MarkCashCollected:
         await self.notifier.send(
             OutboundNotification(
                 user_id=booking.customer_id,
-                channel=NotificationChannel.IN_APP,
+                channel=Channel.IN_APP,
                 template_id="cashConfirm",
+                title="Confirm cash",
+                body="Your mechanic marked cash collected.",
                 data={"paymentId": saved.id},
                 deep_link="/booking/details",
             )

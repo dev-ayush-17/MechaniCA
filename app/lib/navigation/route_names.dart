@@ -26,6 +26,7 @@ class RouteNames {
   static const String bookingDetails = '/booking/details';
   static const String pay = '/booking/pay';
   static const String reschedule = '/booking/reschedule';
+  static const String jobChat = '/job-chat';
 
   // Tracking
   static const String liveTracking = '/tracking';
@@ -33,6 +34,7 @@ class RouteNames {
 
   // Inspection & Invoice
   static const String inspection = '/inspection';
+  static const String inspectionMock = '/inspection/mock';
   static const String photoGallery = '/inspection/gallery';
   static const String invoice = '/invoice';
 
@@ -81,4 +83,7 @@ class RouteNames {
   // History
   static const String history = '/history';
   static const String serviceDetail = '/history/detail';
+
+  static const String reviewSubmit = '/reviews/submit';
+  static const String reviews = '/reviews';
 }
