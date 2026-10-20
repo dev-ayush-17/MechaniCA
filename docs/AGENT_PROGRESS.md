@@ -307,15 +307,15 @@ Done (PR 1 API):
 - Server `AnalyticsService.track` drops forbidden properties (phone, token, …) and records booking/payment/dispatch events.
 - Named tests: `support_cannot_resolve_with_refund`, `suspend_blocks_booking_create`, `coupon_with_redemptions_cannot_be_edited`, `analytics_drops_phone_property`, `dispute_second_open_conflicts`. RBAC is asserted on the API, not only hidden buttons.
 
-Left / follow-ups (PR 2 UI):
+Done (PR 2 UI):
 
-- `main_admin.dart` Flutter web, 1024 px width gate, queues (users, verification, orders, revenue, coupons, disputes, audit).
-- Booking details "Report a problem" only after arrived.
-- Do not import maps/camera/image_picker/firebase_database into the admin target.
+- `main_admin.dart` Flutter web, 1024 px width gate ("Use a larger screen"), queues (users, verification, orders, revenue, coupons, disputes, audit). Support buttons are hidden; API still 403s.
+- Booking details "Report a problem" only after arrived. Widget test matches that name.
+- Admin target does not import maps/camera/image_picker/firebase_database.
 
 Not run locally:
 
 - Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
-- Admin Chrome build. `flutter analyze` for the UI PR.
+- Admin Chrome full web build. `flutter analyze` is clean; width-gate widget test passes.
 
-Next: open the API PR, then the UI PR. Do not start M14/M16 in this worktree.
+Next: open both PRs against `main`. Do not start M14/M16 in this worktree.
