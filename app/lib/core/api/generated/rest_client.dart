@@ -12,6 +12,7 @@ import 'messages/messages_client.dart';
 import 'catalog/catalog_client.dart';
 import 'coupons/coupons_client.dart';
 import 'internal/internal_client.dart';
+import 'invoices/invoices_client.dart';
 import 'me/me_client.dart';
 import 'mechanic/mechanic_client.dart';
 import 'notifications/notifications_client.dart';
@@ -44,6 +45,7 @@ class RestClient {
   CatalogClient? _catalog;
   CouponsClient? _coupons;
   InternalClient? _internal;
+  InvoicesClient? _invoices;
   MeClient? _me;
   MechanicClient? _mechanic;
   NotificationsClient? _notifications;
@@ -70,6 +72,8 @@ class RestClient {
   CouponsClient get coupons => _coupons ??= CouponsClient(_dio, baseUrl: _baseUrl);
 
   InternalClient get internal => _internal ??= InternalClient(_dio, baseUrl: _baseUrl);
+
+  InvoicesClient get invoices => _invoices ??= InvoicesClient(_dio, baseUrl: _baseUrl);
 
   MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
 

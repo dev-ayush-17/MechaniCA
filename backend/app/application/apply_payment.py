@@ -4,6 +4,7 @@ import logging
 import uuid
 from dataclasses import dataclass, replace
 
+from app.application.invoices import schedule_invoice_render
 from app.domain.audit import AuditEvent
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.errors import NotFound
@@ -13,6 +14,7 @@ from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 from app.ports.audit_log import AuditLog
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.job_scheduler import JobScheduler
 from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.payment_repository import PaymentRepository
 from app.ports.wallet_service import WalletService
@@ -28,6 +30,7 @@ class ApplyGatewayEvent:
     audit: AuditLog
     notifier: NotificationSender
     clock: Clock
+    scheduler: JobScheduler | None = None
 
     async def execute(self, event: GatewayEvent) -> Payment:
         payment = await self.payments.get_by_gateway_order(event.gateway_order_id)
@@ -109,6 +112,7 @@ class ApplyGatewayEvent:
             if booking is not None and booking.status is BookingStatus.COMPLETED:
                 assert_transition(booking.status, BookingStatus.PAID, "system")
                 await self.bookings.save(booking.with_status(BookingStatus.PAID, now=now))
+                await schedule_invoice_render(self.scheduler, saved.booking_id, now)
         await self._notify(saved, "paymentPaid")
         return saved
 

@@ -15,6 +15,7 @@ from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
+from app.adapters.fake.invoice_repository import FakeInvoiceRepository
 from app.adapters.fake.job_scheduler import FakeJobScheduler
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
@@ -28,6 +29,7 @@ from app.adapters.fake.review_repository import FakeReviewRepository
 from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.fake.wallet_service import FakeWalletService
+from app.adapters.pdf import render_invoice_pdf
 from app.adapters.system_clock import SystemClock
 from app.application.apply_payment import ApplyGatewayEvent
 from app.application.bootstrap_user import BootstrapUser
@@ -42,6 +44,7 @@ from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
+from app.application.invoices import DefaultInvoiceService, GetInvoice
 from app.application.list_earnings import ListEarnings
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
@@ -79,6 +82,7 @@ from app.ports.coupon_service import CouponService
 from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
+from app.ports.invoice_repository import InvoiceRepository
 from app.ports.job_scheduler import JobScheduler
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_repository import NotificationRepository
@@ -299,6 +303,15 @@ def file_storage_dep() -> FileStorage:
 
 
 @lru_cache
+def _invoices() -> FakeInvoiceRepository:
+    return FakeInvoiceRepository()
+
+
+def invoice_repository_dep() -> InvoiceRepository:
+    return _invoices()
+
+
+@lru_cache
 def _audit() -> AuditLog:
     return FakeAuditLog()
 
@@ -388,6 +401,39 @@ def _bookings() -> BookingRepository:
 
 def booking_repository_dep() -> BookingRepository:
     return _bookings()
+
+
+def invoice_service_dep(
+    invoices: Annotated[InvoiceRepository, Depends(invoice_repository_dep)],
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> DefaultInvoiceService:
+    return DefaultInvoiceService(
+        invoices=invoices,
+        storage=storage,
+        bookings=bookings,
+        payments=payments,
+        users=users,
+        vehicles=vehicles,
+        mechanics=mechanics,
+        clock=clock,
+        gstin=settings.gstin,
+        render_pdf=render_invoice_pdf,
+    )
+
+
+def get_invoice_dep(
+    invoices: Annotated[DefaultInvoiceService, Depends(invoice_service_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+) -> GetInvoice:
+    return GetInvoice(invoices=invoices, bookings=bookings, storage=storage)
 
 
 def create_quote_dep(
@@ -660,6 +706,7 @@ def create_payment_dep(
     coupons: Annotated[CouponService, Depends(coupon_service_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     settings: Annotated[Settings, Depends(settings_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> CreatePayment:
     return CreatePayment(
         payments=payments,
@@ -669,6 +716,7 @@ def create_payment_dep(
         coupons=coupons,
         clock=clock,
         gst_bps=settings.gst_bps,
+        scheduler=scheduler,
     )
 
 
@@ -679,6 +727,7 @@ def apply_gateway_event_dep(
     audit: Annotated[AuditLog, Depends(audit_log_dep)],
     notifier: Annotated[NotificationSender, Depends(notification_sender_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> ApplyGatewayEvent:
     return ApplyGatewayEvent(
         payments=payments,
@@ -687,6 +736,7 @@ def apply_gateway_event_dep(
         audit=audit,
         notifier=notifier,
         clock=clock,
+        scheduler=scheduler,
     )
 
 
@@ -730,8 +780,9 @@ def confirm_cash_dep(
     payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> ConfirmCash:
-    return ConfirmCash(payments=payments, bookings=bookings, clock=clock)
+    return ConfirmCash(payments=payments, bookings=bookings, clock=clock, scheduler=scheduler)
 
 
 def reconcile_pending_dep(
@@ -747,8 +798,11 @@ def staff_confirm_cash_dep(
     payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
 ) -> StaffConfirmCash:
-    return StaffConfirmCash(payments=payments, bookings=bookings, clock=clock)
+    return StaffConfirmCash(
+        payments=payments, bookings=bookings, clock=clock, scheduler=scheduler
+    )
 
 
 @lru_cache

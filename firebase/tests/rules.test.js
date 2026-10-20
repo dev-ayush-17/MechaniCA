@@ -179,6 +179,15 @@ describe('firestore rules', () => {
     await assertFails(setDoc(doc(db, 'reviews/r2'), { bookingId: 'b1', stars: 5 }));
   });
 
+  it('invoices_are_not_client_writable', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(setDoc(doc(db, 'invoices/b1'), { number: 'MC-202606-000001' }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'invoices/b1'), { number: 'MC-202606-000001' });
+    });
+    await assertFails(getDoc(doc(db, 'invoices/b1')));
+  });
+
   it('rules_deny_client_notification_write', async () => {
     const db = env.authenticatedContext('cust').firestore();
     await assertFails(

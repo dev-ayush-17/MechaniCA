@@ -1025,6 +1025,137 @@
         "title": "Intent",
         "type": "string"
       },
+      "InvoiceLineOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amountPaise": {
+            "title": "Amountpaise",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "amountPaise"
+        ],
+        "title": "InvoiceLineOut",
+        "type": "object"
+      },
+      "InvoiceOut": {
+        "additionalProperties": false,
+        "properties": {
+          "bookingId": {
+            "title": "Bookingid",
+            "type": "string"
+          },
+          "cgstPaise": {
+            "title": "Cgstpaise",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "customerName": {
+            "title": "Customername",
+            "type": "string"
+          },
+          "downloadUrl": {
+            "title": "Downloadurl",
+            "type": "string"
+          },
+          "gstin": {
+            "title": "Gstin",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "mechanicDisplayName": {
+            "title": "Mechanicdisplayname",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "paymentMethod": {
+            "title": "Paymentmethod",
+            "type": "string"
+          },
+          "sgstPaise": {
+            "title": "Sgstpaise",
+            "type": "integer"
+          },
+          "totalPaise": {
+            "title": "Totalpaise",
+            "type": "integer"
+          },
+          "vehicleRegistration": {
+            "title": "Vehicleregistration",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bookingId",
+          "number",
+          "version",
+          "totalPaise",
+          "cgstPaise",
+          "sgstPaise",
+          "gstin",
+          "customerName",
+          "vehicleRegistration",
+          "mechanicDisplayName",
+          "paymentMethod",
+          "downloadUrl",
+          "createdAt",
+          "lines"
+        ],
+        "title": "InvoiceOut",
+        "type": "object"
+      },
+      "InvoiceRenderOut": {
+        "additionalProperties": false,
+        "properties": {
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "number"
+        ],
+        "title": "InvoiceRenderOut",
+        "type": "object"
+      },
       "JobOk": {
         "additionalProperties": false,
         "properties": {
@@ -1732,6 +1863,20 @@
           "platform"
         ],
         "title": "RegisterDeviceRequest",
+        "type": "object"
+      },
+      "RenderInvoiceRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bookingId": {
+            "title": "Bookingid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookingId"
+        ],
+        "title": "RenderInvoiceRequest",
         "type": "object"
       },
       "ReviewListOut": {
@@ -4530,6 +4675,75 @@
         ]
       }
     },
+    "/v1/internal/invoices/render": {
+      "post": {
+        "operationId": "render_invoice_v1_internal_invoices_render_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-internal-job-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Job-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceRenderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Render Invoice",
+        "tags": [
+          "internal"
+        ]
+      }
+    },
     "/v1/internal/jobs/dispatch-sweep": {
       "post": {
         "operationId": "dispatch_sweep_v1_internal_jobs_dispatch_sweep_post",
@@ -4773,6 +4987,84 @@
         "summary": "Reconcile Payments",
         "tags": [
           "internal"
+        ]
+      }
+    },
+    "/v1/invoices/{booking_id}": {
+      "get": {
+        "operationId": "get_invoice_v1_invoices__booking_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Get Invoice",
+        "tags": [
+          "invoices"
         ]
       }
     },

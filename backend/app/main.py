@@ -6,6 +6,7 @@ from app.api.v1 import (
     admin_verification,
     bookings,
     catalog,
+    invoices,
     me,
     mechanic,
     messages,
@@ -47,6 +48,8 @@ def create_app() -> FastAPI:
     app.include_router(payments.admin_router)
     app.include_router(payments.earnings_router)
     app.include_router(payments.internal_router)
+    app.include_router(invoices.router)
+    app.include_router(invoices.internal_router)
     return app
 
 
