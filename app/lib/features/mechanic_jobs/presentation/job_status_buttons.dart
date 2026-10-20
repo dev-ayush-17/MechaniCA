@@ -12,6 +12,7 @@ class JobStatusButtons extends StatelessWidget {
     this.hasPartLines = false,
     this.hasPendingExtra = false,
     this.busy = false,
+    this.nearJob = false,
   });
 
   final String status;
@@ -19,6 +20,7 @@ class JobStatusButtons extends StatelessWidget {
   final bool hasPartLines;
   final bool hasPendingExtra;
   final bool busy;
+  final bool nearJob;
 
   String? get label {
     return switch (status) {
@@ -50,6 +52,22 @@ class JobStatusButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (nearJob && status == 'enRoute')
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'You appear to be at the job. Mark Arrived?',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+        if (status == 'enRoute' || status == 'arrived')
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'MechUpp is sharing your trip location.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ),
         if (completeBlocked)
           const Padding(
             padding: EdgeInsets.only(bottom: 8),

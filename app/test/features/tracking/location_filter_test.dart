@@ -28,7 +28,7 @@ void main() {
 
   test('jump_over_2km_dropped', () {
     final first = point(patnaLat, patnaLng, now);
-    final jumpedLng = patnaLng + 5.0 / (111.32 * 0.902);
+    const jumpedLng = patnaLng + 5.0 / (111.32 * 0.902);
     final jumped = point(
       patnaLat,
       jumpedLng,

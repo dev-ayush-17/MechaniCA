@@ -473,38 +473,6 @@ final inspectionProvider = FutureProvider.family<InspectionModel, String>((ref, 
   return ref.watch(inspectionRepositoryProvider).getInspectionByBooking(bookingId);
 });
 
-// ─── TRACKING SIMULATION PROVIDER ────────────────────────────────────────────
-
-class TrackingState {
-  final int currentStepIndex;
-  final bool isCompleted;
-
-  const TrackingState({this.currentStepIndex = 3, this.isCompleted = false});
-
-  TrackingState copyWith({int? currentStepIndex, bool? isCompleted}) => TrackingState(
-        currentStepIndex: currentStepIndex ?? this.currentStepIndex,
-        isCompleted: isCompleted ?? this.isCompleted,
-      );
-}
-
-final trackingProvider = StateNotifierProvider<TrackingNotifier, TrackingState>(
-  (ref) => TrackingNotifier(),
-);
-
-class TrackingNotifier extends StateNotifier<TrackingState> {
-  TrackingNotifier() : super(const TrackingState());
-
-  void advance() {
-    if (state.currentStepIndex < 6) {
-      state = state.copyWith(currentStepIndex: state.currentStepIndex + 1);
-    } else {
-      state = state.copyWith(isCompleted: true);
-    }
-  }
-
-  void reset() => state = const TrackingState();
-}
-
 // ─── ADDRESSES PROVIDER ───────────────────────────────────────────────────────
 
 class AddressNotifier extends StateNotifier<AsyncValue<List<AddressModel>>> {

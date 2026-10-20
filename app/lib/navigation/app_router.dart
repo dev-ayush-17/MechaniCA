@@ -237,10 +237,10 @@ final appRouter = GoRouter(
       path: RouteNames.emergencyTracking,
       builder: (_, state) {
         final extra = state.extra;
-        final payload = extra is SosBookingPayload
-            ? extra
-            : sosPayloadFor(extra as String? ?? 'Breakdown');
-        return EmergencyTrackingScreen(payload: payload);
+        final bookingId = extra is SosBookingPayload
+            ? extra.reason
+            : extra as String? ?? 'sos';
+        return LiveTrackingScreen(bookingId: bookingId, urgency: 'sos');
       },
     ),
 
