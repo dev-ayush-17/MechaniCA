@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../navigation/route_names.dart';
 import '../../../widgets/shared/app_states.dart';
 import '../../booking/domain/booking.dart';
+import '../../health/domain/vehicle_health.dart';
 import '../../vehicles/domain/vehicle.dart';
 import '../domain/home_copy.dart';
 
@@ -524,7 +525,15 @@ class HomeQuickActions extends StatelessWidget {
 }
 
 class HomeHealthScoreMini extends StatelessWidget {
-  const HomeHealthScoreMini({super.key});
+  const HomeHealthScoreMini({super.key, required this.health});
+
+  final VehicleHealth health;
+
+  Color get _bandColor => switch (health.band) {
+        HealthBand.good => AppColors.success,
+        HealthBand.fair => AppColors.warning,
+        HealthBand.poor => AppColors.error,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -543,7 +552,7 @@ class HomeHealthScoreMini extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('85', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w800, color: Colors.white)),
+                Text('${health.score}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w800, color: Colors.white)),
                 const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,17 +561,22 @@ class HomeHealthScoreMini extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.15),
+                        color: _bandColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text('Good', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w600)),
+                      child: Text(health.label, style: TextStyle(color: _bandColor, fontSize: 11, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text('Your Bike is in Good Condition', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+            const Text(
+              kHealthFromLastService,
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

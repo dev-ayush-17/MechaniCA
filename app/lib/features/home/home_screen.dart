@@ -9,6 +9,7 @@ import '../../features/notifications/presentation/push_denied_banner.dart';
 import '../../navigation/route_names.dart';
 import '../../widgets/shared/app_states.dart';
 import '../booking/domain/booking.dart';
+import '../health/domain/vehicle_health.dart';
 import '../vehicles/domain/vehicle.dart';
 import 'domain/booking_buckets.dart';
 import 'domain/home_copy.dart';
@@ -203,13 +204,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const HomeQuickActions(),
                   const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Expanded(child: HomeHealthScoreMini()),
-                        SizedBox(width: 12),
-                        Expanded(child: HomeFuelMini()),
+                        Expanded(
+                          child: HomeHealthScoreMini(
+                            health: healthFromLastService(
+                              lastCompletedServiceAt(
+                                bookingsAsync.valueOrNull ?? const [],
+                              ),
+                              now: DateTime.now(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(child: HomeFuelMini()),
                       ],
                     ),
                   ),
