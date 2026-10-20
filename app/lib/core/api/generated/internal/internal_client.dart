@@ -8,6 +8,7 @@ import 'package:retrofit/retrofit.dart';
 import '../models/dispatch_timeout_request.dart';
 import '../models/extra_work_timeout_request.dart';
 import '../models/job_ok.dart';
+import '../models/reconcile_out.dart';
 
 part 'internal_client.g.dart';
 
@@ -32,6 +33,12 @@ abstract class InternalClient {
   @POST('/v1/internal/jobs/extra-work-timeout')
   Future<JobOk> extraWorkTimeoutV1InternalJobsExtraWorkTimeoutPost({
     @Body() required ExtraWorkTimeoutRequest body,
+    @Header('x-internal-job-token') String? xInternalJobToken,
+  });
+
+  /// Reconcile Payments
+  @POST('/v1/internal/jobs/reconcile-payments')
+  Future<ReconcileOut> reconcilePaymentsV1InternalJobsReconcilePaymentsPost({
     @Header('x-internal-job-token') String? xInternalJobToken,
   });
 }

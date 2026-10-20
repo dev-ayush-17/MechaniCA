@@ -103,6 +103,7 @@ class Booking:
     created_at: datetime
     updated_at: datetime
     version: int
+    coupon_code: str = ""
     failure_reason: str | None = None
     dispatch_attempt: int = 0
 

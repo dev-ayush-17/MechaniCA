@@ -99,6 +99,7 @@ def _to_doc(booking: Booking) -> dict[str, object]:
         "createdAt": booking.created_at,
         "updatedAt": booking.updated_at,
         "version": booking.version,
+        "couponCode": booking.coupon_code,
         "failureReason": booking.failure_reason,
         "dispatchAttempt": booking.dispatch_attempt,
     }
@@ -137,6 +138,7 @@ def _from_doc(booking_id: str, data: dict[str, object]) -> Booking:
         created_at=_parse_time(data["createdAt"]),
         updated_at=_parse_time(data["updatedAt"]),
         version=int(str(data.get("version", 1))),
+        coupon_code=str(data.get("couponCode") or ""),
         failure_reason=str(data["failureReason"]) if data.get("failureReason") else None,
         dispatch_attempt=int(str(data.get("dispatchAttempt", 0))),
     )

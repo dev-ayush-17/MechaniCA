@@ -10,15 +10,18 @@ import 'bookings/bookings_client.dart';
 import 'proofs/proofs_client.dart';
 import 'messages/messages_client.dart';
 import 'catalog/catalog_client.dart';
+import 'coupons/coupons_client.dart';
 import 'internal/internal_client.dart';
 import 'me/me_client.dart';
 import 'mechanic/mechanic_client.dart';
 import 'notifications/notifications_client.dart';
 import 'offers/offers_client.dart';
+import 'payments/payments_client.dart';
 import 'quotes/quotes_client.dart';
 import 'reviews/reviews_client.dart';
 import 'uploads/uploads_client.dart';
 import 'vehicles/vehicles_client.dart';
+import 'wallet/wallet_client.dart';
 
 /// MechUpp API `v0.1.0`
 class RestClient {
@@ -39,15 +42,18 @@ class RestClient {
   ProofsClient? _proofs;
   MessagesClient? _messages;
   CatalogClient? _catalog;
+  CouponsClient? _coupons;
   InternalClient? _internal;
   MeClient? _me;
   MechanicClient? _mechanic;
   NotificationsClient? _notifications;
   OffersClient? _offers;
+  PaymentsClient? _payments;
   QuotesClient? _quotes;
   ReviewsClient? _reviews;
   UploadsClient? _uploads;
   VehiclesClient? _vehicles;
+  WalletClient? _wallet;
 
   FallbackClient get fallback => _fallback ??= FallbackClient(_dio, baseUrl: _baseUrl);
 
@@ -61,6 +67,8 @@ class RestClient {
 
   CatalogClient get catalog => _catalog ??= CatalogClient(_dio, baseUrl: _baseUrl);
 
+  CouponsClient get coupons => _coupons ??= CouponsClient(_dio, baseUrl: _baseUrl);
+
   InternalClient get internal => _internal ??= InternalClient(_dio, baseUrl: _baseUrl);
 
   MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
@@ -71,6 +79,8 @@ class RestClient {
 
   OffersClient get offers => _offers ??= OffersClient(_dio, baseUrl: _baseUrl);
 
+  PaymentsClient get payments => _payments ??= PaymentsClient(_dio, baseUrl: _baseUrl);
+
   QuotesClient get quotes => _quotes ??= QuotesClient(_dio, baseUrl: _baseUrl);
 
   ReviewsClient get reviews => _reviews ??= ReviewsClient(_dio, baseUrl: _baseUrl);
@@ -78,4 +88,6 @@ class RestClient {
   UploadsClient get uploads => _uploads ??= UploadsClient(_dio, baseUrl: _baseUrl);
 
   VehiclesClient get vehicles => _vehicles ??= VehiclesClient(_dio, baseUrl: _baseUrl);
+
+  WalletClient get wallet => _wallet ??= WalletClient(_dio, baseUrl: _baseUrl);
 }

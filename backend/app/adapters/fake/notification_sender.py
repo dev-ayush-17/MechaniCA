@@ -52,3 +52,6 @@ class RecordingNotificationSender:
                     created_at=self.clock.now(),
                 )
             )
+
+
+RecordingNotifier = RecordingNotificationSender

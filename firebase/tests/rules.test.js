@@ -33,6 +33,8 @@ beforeEach(async () => {
       totalPaise: 70000,
     });
     await setDoc(doc(db, 'payments/p1'), { bookingId: 'b1', status: 'pending' });
+    await setDoc(doc(db, 'ledger/l1'), { userId: 'cust', amountPaise: 100, direction: 'credit' });
+    await setDoc(doc(db, 'coupons/FLAT50'), { code: 'FLAT50', active: true });
     await setDoc(doc(db, 'mechanics/mech'), {
       displayName: 'Imran',
       verified: false,
@@ -112,6 +114,14 @@ describe('firestore rules', () => {
     const db = env.authenticatedContext('cust').firestore();
     await assertFails(getDoc(doc(db, 'payments/p1')));
     await assertFails(updateDoc(doc(db, 'payments/p1'), { status: 'paid' }));
+  });
+
+  it('rules_deny_client_wallet_and_coupon_writes', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(getDoc(doc(db, 'ledger/l1')));
+    await assertFails(updateDoc(doc(db, 'ledger/l1'), { amountPaise: 1 }));
+    await assertFails(getDoc(doc(db, 'coupons/FLAT50')));
+    await assertFails(setDoc(doc(db, 'coupons/NEW'), { code: 'NEW' }));
   });
 
   it('signed_out_users_read_nothing', async () => {

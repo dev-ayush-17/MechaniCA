@@ -11,6 +11,7 @@ from app.api.v1 import (
     messages,
     notifications,
     offers,
+    payments,
     quotes,
     reviews,
     vehicles,
@@ -40,6 +41,12 @@ def create_app() -> FastAPI:
     app.include_router(admin_verification.router)
     app.include_router(reviews.proofs_router)
     app.include_router(reviews.reviews_router)
+    app.include_router(payments.router)
+    app.include_router(payments.wallet_router)
+    app.include_router(payments.coupons_router)
+    app.include_router(payments.admin_router)
+    app.include_router(payments.earnings_router)
+    app.include_router(payments.internal_router)
     return app
 
 

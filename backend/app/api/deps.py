@@ -11,6 +11,7 @@ from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.chat_service import FakeChatService
+from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
@@ -20,27 +21,36 @@ from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
 from app.adapters.fake.offer_repository import FakeOfferRepository
 from app.adapters.fake.parts_proof_repository import FakePartsProofRepository
+from app.adapters.fake.payment_gateway import FakePaymentGateway
+from app.adapters.fake.payment_repository import FakePaymentRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.review_repository import FakeReviewRepository
 from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.user_repository import FakeUserRepository
+from app.adapters.fake.wallet_service import FakeWalletService
 from app.adapters.system_clock import SystemClock
+from app.application.apply_payment import ApplyGatewayEvent
 from app.application.bootstrap_user import BootstrapUser
 from app.application.cancel_booking import CancelBooking
+from app.application.cash_confirm import ConfirmCash, MarkCashCollected, StaffConfirmCash
 from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
+from app.application.create_payment import CreatePayment
 from app.application.create_quote import CreateQuote
 from app.application.dispatch import SequentialDispatch
 from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
+from app.application.list_earnings import ListEarnings
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.notify import Notify
 from app.application.parts_proofs import CreatePartsProof, HidePartsProof, ListPartsProofs
+from app.application.reconcile_payments import ReconcilePendingPayments
+from app.application.refund_payment import RefundPayment
 from app.application.register_device import RegisterDevice
 from app.application.reviews import EditReview, HideReview, ListReviews, SubmitReview
 from app.application.send_message import SendMessage
@@ -51,6 +61,7 @@ from app.application.submit_mechanic_application import SubmitMechanicApplicatio
 from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
 from app.application.verify_mechanic import VerifyMechanic
+from app.application.wallet_topup import CreateWalletTopup
 from app.core.config import Settings, get_settings
 from app.domain.booking import BookingPolicy
 from app.domain.catalog import PricingConfig
@@ -64,6 +75,7 @@ from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.chat_service import ChatService
 from app.ports.clock import Clock
+from app.ports.coupon_service import CouponService
 from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
@@ -73,12 +85,15 @@ from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
 from app.ports.offer_repository import OfferRepository
 from app.ports.parts_proof_repository import PartsProofRepository
+from app.ports.payment_gateway import PaymentGateway
+from app.ports.payment_repository import PaymentRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.review_repository import ReviewRepository
 from app.ports.role_claims import RoleClaims
 from app.ports.telephony import TelephonyPort
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
+from app.ports.wallet_service import WalletService
 
 
 def settings_dep() -> Settings:
@@ -199,12 +214,52 @@ def pricing_service_dep(
     )
 
 
-def create_quote_dep(
-    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
-    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
-    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
-) -> CreateQuote:
-    return CreateQuote(catalog=catalog, vehicles=vehicles, pricing=pricing)
+@lru_cache
+def _payments() -> PaymentRepository:
+    return FakePaymentRepository()
+
+
+def payment_repository_dep() -> PaymentRepository:
+    return _payments()
+
+
+@lru_cache
+def _wallet() -> WalletService:
+    return FakeWalletService()
+
+
+def wallet_service_dep() -> WalletService:
+    return _wallet()
+
+
+@lru_cache
+def _coupons() -> CouponService:
+    return FakeCouponService()
+
+
+def coupon_service_dep() -> CouponService:
+    return _coupons()
+
+
+@lru_cache
+def _payment_gateway() -> PaymentGateway:
+    settings = get_settings()
+    if settings.provider_payments == "cashfree":
+        from app.adapters.cashfree.payment_gateway import CashfreePaymentGateway
+
+        assert settings.cashfree_app_id is not None  # noqa: S101
+        assert settings.cashfree_secret is not None  # noqa: S101
+        return CashfreePaymentGateway(
+            app_id=settings.cashfree_app_id,
+            secret=settings.cashfree_secret,
+            api_url=settings.cashfree_api_url,
+            app_env=settings.app_env,
+        )
+    return FakePaymentGateway(secret=settings.payments_webhook_secret)
+
+
+def payment_gateway_dep() -> PaymentGateway:
+    return _payment_gateway()
 
 
 def manage_vehicles_dep(
@@ -333,6 +388,22 @@ def _bookings() -> BookingRepository:
 
 def booking_repository_dep() -> BookingRepository:
     return _bookings()
+
+
+def create_quote_dep(
+    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
+    coupons: Annotated[CouponService, Depends(coupon_service_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+) -> CreateQuote:
+    return CreateQuote(
+        catalog=catalog,
+        vehicles=vehicles,
+        pricing=pricing,
+        coupons=coupons,
+        bookings=bookings,
+    )
 
 
 @lru_cache
@@ -506,6 +577,8 @@ def create_booking_dep(
     pricing: Annotated[PricingService, Depends(pricing_service_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    coupons: Annotated[CouponService, Depends(coupon_service_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
     dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
 ) -> CreateBooking:
     return CreateBooking(
@@ -517,6 +590,8 @@ def create_booking_dep(
         pricing=pricing,
         clock=clock,
         policy=policy,
+        coupons=coupons,
+        wallet=wallet,
         dispatch=dispatch,
     )
 
@@ -575,6 +650,105 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+def create_payment_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    coupons: Annotated[CouponService, Depends(coupon_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> CreatePayment:
+    return CreatePayment(
+        payments=payments,
+        bookings=bookings,
+        gateway=gateway,
+        wallet=wallet,
+        coupons=coupons,
+        clock=clock,
+        gst_bps=settings.gst_bps,
+    )
+
+
+def apply_gateway_event_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+    notifier: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ApplyGatewayEvent:
+    return ApplyGatewayEvent(
+        payments=payments,
+        bookings=bookings,
+        wallet=wallet,
+        audit=audit,
+        notifier=notifier,
+        clock=clock,
+    )
+
+
+def create_wallet_topup_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> CreateWalletTopup:
+    return CreateWalletTopup(payments=payments, gateway=gateway, clock=clock)
+
+
+def refund_payment_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> RefundPayment:
+    return RefundPayment(payments=payments, gateway=gateway, wallet=wallet, clock=clock)
+
+
+def list_earnings_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> ListEarnings:
+    return ListEarnings(
+        bookings=bookings, payments=payments, share_bps=settings.mechanic_labor_share_bps
+    )
+
+
+def mark_cash_collected_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    notifier: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> MarkCashCollected:
+    return MarkCashCollected(payments=payments, bookings=bookings, notifier=notifier, clock=clock)
+
+
+def confirm_cash_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ConfirmCash:
+    return ConfirmCash(payments=payments, bookings=bookings, clock=clock)
+
+
+def reconcile_pending_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
+    apply: Annotated[ApplyGatewayEvent, Depends(apply_gateway_event_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ReconcilePendingPayments:
+    return ReconcilePendingPayments(payments=payments, gateway=gateway, apply=apply, clock=clock)
+
+
+def staff_confirm_cash_dep(
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> StaffConfirmCash:
+    return StaffConfirmCash(payments=payments, bookings=bookings, clock=clock)
 
 
 @lru_cache
@@ -705,9 +879,12 @@ def cancel_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
     notify: Annotated[Notify, Depends(notify_dep)],
 ) -> CancelBooking:
-    return CancelBooking(bookings=bookings, clock=clock, policy=policy, notify=notify)
+    return CancelBooking(
+        bookings=bookings, clock=clock, policy=policy, wallet=wallet, notify=notify
+    )
 
 
 def transition_booking_dep(

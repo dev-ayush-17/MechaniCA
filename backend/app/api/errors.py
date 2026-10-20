@@ -14,7 +14,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.domain.errors import (
     Conflict,
+    CouponRejected,
     DomainError,
+    InsufficientWallet,
     InvalidInput,
     NotFound,
     PermissionDenied,
@@ -49,6 +51,8 @@ _STATUS: dict[type[DomainError], int] = {
     PermissionDenied: 403,
     NotFound: 404,
     Conflict: 409,
+    InsufficientWallet: 402,
+    CouponRejected: 422,
     RateLimited: 429,
     Unavailable: 503,
 }
