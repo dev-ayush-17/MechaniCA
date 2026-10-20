@@ -9,6 +9,7 @@ import 'admin/admin_client.dart';
 import 'bookings/bookings_client.dart';
 import 'proofs/proofs_client.dart';
 import 'messages/messages_client.dart';
+import 'tracking/tracking_client.dart';
 import 'catalog/catalog_client.dart';
 import 'coupons/coupons_client.dart';
 import 'internal/internal_client.dart';
@@ -42,6 +43,7 @@ class RestClient {
   BookingsClient? _bookings;
   ProofsClient? _proofs;
   MessagesClient? _messages;
+  TrackingClient? _tracking;
   CatalogClient? _catalog;
   CouponsClient? _coupons;
   InternalClient? _internal;
@@ -66,6 +68,8 @@ class RestClient {
   ProofsClient get proofs => _proofs ??= ProofsClient(_dio, baseUrl: _baseUrl);
 
   MessagesClient get messages => _messages ??= MessagesClient(_dio, baseUrl: _baseUrl);
+
+  TrackingClient get tracking => _tracking ??= TrackingClient(_dio, baseUrl: _baseUrl);
 
   CatalogClient get catalog => _catalog ??= CatalogClient(_dio, baseUrl: _baseUrl);
 

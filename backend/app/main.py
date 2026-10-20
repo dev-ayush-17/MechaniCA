@@ -15,6 +15,7 @@ from app.api.v1 import (
     payments,
     quotes,
     reviews,
+    tracking,
     vehicles,
 )
 from app.api.v1.internal import jobs as internal_jobs
@@ -50,6 +51,8 @@ def create_app() -> FastAPI:
     app.include_router(payments.internal_router)
     app.include_router(invoices.router)
     app.include_router(invoices.internal_router)
+    app.include_router(tracking.links_router)
+    app.include_router(tracking.public_router)
     return app
 
 

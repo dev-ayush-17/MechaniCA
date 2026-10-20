@@ -9,6 +9,25 @@ enum AuthProviderKind {
       .firstWhere((k) => k.name == value, orElse: () => AuthProviderKind.fake);
 }
 
+enum LocationProviderKind {
+  fake,
+  rtdb;
+
+  static LocationProviderKind parse(String value) =>
+      LocationProviderKind.values.firstWhere(
+        (k) => k.name == value,
+        orElse: () => LocationProviderKind.fake,
+      );
+}
+
+enum MapsProviderKind {
+  fake,
+  google;
+
+  static MapsProviderKind parse(String value) => MapsProviderKind.values
+      .firstWhere((k) => k.name == value, orElse: () => MapsProviderKind.fake);
+}
+
 /// Build-time configuration. Business code reads this, never `String.fromEnvironment`.
 ///
 /// Set with `--dart-define-from-file=config/dev.json`.
@@ -18,6 +37,9 @@ class AppConfig {
     required this.apiBaseUrl,
     required this.useFirebaseEmulator,
     this.providerAuth = AuthProviderKind.fake,
+    this.providerLocation = LocationProviderKind.fake,
+    this.providerMaps = MapsProviderKind.fake,
+    this.mapsApiKey = '',
     this.firebaseEmulatorHost = '10.0.2.2',
   });
 
@@ -33,6 +55,16 @@ class AppConfig {
         providerAuth: AuthProviderKind.parse(
           const String.fromEnvironment('PROVIDER_AUTH', defaultValue: 'fake'),
         ),
+        providerLocation: LocationProviderKind.parse(
+          const String.fromEnvironment(
+            'PROVIDER_LOCATION',
+            defaultValue: 'fake',
+          ),
+        ),
+        providerMaps: MapsProviderKind.parse(
+          const String.fromEnvironment('PROVIDER_MAPS', defaultValue: 'fake'),
+        ),
+        mapsApiKey: const String.fromEnvironment('MAPS_API_KEY', defaultValue: ''),
         firebaseEmulatorHost: const String.fromEnvironment(
           'FIREBASE_EMULATOR_HOST',
           defaultValue: '10.0.2.2',
@@ -41,6 +73,9 @@ class AppConfig {
 
   final String firebaseEmulatorHost;
   final AuthProviderKind providerAuth;
+  final LocationProviderKind providerLocation;
+  final MapsProviderKind providerMaps;
+  final String mapsApiKey;
   final AppEnv env;
   final String apiBaseUrl;
   final bool useFirebaseEmulator;

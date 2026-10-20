@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.application.location_gate import sync_location_gate
 from app.application.notify import Notify
 from app.domain.booking import Booking, LineStatus
 from app.domain.booking_state import BookingStatus, actor_for, assert_transition
@@ -9,6 +10,7 @@ from app.domain.parts_proof import REQUIRED_PROOF_KINDS
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.location_tracking import LocationTrackingService
 from app.ports.parts_proof_repository import PartsProofRepository
 
 
@@ -20,6 +22,7 @@ class TransitionBooking:
     clock: Clock
     proofs: PartsProofRepository | None = None
     notify: Notify | None = None
+    locations: LocationTrackingService | None = None
 
     async def execute(
         self,
@@ -49,6 +52,8 @@ class TransitionBooking:
             mechanic_id = None
         updated = booking.with_status(target, now=self.clock.now(), mechanic_id=mechanic_id)
         saved = await self.bookings.save(updated)
+        if self.locations is not None:
+            await sync_location_gate(self.locations, saved)
         await self._emit(saved, target)
         return saved
 

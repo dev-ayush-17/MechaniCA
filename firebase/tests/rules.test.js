@@ -6,6 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
+import { ref, set } from 'firebase/database';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 let env;
@@ -14,6 +15,7 @@ before(async () => {
   env = await initializeTestEnvironment({
     projectId: 'demo-mechupp',
     firestore: { rules: readFileSync('firestore.rules', 'utf8') },
+    database: { rules: readFileSync('database.rules.json', 'utf8') },
   });
 });
 
@@ -23,6 +25,7 @@ after(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
+  await env.clearDatabase();
   // The Admin SDK (FastAPI) bypasses rules, so seed with rules disabled.
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
@@ -84,6 +87,11 @@ beforeEach(async () => {
       bookingId: 'b1',
       mechanicId: 'mech',
       status: 'open',
+    });
+    await set(ref(ctx.database(), 'bookingGates/b1'), {
+      customerId: 'cust',
+      mechanicId: 'mech',
+      locationOpen: true,
     });
   });
 });
@@ -255,3 +263,26 @@ describe('firestore rules', () => {
     await assertFails(setDoc(doc(mech, 'bookings/b1/messages/m3'), { text: 'nope' }));
   });
 });
+
+const point = { lat: 25.5941, lng: 85.1376, accuracyM: 20, recordedAt: 1 };
+
+describe('rtdb location rules', () => {
+  it('rules_allow_own_location_write', async () => {
+    const mechDb = env.authenticatedContext('mech').database();
+    const custDb = env.authenticatedContext('cust').database();
+    await assertSucceeds(set(ref(mechDb, 'liveLocations/b1/mechanic'), point));
+    await assertSucceeds(set(ref(custDb, 'liveLocations/b1/customer'), point));
+  });
+
+  it('rules_deny_other_party_location_write', async () => {
+    const mechDb = env.authenticatedContext('mech').database();
+    const custDb = env.authenticatedContext('cust').database();
+    await assertFails(set(ref(mechDb, 'liveLocations/b1/customer'), point));
+    await assertFails(set(ref(custDb, 'liveLocations/b1/mechanic'), point));
+    await assertFails(
+      set(ref(env.authenticatedContext('other').database(), 'liveLocations/b1/mechanic'), point),
+    );
+    await assertFails(set(ref(custDb, 'bookingGates/b1'), { locationOpen: false }));
+  });
+});
+
