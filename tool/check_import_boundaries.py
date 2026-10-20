@@ -25,7 +25,7 @@ DART_BANNED = (
     "google_maps_flutter",
     "google_maps",
 )
-PY_BANNED = ("firebase_admin", "google.cloud", "cashfree", "googlemaps")
+PY_BANNED = ("firebase_admin", "google.cloud", "cashfree", "googlemaps", "reportlab")
 
 DART_IMPORT = re.compile(r"""^\s*(?:import|export)\s+['"]package:([^/'"]+)""")
 PY_IMPORT = re.compile(r"^\s*(?:from|import)\s+([\w.]+)")
