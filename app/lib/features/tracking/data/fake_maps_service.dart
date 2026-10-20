@@ -6,6 +6,7 @@ class FakeMapsService implements MapsService {
   FakeMapsService({this.failRoute = false});
 
   bool failRoute;
+  int routeCalls = 0;
 
   static const patna = GeoPoint(lat: 25.5941, lng: 85.1376);
   static const summary = RouteSummary(
@@ -32,6 +33,7 @@ class FakeMapsService implements MapsService {
     required double destLat,
     required double destLng,
   }) async {
+    routeCalls += 1;
     if (failRoute) return const Err(Unavailable());
     return const Ok(summary);
   }

@@ -94,7 +94,9 @@ import '../features/wallet/data/fake_wallet_api.dart';
 import '../features/wallet/data/http_wallet_api.dart';
 import '../features/wallet/domain/wallet_api.dart';
 import '../features/wallet/presentation/wallet_controller.dart';
+import '../features/tracking/data/adapters/google_maps_service.dart';
 import '../features/tracking/data/adapters/rtdb_location_tracking_service.dart';
+import '../features/tracking/data/cached_maps_service.dart';
 import '../features/tracking/data/fake_location_tracking_service.dart';
 import '../features/tracking/data/fake_maps_service.dart';
 import '../features/tracking/data/fake_tracking_link_api.dart';
@@ -127,7 +129,20 @@ final locationTrackingServiceProvider = Provider<LocationTrackingService>((ref) 
 });
 
 final mapsServiceProvider = Provider<MapsService>((ref) {
-  return FakeMapsService();
+  final config = ref.watch(appConfigProvider);
+  final inner =
+      config.providerMaps == MapsProviderKind.google && config.mapsApiKey.isNotEmpty
+          ? GoogleMapsService(
+              dio: Dio(
+                BaseOptions(
+                  connectTimeout: const Duration(seconds: 10),
+                  receiveTimeout: const Duration(seconds: 10),
+                ),
+              ),
+              apiKey: config.mapsApiKey,
+            )
+          : FakeMapsService();
+  return CachedMapsService(inner: inner, clock: ref.watch(clockProvider));
 });
 
 final trackingLinkApiProvider = Provider<TrackingLinkApi>((ref) {
