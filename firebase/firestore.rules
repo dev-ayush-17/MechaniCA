@@ -11,6 +11,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isSelf(uid);
       allow write: if false;
+      match /notifications/{id} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
       match /{sub=**} {
         allow read: if isSelf(uid);
         allow write: if false;
@@ -51,6 +55,11 @@ service cloud.firestore {
 
     match /serviceCatalog/{code} {
       allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /offers/{offerId} {
+      allow read: if signedIn() && resource.data.mechanicId == request.auth.uid;
       allow write: if false;
     }
 

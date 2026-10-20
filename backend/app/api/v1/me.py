@@ -9,11 +9,13 @@ from app.api.deps import (
     bootstrap_user_dep,
     create_mechanic_draft_dep,
     principal_dep,
+    register_device_dep,
     user_repository_dep,
 )
 from app.api.errors import error_responses
 from app.application.bootstrap_user import BootstrapUser, Intent
 from app.application.create_mechanic_draft import CreateMechanicDraft
+from app.application.register_device import RegisterDevice
 from app.core.logging import log_info
 from app.domain.errors import NotFound
 from app.domain.user import Principal, User
@@ -70,6 +72,27 @@ async def bootstrap(
     response.status_code = 201 if created else 200
     log_info("user bootstrapped", user_id=user.id, created=created)
     return UserOut.of(user)
+
+
+class RegisterDeviceRequest(_Camel):
+    token: str
+    platform: str
+
+
+class DeviceOut(_Camel):
+    platform: str
+    updated_at: datetime
+
+
+@router.post("/devices", response_model=DeviceOut)
+async def register_device(
+    body: RegisterDeviceRequest,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[RegisterDevice, Depends(register_device_dep)],
+) -> DeviceOut:
+    stored = await use_case.execute(principal, token=body.token, platform=body.platform)
+    log_info("device registered", user_id=principal.user_id, platform=stored.platform.value)
+    return DeviceOut(platform=stored.platform.value, updated_at=stored.updated_at)
 
 
 @router.get("", response_model=UserOut)

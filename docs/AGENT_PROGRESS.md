@@ -99,3 +99,64 @@ Branch: `feat/m12-chat`. FR-COM-001–004.
 **Next**
 
 PR against `main`. Do not merge from this session. M07/M09/M10/M13 are parallel and out of this branch.
+
+## M07 notes
+
+Branch: `feat/m07-dispatch` from `origin/main` (M06 merged). Isolated worktree `C:/Users/l/AppDev/Aethenox-m07`.
+
+Done:
+
+- Sequential dispatch: one open offer per booking, max three attempts, ranking from chapter 14 / ADR-013.
+- Offer accept/reject HTTP. Second accept loses (`offer_gone`). ExpireOffer and extra-line timeout are safe to run twice.
+- Fake `JobScheduler` in dev (`MECHUPP_PROVIDER_SCHEDULER=fake`). Cloud Tasks adapter exists and is never bound in fake/dev.
+- Sweep expires leftover offers and pending extra lines if a task was not placed.
+- Recording `NotificationSender` fake: `send()` is recorded and never throws into the booking path. No FCM.
+- Mechanic offer screen (accept/reject) and legal status buttons. Complete allowed when there are no part lines; part-replacement lines still block (M13).
+- Extra-work 10-minute timeout auto-rejects the pending line without changing totals.
+- Customer booking-details copy: finding / still looking / failed / SOS failed (chapter 14).
+- Named tests: `dispatch_second_accept_loses`, `dispatch_third_miss_fails`, `sos_timeout_is_20_seconds`, `mechanic_with_active_job_is_skipped`, `expired_offer_is_idempotent`, `outside_service_area_excluded`. Widget tests for the offer screen and failed copy.
+
+Left / follow-ups (not this PR):
+
+- Real FCM adapter (M09).
+- Map tiles and live tracking (M08). Tracking may still use the old animation.
+- Parts photos required to complete (M13).
+- Production Cloud Tasks project (owner). Do not block on GCP.
+
+Next: M08 tracking after this PR merges. Parallel milestones (M09, M10, M12, M13) stay on their own branches.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- Firebase emulators.
+- Cloud Tasks against a GCP project.
+- Android / iOS device builds. Widget tests cover offer UI, status buttons, and failed copy.
+
+## M09 notes
+
+M09 notifications is done on `feat/m09-notifications` from `origin/main` (a6f48ed). Isolated worktree `C:/Users/l/AppDev/Aethenox-m09`.
+
+Done:
+
+- Chapter 17 matrix lives in `backend/app/domain/notification_templates.py`. Every event id has a non-empty title.
+- In-app docs at `users/{userId}/notifications/{id}`. Owner list/read/delete via API. Clients cannot write notification docs (rules + test).
+- `NotificationSender` port, recording fake, FCM adapter (`backend/app/adapters/fcm.py`). `POST /v1/me/devices` is idempotent by token.
+- SMS stays behind `MECHUPP_SMS_ENABLED`, default off. `sms_not_called_when_flag_off` passes.
+- Existing notifications screen bound to `features/notifications/`. Empty copy "No notifications yet." Denied banner copy on home. Permission screen calls `requestOnce` once.
+- Assigned / arrived / cancelled emit after the booking write. `failed_push_does_not_roll_back_booking` passes.
+- Payment and verification templates are sender functions unit-tested with a direct call. M10/M04 can hook them later.
+
+Left / follow-ups:
+
+- No debug FCM token on this machine. Recording fake plus the in-app row is the proof. Do not stall on a Firebase project.
+- Real FCM send needs `MECHUPP_PROVIDER_NOTIFY=fcm` and a Firebase project (owner).
+- SMS vendor is still out of scope. Flag stays off.
+- Offer/extra-work/payment events wait for M07/M10 to call the same `Notify.emit` / `notify_payment_paid`.
+
+Next: open the M09 PR. Do not start another milestone in this worktree.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`) were **not run**. This machine has no Java. CI installs Java 21.
+- `FcmNotificationSender` has not sent a real push.
+- The app was not built for Android or iOS here. Widget tests cover empty copy, denied banner copy, and a single OS prompt.

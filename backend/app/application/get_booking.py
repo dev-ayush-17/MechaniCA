@@ -17,6 +17,9 @@ class GetBooking:
         return booking
 
     async def list_mine(self, principal: Principal) -> list[Booking]:
+        if principal.role == Role.MECHANIC:
+            items = await self.bookings.list_by_mechanic(principal.user_id)
+            return sorted(items, key=lambda b: b.created_at, reverse=True)
         if principal.role != Role.CUSTOMER:
             return []
         items = await self.bookings.list_by_customer(principal.user_id)
