@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../navigation/route_names.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../booking/domain/sos_payload.dart';
@@ -25,38 +26,49 @@ class EmergencyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Emergency Assistance'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
+        title: Text(l10nOf(context).emergencyAssistance),
+        leading: IconButton(
+          tooltip: l10nOf(context).back,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // SOS Button
-            GestureDetector(
-              onLongPress: () => context.push(
-                RouteNames.emergencyTracking,
-                extra: sosPayloadFor('SOS'),
-              ),
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  gradient: const RadialGradient(colors: [AppColors.primaryRed, Color(0xFF7B0000)]),
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: AppColors.primaryRed.withValues(alpha: 0.6), blurRadius: 40, spreadRadius: 10)],
+            Semantics(
+              key: const ValueKey('sos-control'),
+              button: true,
+              label: l10nOf(context).sos,
+              hint: l10nOf(context).sosSemanticsHint,
+              child: GestureDetector(
+                onLongPress: () => context.push(
+                  RouteNames.emergencyTracking,
+                  extra: sosPayloadFor('SOS'),
                 ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('SOS', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: 4)),
-                    Text('Hold for 2s', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
+                child: ExcludeSemantics(
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      gradient: const RadialGradient(colors: [AppColors.primaryRed, Color(0xFF7B0000)]),
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: AppColors.primaryRed.withValues(alpha: 0.6), blurRadius: 40, spreadRadius: 10)],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(l10nOf(context).sos, style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: 4)),
+                        Text(l10nOf(context).sosHoldHint, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
             const SizedBox(height: 12),
-            const Text('Need Immediate Help?', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(l10nOf(context).needImmediateHelp, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             const Text('We are here for you', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 32),
@@ -105,7 +117,7 @@ class EmergencyScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             AppButton(
-              label: 'Call Support',
+              label: l10nOf(context).callSupport,
               icon: Icons.call_rounded,
               onPressed: () => showAppSnackbar(context, 'Calling emergency support...'),
             ),
@@ -149,7 +161,11 @@ class _EmergencyTrackingScreenState extends State<EmergencyTrackingScreen> with 
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('${widget.payload.reason} Assistance'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
+        leading: IconButton(
+          tooltip: l10nOf(context).back,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

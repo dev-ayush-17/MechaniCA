@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_hi.dart';
 
 // ignore_for_file: type=lint
 
@@ -62,7 +63,7 @@ import 'app_localizations_en.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,14 +86,17 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('hi'),
+  ];
 
   /// Product name shown on the splash screen.
   ///
@@ -105,6 +109,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your Bike. Our Responsibility.'**
   String get appTagline;
+
+  /// Semantics and tooltip for back icon buttons.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// Primary payment button when the amount is not shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get pay;
+
+  /// Primary pay button on a completed booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay now'**
+  String get payNow;
+
+  /// Primary confirm/pay button on the booking price step.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay {amount}'**
+  String payAmount(String amount);
+
+  /// Opens live tracking from booking details.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Live'**
+  String get trackLive;
+
+  /// Live tracking screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Tracking'**
+  String get liveTracking;
+
+  /// Share a public tracking link.
+  ///
+  /// In en, this message translates to:
+  /// **'Share tracking'**
+  String get shareTracking;
+
+  /// Payment status after the SDK returns. Not paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for confirmation'**
+  String get waitingForConfirmation;
+
+  /// Payment reached paid after the server webhook.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
+  /// Shown when payment poll times out.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is still processing. We\'ll notify you.'**
+  String get paymentProcessing;
+
+  /// Quote line for labor.
+  ///
+  /// In en, this message translates to:
+  /// **'Labor'**
+  String get labor;
+
+  /// Quote line for the convenience fee.
+  ///
+  /// In en, this message translates to:
+  /// **'Convenience fee'**
+  String get convenienceFee;
+
+  /// Quote line for GST.
+  ///
+  /// In en, this message translates to:
+  /// **'GST'**
+  String get gst;
+
+  /// Quote total label. Must stay readable at 1.6 text scale.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount'**
+  String get totalAmount;
+
+  /// Price step heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Price Estimate'**
+  String get priceEstimate;
+
+  /// Offline error on the booking confirm button.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to book.'**
+  String get connectToBook;
+
+  /// Emergency SOS control label. International distress letters stay as SOS.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS'**
+  String get sos;
+
+  /// Visible hint under the SOS control.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold for 2s'**
+  String get sosHoldHint;
+
+  /// Screen-reader hint for the SOS control.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold for 2 seconds to request emergency help'**
+  String get sosSemanticsHint;
+
+  /// Emergency screen title.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Assistance'**
+  String get emergencyAssistance;
+
+  /// Copy under the SOS control.
+  ///
+  /// In en, this message translates to:
+  /// **'Need Immediate Help?'**
+  String get needImmediateHelp;
+
+  /// Emergency support call button.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Support'**
+  String get callSupport;
+
+  /// Onboarding age checkbox. Speed bump, not identity proof.
+  ///
+  /// In en, this message translates to:
+  /// **'I am 18 or older'**
+  String get iAm18OrOlder;
+
+  /// Settings row that opens the privacy policy URL.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicy;
+
+  /// Onboarding finish button.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// Onboarding next page button.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
 }
 
 class _AppLocalizationsDelegate
@@ -118,7 +278,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['en', 'hi'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -129,11 +289,14 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'hi':
+      return AppLocalizationsHi();
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

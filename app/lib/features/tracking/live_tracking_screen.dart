@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../widgets/shared/app_widgets.dart';
 import 'domain/location_filter.dart';
 import 'domain/tracking_copy.dart';
@@ -54,17 +55,18 @@ class LiveTrackingScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Live Tracking'),
+        title: Text(l10nOf(context).liveTracking),
         leading: IconButton(
+          tooltip: l10nOf(context).back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => context.pop(),
         ),
         actions: [
           TextButton(
             onPressed: () => _share(context, ref),
-            child: const Text(
-              kShareTracking,
-              style: TextStyle(color: AppColors.primaryRed, fontSize: 12),
+            child: Text(
+              l10nOf(context).shareTracking,
+              style: const TextStyle(color: AppColors.primaryRed, fontSize: 12),
             ),
           ),
         ],
@@ -316,6 +318,7 @@ class ServiceProgressScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Service Progress'),
         leading: IconButton(
+          tooltip: l10nOf(context).back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => context.pop(),
         ),
