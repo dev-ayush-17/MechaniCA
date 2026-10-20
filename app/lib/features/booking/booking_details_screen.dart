@@ -105,6 +105,15 @@ class BookingDetailsScreen extends ConsumerWidget {
             ],
 
             const SizedBox(height: 20),
+            if (booking.mechanicName != null) ...[
+              AppButton(
+                label: 'Chat',
+                icon: Icons.chat_bubble_outline_rounded,
+                isOutlined: true,
+                onPressed: () => context.push(RouteNames.jobChat, extra: booking.id),
+              ),
+              const SizedBox(height: 10),
+            ],
             if (booking.isActive) ...[
               AppButton(
                 label: 'Track Live',

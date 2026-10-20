@@ -52,9 +52,18 @@ import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/messages/messages_client.dart';
 import '../core/api/generated/notifications/notifications_client.dart';
 import '../core/api/generated/offers/offers_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
+import '../features/job_chat/data/fake_chat_service.dart';
+import '../features/job_chat/data/fake_telephony.dart';
+import '../features/job_chat/data/http_chat_service.dart';
+import '../features/job_chat/data/http_telephony.dart';
+import '../features/job_chat/data/offline_chat_service.dart';
+import '../features/job_chat/data/url_launcher_dialer.dart' show Dialer, UrlLauncherDialer;
+import '../features/job_chat/domain/chat_service.dart';
+import '../features/job_chat/domain/telephony_port.dart';
 import '../features/notifications/data/fake_notification_inbox.dart';
 import '../features/notifications/data/fake_push_permission.dart';
 import '../features/notifications/data/http_notification_inbox.dart';
@@ -74,8 +83,12 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 final loggerProvider = Provider<Logger>((ref) => const DeveloperLogger());
 
-final featureFlagsProvider =
-    Provider<FeatureFlags>((ref) => const StaticFeatureFlags());
+final featureFlagsProvider = Provider<FeatureFlags>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return StaticFeatureFlags({
+    'masked_call_enabled': config.env != AppEnv.prod,
+  });
+});
 
 /// `PROVIDER_AUTH` picks the adapter. Rollback is the fake binding.
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -268,6 +281,40 @@ final bookingApiProvider = Provider<BookingApi>((ref) {
   };
 });
 
+final chatServiceProvider = Provider<ChatService>((ref) {
+  final config = ref.watch(appConfigProvider);
+  final ChatService remote = switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeChatService(),
+    AuthProviderKind.firebase => HttpChatService(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+  return OfflineChatService(
+    remote: remote,
+    isOnline: () => ref.read(networkOnlineProvider),
+  );
+});
+
+final telephonyPortProvider = Provider<TelephonyPort>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeTelephony(),
+    AuthProviderKind.firebase => HttpTelephony(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
 final notificationInboxProvider = Provider<NotificationInbox>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
@@ -282,6 +329,8 @@ final notificationInboxProvider = Provider<NotificationInbox>((ref) {
       ),
   };
 });
+
+final dialerProvider = Provider<Dialer>((ref) => UrlLauncherDialer());
 
 final notificationsControllerProvider = StateNotifierProvider<
     NotificationsController, AsyncValue<List<InboxNotification>>>(

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     provider_notify: Literal["fake", "fcm"] = "fake"
     sms_enabled: bool = False
     provider_scheduler: Literal["fake", "cloud_tasks"] = "fake"
+    provider_chat: Literal["fake", "firestore"] = "fake"
+    provider_telephony: Literal["fake", "unavailable"] = "fake"
+    # None means on in dev/test/staging and off in prod (FR-COM-002).
+    masked_call_enabled: bool | None = None
     firebase_project_id: str | None = None
     internal_job_token: str = "dev-internal-job"  # noqa: S105 - local stand-in for OIDC
     cloud_tasks_location: str = "asia-south1"
@@ -67,7 +71,14 @@ class Settings(BaseSettings):
             )
         if self.provider_notify == "fcm" and not self.firebase_project_id:
             raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_NOTIFY=fcm")
+        if self.provider_chat == "firestore" and not self.firebase_project_id:
+            raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_CHAT=firestore")
         return self
+
+    def is_masked_call_enabled(self) -> bool:
+        if self.masked_call_enabled is None:
+            return self.app_env != "prod"
+        return self.masked_call_enabled
 
 
 @lru_cache

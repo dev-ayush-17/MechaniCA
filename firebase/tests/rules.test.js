@@ -54,6 +54,12 @@ beforeEach(async () => {
       active: true,
       sortOrder: 1,
     });
+    await setDoc(doc(db, 'bookings/b1/messages/m1'), {
+      senderId: 'cust',
+      senderRole: 'customer',
+      text: 'On the way?',
+      state: 'sent',
+    });
     await setDoc(doc(db, 'users/cust/notifications/n1'), {
       templateId: 'mechanicAssigned',
       title: 'Mechanic assigned',
@@ -178,5 +184,28 @@ describe('firestore rules', () => {
     await assertFails(
       updateDoc(doc(db, 'serviceCatalog/general_service'), { baseLaborPaise: 1 }),
     );
+  });
+
+  it('parties_can_read_messages', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'bookings/b1/messages/m1')),
+    );
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('mech').firestore(), 'bookings/b1/messages/m1')),
+    );
+  });
+
+  it('strangers_cannot_read_messages', async () => {
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('other').firestore(), 'bookings/b1/messages/m1')),
+    );
+  });
+
+  it('client_cannot_write_messages', async () => {
+    const cust = env.authenticatedContext('cust').firestore();
+    const mech = env.authenticatedContext('mech').firestore();
+    await assertFails(setDoc(doc(cust, 'bookings/b1/messages/m2'), { text: 'nope' }));
+    await assertFails(updateDoc(doc(cust, 'bookings/b1/messages/m1'), { text: 'edit' }));
+    await assertFails(setDoc(doc(mech, 'bookings/b1/messages/m3'), { text: 'nope' }));
   });
 });

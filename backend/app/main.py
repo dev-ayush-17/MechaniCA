@@ -8,6 +8,7 @@ from app.api.v1 import (
     catalog,
     me,
     mechanic,
+    messages,
     notifications,
     offers,
     quotes,
@@ -32,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(offers.router)
     app.include_router(internal_jobs.router)
     app.include_router(notifications.router)
+    app.include_router(messages.router)
     app.include_router(mechanic.router)
     app.include_router(mechanic.upload_router)
     app.include_router(admin_verification.router)
