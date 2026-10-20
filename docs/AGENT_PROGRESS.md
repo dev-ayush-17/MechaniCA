@@ -7,10 +7,10 @@ Living log. Update this at the end of every session.
 | Field | Value |
 | --- | --- |
 | Phase | Implementation |
-| Branch | `main` |
-| Milestone in progress | None. Wave 5 is merging (M08 landed; M11 this PR). |
-| Next milestone | M14 dashboard (needs M08 + M11). Do not start M15/M16. |
-| Demo | Runs from `app/` with `flutter run`. Tracking (fake maps) and invoices are on this branch with Wave 4. |
+| Branch | `chore/m16-hardening` |
+| Milestone in progress | M16 hardening (this PR). MVP spec is implemented. |
+| Next milestone | None. Owner-only launch steps in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). |
+| Demo | Runs from `app/` with `flutter run`. Hindi ARB, a11y labels, chapter-16 rate limits, secret scan. |
 | Known broken | Nothing known. |
 
 ## Completed
@@ -23,6 +23,8 @@ Living log. Update this at the end of every session.
 | 2026-10-19 | M06: product booking statuses, idempotent `POST /v1/bookings`, transitions, cancel fees, SOS payload, extra-line approve/reject. Wizard submit and cancel UI. |
 | 2026-10-20 | Wave 4 merged: M07 dispatch (#15), M09 notifications (#14), M12 chat (#13), M13 parts/reviews (#12), M10 payments API (#16) + UI (#17). |
 | 2026-10-20 | Wave 5: M08 tracking API (#19) + UI (#21) merged. M11 invoices (#20) resolving onto that main. |
+| 2026-10-20 | Wave 6: M14 dashboard (#24) and M15 admin API (#22) + UI (#23) merged. |
+| 2026-10-20 | M16 hardening on `chore/m16-hardening`. |
 
 ## M06 notes and follow-ups
 
@@ -69,7 +71,7 @@ Follow-ups, not done here (scope):
 
 ## Next session
 
-M08 tracking and M11 invoices in parallel from this `main`. Specs: [M08-tracking.md](milestones/M08-tracking.md), [M11-invoices.md](milestones/M11-invoices.md). Do not start M14/M15/M16.
+MVP spec is implemented (M00–M16). Owner-only launch steps: [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Do not add features. Do not deploy production.
 
 ## M10 notes
 
@@ -339,3 +341,30 @@ Not run locally:
 - Admin Chrome full web build. `flutter analyze` is clean; width-gate widget test passes.
 
 Next: open both PRs against `main`. Do not start M14/M16 in this worktree.
+
+## M16 notes
+
+Branch: `chore/m16-hardening` from `origin/main` (80121a2, Wave 6 M14+M15). Isolated worktree. NFR-A11Y, NFR-I18N-002, NFR-BAT, chapters 16 and 21.
+
+The MVP spec is implemented. Remaining work is owner-only launch (staging soak, store, lawyer, live keys). See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
+
+Done:
+
+- Semantics on the pay button and SOS control. Icon-button tooltips on booking, tracking, payment, and SOS back controls. Price total still readable at 1.6 text scale. `textTertiary`/`textHint` bumped to AA on the dark background.
+- Hindi ARB for booking, tracking, payment, and SOS. English copy on those buttons is unchanged.
+- CI secret scan (`python tool/check_secrets.py`). Named test `secret_scan_fails_on_a_fixture`.
+- Chapter 16 HTTP rate limits: booking create 10/hour, payment create 10/hour, admin writes 60/min, public tracking 60/min/IP, webhook 300/min/IP. CORS allow-list (never `*`). Chat and OTP limits stay in their existing use cases/adapters.
+- Onboarding "I am 18 or older" stores `adultConfirmedAt` locally. Privacy policy placeholder `https://mechupp.example/privacy` in settings. Demo OTP hint is off in release builds (`kReleaseMode` and non-dev env).
+- Checklist tells the owner not to ship `com.example` (current id is `com.mechupp.app`) and not to ship sandbox payment keys. k6/locust notes against `/health` and quote.
+
+Named tests: `semantics_on_the_pay_button`, `semantics_on_the_sos_control`, `hi_locale_loads_the_booking_confirm_button`, `secret_scan_fails_on_a_fixture`, `eleventh_payment_create_is_rate_limited`.
+
+Filed as issues, not this PR:
+
+- Persist `adultConfirmedAt` on `users/{id}` (local speed bump only here).
+- SOS 3-failed-in-24h `sos_limited`.
+- FastAPI OTP request limit (Firebase/adapter already caps resend).
+
+Not run locally: Firestore/RTDB rules tests (no Java). App not built for Android/iOS here. OS language/text-scale toggle is a manual check.
+
+No new ports. No production deploy.
