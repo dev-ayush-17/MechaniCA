@@ -7,10 +7,10 @@ Living log. Update this at the end of every session.
 | Field | Value |
 | --- | --- |
 | Phase | Implementation |
-| Branch | `main` (`844f1d1`) |
-| Milestone in progress | None. Wave 4 is merged. |
-| Next milestone | M08 live tracking and M11 invoices, in parallel. |
-| Demo | Runs from `app/` with `flutter run`. Booking, dispatch, notifications, chat, parts/reviews, and payments are on main (fakes in demo). |
+| Branch | `main` |
+| Milestone in progress | None. Wave 5 is merging (M08 landed; M11 this PR). |
+| Next milestone | M14 dashboard (needs M08 + M11). Do not start M15/M16. |
+| Demo | Runs from `app/` with `flutter run`. Tracking (fake maps) and invoices are on this branch with Wave 4. |
 | Known broken | Nothing known. |
 
 ## Completed
@@ -22,6 +22,7 @@ Living log. Update this at the end of every session.
 | 2026-10-19 | M00 foundation (PR #4), M01 frontend foundations (PR #5), M02 auth (PR #6), rename to MechUpp (PR #7), M03 vehicles (PR #9), M04 mechanics (PR #8), M05 catalog/pricing (PR #10). All merged. |
 | 2026-10-19 | M06: product booking statuses, idempotent `POST /v1/bookings`, transitions, cancel fees, SOS payload, extra-line approve/reject. Wizard submit and cancel UI. |
 | 2026-10-20 | Wave 4 merged: M07 dispatch (#15), M09 notifications (#14), M12 chat (#13), M13 parts/reviews (#12), M10 payments API (#16) + UI (#17). |
+| 2026-10-20 | Wave 5: M08 tracking API (#19) + UI (#21) merged. M11 invoices (#20) resolving onto that main. |
 
 ## M06 notes and follow-ups
 
@@ -264,3 +265,29 @@ Follow-ups, not this milestone:
 - `google_maps_flutter` tiles. Fake placeholder is enough; Directions HTTP is the real Maps adapter.
 
 Packages: `firebase_database` 11.3.8 (RTDB live location, PR 1). No new packages on PR 2 (`share_plus` 11.0.0 already present).
+
+## M11 notes
+
+Branch: `feat/m11-invoices` from `origin/main` (a06c200, M10 merged). Isolated worktree. FR-INV-001, FR-INV-002.
+
+Done:
+
+- `InvoiceService.render/get`, month-scoped numbers `MC-YYYYMM-######`, GST 18% as CGST 9% + SGST 9% in paise. Invoice total equals the paid payment.
+- PDF via **reportlab** (pinned `reportlab==5.0.1`) in `backend/app/adapters/pdf.py`. Reason: no OS packages in the Cloud Run image, unlike WeasyPrint.
+- After paid (gateway apply, wallet pay, cash confirm/staff confirm), schedule `POST /v1/internal/invoices/render`. Payment HTTP does not wait on PDF (NFR-PERF-007). `render` is idempotent (`second_render_keeps_version_one`).
+- `FileStorage.put` writes `invoices/{bookingId}/v{n}.pdf`. GET `/v1/invoices/{bookingId}` returns metadata + signed download URL. Owner or staff; other customers get 403. Clients cannot write `invoices` in Firestore.
+- Invoice screen loads by booking id (no `mockInvoices.first`). Download + share via `share_plus` 11.0.0 (`SharePlus.instance.share` of the PDF file). Reason pinned: share the invoice file.
+- Named tests: `invoice_total_matches_payment`, `second_render_keeps_version_one`, `customer_cannot_read_another_invoice`. Widget tests: missing booking id shows loading then error; `b-paid` shows that total.
+
+Left / follow-ups:
+
+- Firestore adapter for `InvoiceRepository` (in-memory fake is the default).
+- Real Cloud Storage `put` adapter (fake stores bytes in memory).
+- Emailing the PDF, credit notes / explicit v2 re-render API, membership invoices.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
+- App not built for Android or iOS here.
+
+Next: PR against `main`. Do not merge. Do not start M08/M14/M15/M16 in this worktree.

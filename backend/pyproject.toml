@@ -9,6 +9,7 @@ dependencies = [
     "pydantic==2.14.1",
     "pydantic-settings==2.16.0",
     "uvicorn[standard]==0.54.0",
+    "reportlab==5.0.1",
 ]
 
 [project.optional-dependencies]
@@ -42,5 +43,12 @@ packages = ["app"]
 
 [[tool.mypy.overrides]]
 # The Admin SDK ships no type information.
-module = ["firebase_admin", "firebase_admin.*", "google.cloud", "google.cloud.*"]
+module = [
+    "firebase_admin",
+    "firebase_admin.*",
+    "google.cloud",
+    "google.cloud.*",
+    "reportlab",
+    "reportlab.*",
+]
 ignore_missing_imports = true

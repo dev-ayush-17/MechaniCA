@@ -2,6 +2,7 @@ import uuid
 from dataclasses import dataclass, replace
 
 from app.application.create_booking import hash_create_body, parse_idempotency_key
+from app.application.invoices import schedule_invoice_render
 from app.domain.booking import Booking, LineKind, LineStatus, PaymentMethod
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.catalog import BPS_DENOMINATOR
@@ -26,6 +27,7 @@ from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
 from app.ports.coupon_service import CouponService
+from app.ports.job_scheduler import JobScheduler
 from app.ports.payment_gateway import PaymentGateway
 from app.ports.payment_repository import PaymentRepository
 from app.ports.wallet_service import WalletService
@@ -53,6 +55,7 @@ class CreatePayment:
     coupons: CouponService
     clock: Clock
     gst_bps: int
+    scheduler: JobScheduler | None = None
 
     async def execute(
         self,
@@ -180,4 +183,5 @@ class CreatePayment:
             saved = await self.payments.save(paid, expected_version=saved.version)
             assert_transition(booking.status, BookingStatus.PAID, "system")
             await self.bookings.save(booking.with_status(BookingStatus.PAID, now=now))
+            await schedule_invoice_render(self.scheduler, booking.id, now)
         return saved

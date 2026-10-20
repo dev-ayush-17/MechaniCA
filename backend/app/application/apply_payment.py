@@ -4,6 +4,7 @@ import logging
 import uuid
 from dataclasses import dataclass, replace
 
+from app.application.invoices import schedule_invoice_render
 from app.application.location_gate import sync_location_gate
 from app.domain.audit import AuditEvent
 from app.domain.booking_state import BookingStatus, assert_transition
@@ -14,6 +15,7 @@ from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 from app.ports.audit_log import AuditLog
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.job_scheduler import JobScheduler
 from app.ports.location_tracking import LocationTrackingService
 from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.payment_repository import PaymentRepository
@@ -30,6 +32,7 @@ class ApplyGatewayEvent:
     audit: AuditLog
     notifier: NotificationSender
     clock: Clock
+    scheduler: JobScheduler | None = None
     locations: LocationTrackingService | None = None
 
     async def execute(self, event: GatewayEvent) -> Payment:
@@ -115,6 +118,7 @@ class ApplyGatewayEvent:
                 await self.bookings.save(paid)
                 if self.locations is not None:
                     await sync_location_gate(self.locations, paid)
+                await schedule_invoice_render(self.scheduler, saved.booking_id, now)
         await self._notify(saved, "paymentPaid")
         return saved
 

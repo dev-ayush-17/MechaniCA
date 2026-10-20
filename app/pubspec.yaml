@@ -35,7 +35,7 @@ dependencies:
   # Platform
   url_launcher: 6.3.2
   image_picker: 1.2.3 # capture parts photos.
-  share_plus: 11.0.0
+  share_plus: 11.0.0 # share the invoice file
   path_provider: 2.1.6
   retrofit: 4.10.0
   json_annotation: 4.12.0

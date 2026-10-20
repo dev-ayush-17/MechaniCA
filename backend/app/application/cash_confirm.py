@@ -1,5 +1,6 @@
 from dataclasses import dataclass, replace
 
+from app.application.invoices import schedule_invoice_render
 from app.domain.booking import Booking
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.errors import InvalidInput, InvalidTransition, NotFound, PermissionDenied
@@ -8,6 +9,7 @@ from app.domain.payment import Payment, PaymentGatewayKind, PaymentStatus
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.job_scheduler import JobScheduler
 from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.payment_repository import PaymentRepository
 
@@ -54,6 +56,7 @@ class ConfirmCash:
     payments: PaymentRepository
     bookings: BookingRepository
     clock: Clock
+    scheduler: JobScheduler | None = None
 
     async def execute(self, principal: Principal, payment_id: str, *, paid: bool) -> Payment:
         if principal.role != Role.CUSTOMER:
@@ -81,6 +84,7 @@ class ConfirmCash:
         if booking.status is BookingStatus.COMPLETED:
             assert_transition(booking.status, BookingStatus.PAID, "system")
             await self.bookings.save(booking.with_status(BookingStatus.PAID, now=now))
+        await schedule_invoice_render(self.scheduler, booking.id, now)
         return saved
 
 
@@ -89,6 +93,7 @@ class StaffConfirmCash:
     payments: PaymentRepository
     bookings: BookingRepository
     clock: Clock
+    scheduler: JobScheduler | None = None
 
     async def execute(self, principal: Principal, payment_id: str, *, note: str) -> Payment:
         if principal.role not in {Role.ADMIN, Role.SUPER_ADMIN, Role.SUPPORT}:
@@ -110,6 +115,7 @@ class StaffConfirmCash:
         if booking.status is BookingStatus.COMPLETED:
             assert_transition(booking.status, BookingStatus.PAID, "system")
             await self.bookings.save(booking.with_status(BookingStatus.PAID, now=now))
+        await schedule_invoice_render(self.scheduler, booking.id, now)
         return saved
 
 

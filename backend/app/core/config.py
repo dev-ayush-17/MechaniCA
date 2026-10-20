@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     service_area_lng: float = 85.1376
     service_area_radius_km: float = 50.0
     review_blocked_words: str = "spam,scam"
+    # Clearly fake GSTIN placeholder for MVP invoices (FR-INV-001).
+    gstin: str = "22AAAAA0000A1Z5"
 
     @model_validator(mode="after")
     def _check_auth_provider(self) -> "Settings":
