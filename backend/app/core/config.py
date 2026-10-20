@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     review_blocked_words: str = "spam,scam"
     # Clearly fake GSTIN placeholder for MVP invoices (FR-INV-001).
     gstin: str = "22AAAAA0000A1Z5"
+    # Comma-separated. Never "*". Chapter 16 CORS allow-list.
+    cors_origins: str = "http://localhost:8080,http://127.0.0.1:8080,http://localhost:3000"
+
+    def cors_origin_list(self) -> list[str]:
+        return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
 
     @model_validator(mode="after")
     def _check_auth_provider(self) -> "Settings":

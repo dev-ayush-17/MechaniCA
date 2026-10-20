@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../navigation/route_names.dart';
 
 class _OnboardingPage {
@@ -54,6 +56,9 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _ctrl = PageController();
   int _current = 0;
+  bool _adultConfirmed = false;
+
+  static const adultConfirmedAtKey = 'adultConfirmedAt';
 
   @override
   void dispose() {
@@ -61,12 +66,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  Future<void> _persistAdultConfirmed() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(adultConfirmedAtKey, DateTime.now().toUtc().toIso8601String());
+    } on Object {
+      return;
+    }
+  }
+
   void _next() {
     if (_current < _pages.length - 1) {
       _ctrl.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
-    } else {
-      context.go(RouteNames.login);
+      return;
     }
+    if (!_adultConfirmed) return;
+    _persistAdultConfirmed();
+    context.go(RouteNames.login);
   }
 
   @override
@@ -88,7 +104,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             top: MediaQuery.of(context).padding.top + 16,
             right: 20,
             child: TextButton(
-              onPressed: () => context.go(RouteNames.login),
+              onPressed: () {
+                if (_current < _pages.length - 1) {
+                  _ctrl.jumpToPage(_pages.length - 1);
+                  return;
+                }
+                _next();
+              },
               child: const Text('Skip', style: TextStyle(color: AppColors.textSecondary)),
             ),
           ),
@@ -114,7 +136,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  GestureDetector(
+                  if (_current == _pages.length - 1) ...[
+                    CheckboxListTile(
+                      value: _adultConfirmed,
+                      onChanged: (value) => setState(() => _adultConfirmed = value ?? false),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: AppColors.primaryRed,
+                      title: Text(
+                        l10nOf(context).iAm18OrOlder,
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  Opacity(
+                    opacity: _current == _pages.length - 1 && !_adultConfirmed ? 0.45 : 1,
+                    child: GestureDetector(
                     onTap: _next,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
@@ -128,7 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          _current == _pages.length - 1 ? 'Get Started' : 'Next',
+                          _current == _pages.length - 1 ? l10nOf(context).getStarted : l10nOf(context).next,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -137,6 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                     ),
+                  ),
                   ),
                 ],
               ),

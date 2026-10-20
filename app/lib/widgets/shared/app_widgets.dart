@@ -50,7 +50,12 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
     final bgColor = widget.color ?? AppColors.primaryRed;
     final fgColor = widget.textColor ?? Colors.white;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      enabled: widget.onPressed != null && !widget.isLoading,
+      label: widget.label,
+      child: ExcludeSemantics(
+        child: GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) => _ctrl.reverse(),
       onTapCancel: () => _ctrl.reverse(),
@@ -59,7 +64,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         scale: _scale,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: widget.height,
+          constraints: BoxConstraints(minHeight: widget.height),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             gradient: widget.isOutlined
                 ? null
@@ -92,6 +98,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.icon != null) ...[
                         Icon(widget.icon, color: widget.isOutlined ? bgColor : fgColor, size: 18),
@@ -99,6 +106,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                       ],
                       Text(
                         widget.label,
+                        textAlign: TextAlign.center,
+                        softWrap: true,
                         style: TextStyle(
                           color: widget.isOutlined ? bgColor : fgColor,
                           fontSize: 15,
@@ -108,6 +117,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                     ],
                   ),
           ),
+        ),
+      ),
         ),
       ),
     );
@@ -132,22 +143,26 @@ class AppIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = color ?? AppColors.primaryRed;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: c.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: c),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w600)),
-          ],
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: c.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: c),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
       ),
     );

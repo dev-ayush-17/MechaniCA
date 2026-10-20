@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../composition/providers.dart';
 import '../../../core/error/result.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/l10n.dart';
 import '../../../widgets/shared/app_widgets.dart';
 import '../domain/payment.dart';
 
@@ -71,7 +72,7 @@ class _PayStepState extends ConsumerState<PayStep> {
     final checkout = widget.checkout ?? () async => 'success';
     await checkout();
     if (!mounted) return;
-    setState(() => _status = 'Waiting for confirmation');
+    setState(() => _status = l10nOf(context).waitingForConfirmation);
     final deadline = DateTime.now().add(widget.pollFor);
     _poll = Timer.periodic(widget.pollInterval, (timer) async {
       if (!mounted) {
@@ -85,7 +86,7 @@ class _PayStepState extends ConsumerState<PayStep> {
         if (!mounted) return;
         setState(() {
           _busy = false;
-          _status = 'Paid';
+          _status = l10nOf(context).paid;
         });
         return;
       }
@@ -94,7 +95,7 @@ class _PayStepState extends ConsumerState<PayStep> {
         if (!mounted) return;
         setState(() {
           _busy = false;
-          _status = "Payment is still processing. We'll notify you.";
+          _status = l10nOf(context).paymentProcessing;
         });
       }
     });
@@ -119,7 +120,8 @@ class _PayStepState extends ConsumerState<PayStep> {
             const SizedBox(height: 12),
           ],
           AppButton(
-            label: 'Pay',
+            key: const ValueKey('pay-button'),
+            label: l10nOf(context).pay,
             isLoading: _busy,
             onPressed: _busy ? null : _pay,
           ),
@@ -143,7 +145,14 @@ class PayBookingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Pay')),
+      appBar: AppBar(
+        title: Text(l10nOf(context).pay),
+        leading: IconButton(
+          tooltip: l10nOf(context).back,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       body: PayStep(bookingId: bookingId, method: method),
     );
   }

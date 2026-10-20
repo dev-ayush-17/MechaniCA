@@ -20,8 +20,9 @@ class AppColors {
   // Text Colors
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFAAAAAA);
-  static const Color textTertiary = Color(0xFF6B6B6B);
-  static const Color textHint = Color(0xFF4A4A4A);
+  // #8A8A8A on #0D0D0D meets WCAG AA (~5.5:1) for body-sized text.
+  static const Color textTertiary = Color(0xFF8A8A8A);
+  static const Color textHint = Color(0xFF767676);
 
   // Input Colors
   static const Color inputBackground = Color(0xFF252528);

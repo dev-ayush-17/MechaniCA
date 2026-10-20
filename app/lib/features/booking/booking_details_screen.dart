@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../navigation/route_names.dart';
 import '../../models/booking_model.dart';
 import '../../mock/mock_data.dart';
@@ -29,7 +30,11 @@ class BookingDetailsScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Booking Details'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
+        leading: IconButton(
+          tooltip: l10nOf(context).back,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           if (booking.isActive)
             TextButton(
@@ -117,7 +122,7 @@ class BookingDetailsScreen extends ConsumerWidget {
             ],
             if (booking.isActive) ...[
               AppButton(
-                label: 'Track Live',
+                label: l10nOf(context).trackLive,
                 icon: Icons.location_on_rounded,
                 onPressed: () => context.push(RouteNames.liveTracking, extra: booking.id),
               ),
@@ -137,7 +142,8 @@ class BookingDetailsScreen extends ConsumerWidget {
             ],
             if (booking.status == BookingStatus.completed) ...[
               AppButton(
-                label: 'Pay now',
+                key: const ValueKey('pay-now'),
+                label: l10nOf(context).payNow,
                 onPressed: () => context.push(RouteNames.pay, extra: {
                   'bookingId': booking.id,
                   'method': paymentMethodCode(booking.paymentMethod),

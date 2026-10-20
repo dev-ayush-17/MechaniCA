@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/l10n.dart';
 import '../../../widgets/shared/app_widgets.dart';
 import '../../vehicles/domain/vehicle.dart';
 import '../domain/pricing.dart';
@@ -87,9 +88,9 @@ class _PriceStepState extends ConsumerState<PriceStep> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Price Estimate',
-                  style: TextStyle(
+                Text(
+                  l10nOf(context).priceEstimate,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -176,15 +177,16 @@ class _PriceStepState extends ConsumerState<PriceStep> {
                 const SizedBox(height: 8),
               ],
               AppButton(
+                key: const ValueKey('pay-confirm'),
                 label: quote == null
-                    ? 'Pay'
-                    : 'Pay ${formatPaise(quote.totalPaise)}',
+                    ? l10nOf(context).pay
+                    : l10nOf(context).payAmount(formatPaise(quote.totalPaise)),
                 isLoading: _isLoading,
                 onPressed: quote == null
                     ? null
                     : () async {
                         if (!ref.read(networkOnlineProvider)) {
-                          setState(() => _confirmError = 'Connect to book.');
+                          setState(() => _confirmError = l10nOf(context).connectToBook);
                           return;
                         }
                         setState(() {
@@ -225,17 +227,18 @@ class _PriceStepState extends ConsumerState<PriceStep> {
         style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
       );
     }
+    final l10n = l10nOf(context);
     return Column(
       children: [
-        _priceRow('Labor', formatPaise(quote.laborPaise)),
-        _priceRow('Convenience fee', formatPaise(quote.feePaise)),
+        _priceRow(l10n.labor, formatPaise(quote.laborPaise)),
+        _priceRow(l10n.convenienceFee, formatPaise(quote.feePaise)),
         _priceRow(
-          'GST',
+          l10n.gst,
           formatPaise(quote.gstPaise),
           color: AppColors.textSecondary,
         ),
         const Divider(color: AppColors.divider, height: 24),
-        _priceRow('Total Amount', formatPaise(quote.totalPaise), bold: true),
+        _priceRow(l10n.totalAmount, formatPaise(quote.totalPaise), bold: true),
       ],
     );
   }
@@ -245,15 +248,19 @@ Widget _priceRow(String label, String value, {Color? color, bool bold = false}) 
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-        Text(
-          value,
-          style: TextStyle(
-            color: color ?? Colors.white,
-            fontSize: 13,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+        Expanded(
+          child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        ),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: color ?? Colors.white,
+              fontSize: 13,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
         ),
       ],
