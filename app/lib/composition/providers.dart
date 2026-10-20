@@ -18,6 +18,7 @@ import '../features/vehicles/data/vehicle_sync_worker.dart';
 import '../features/vehicles/domain/vehicle_repository.dart';
 import '../features/vehicles/presentation/vehicles_controller.dart';
 import '../core/config/app_config.dart';
+import '../core/error/result.dart';
 import '../core/flags/feature_flags.dart';
 import '../core/logging/logger.dart';
 import '../core/time/clock.dart';
@@ -82,6 +83,10 @@ import '../features/offers/data/fake_coupon_api.dart';
 import '../features/offers/data/http_coupon_api.dart';
 import '../features/offers/domain/coupon_api.dart';
 import '../features/offers/domain/coupon_offer.dart';
+import '../features/invoice/data/fake_invoice_api.dart';
+import '../features/invoice/data/http_invoice_api.dart';
+import '../features/invoice/domain/invoice.dart';
+import '../features/invoice/domain/invoice_api.dart';
 import '../features/payments/data/fake_earnings_api.dart';
 import '../features/payments/data/fake_payment_api.dart';
 import '../features/payments/data/http_earnings_api.dart';
@@ -462,4 +467,24 @@ final earningsProvider = FutureProvider<EarningsList>((ref) async {
     onOk: (items) => items,
     onErr: (failure) => throw Exception(failure.message),
   );
+});
+
+final invoiceApiProvider = Provider<InvoiceApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeInvoiceApi(demoFallback: true),
+    AuthProviderKind.firebase => HttpInvoiceApi(
+        client: ref.watch(restClientProvider).invoices,
+        dio: Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 15),
+        )),
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final invoiceProvider =
+    FutureProvider.family<Result<Invoice>, String>((ref, bookingId) {
+  return ref.watch(invoiceApiProvider).get(bookingId);
 });

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
+
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
+import 'domain/invoice.dart';
 
 class InvoiceScreen extends ConsumerWidget {
   final String bookingId;
@@ -12,14 +15,16 @@ class InvoiceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Use mock invoice data
-    final invoice = mockInvoices.first;
+    final asyncInvoice = ref.watch(invoiceProvider(bookingId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Invoice'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined),
@@ -27,101 +32,187 @@ class InvoiceScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Invoice header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppColors.bikeCardGradient,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('MechUpp', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.success.withValues(alpha: 0.3))),
-                        child: const Text('PAID', style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w700)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  const Text('Your Bike. Our Responsibility.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 16),
-                  const Divider(color: AppColors.divider),
-                  const SizedBox(height: 12),
-                  _invRow('Invoice No', invoice.invoiceNumber),
-                  _invRow('Date', '${invoice.date.day} May 2024'),
-                  _invRow('Bike', invoice.bikeNumber),
-                  _invRow('Payment', invoice.paymentMethod),
-                ],
-              ),
-            ).animate().fadeIn(),
-
-            const SizedBox(height: 16),
-
-            // Items
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Service Details', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
-                  const Divider(color: AppColors.divider),
-                  ...invoice.items.map((item) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(item.name, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
-                        Text('x${item.quantity}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                        const SizedBox(width: 12),
-                        Text('₹${item.total.toInt()}', style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      ],
-                    ),
-                  )),
-                  const Divider(color: AppColors.divider),
-                  _sumRow('Subtotal', '₹${(invoice.serviceCharge + invoice.pickupCharges + invoice.partsCost).toInt()}'),
-                  _sumRow('Discount', '-₹${invoice.discount.toStringAsFixed(0)}', color: AppColors.success),
-                  _sumRow('GST (18%)', '₹${invoice.gst.toStringAsFixed(0)}', color: AppColors.textSecondary),
-                  const Divider(color: AppColors.divider),
-                  _sumRow('Total Amount', '₹${invoice.totalAmount.toStringAsFixed(0)}', bold: true),
-                ],
-              ),
-            ).animate().fadeIn(delay: 200.ms),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              '✅ Thank you for trusting MechUpp!',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 24),
-
-            AppButton(
-              label: 'Download Invoice (PDF)',
-              icon: Icons.download_rounded,
-              onPressed: () => showAppSnackbar(context, 'Invoice downloaded to Downloads folder'),
-            ),
-            const SizedBox(height: 40),
-          ],
+      body: asyncInvoice.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _InvoiceError(message: error.toString()),
+        data: (result) => result.when(
+          onOk: (invoice) => _InvoiceBody(invoice: invoice),
+          onErr: (failure) => _InvoiceError(message: failure.message),
         ),
       ),
     );
   }
 }
+
+class _InvoiceError extends StatelessWidget {
+  const _InvoiceError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _InvoiceBody extends StatelessWidget {
+  const _InvoiceBody({required this.invoice});
+
+  final Invoice invoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateFormat('d MMM yyyy').format(invoice.createdAt.toLocal());
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: AppColors.bikeCardGradient,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'MechUpp',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        'PAID',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Your Bike. Our Responsibility.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: AppColors.divider),
+                const SizedBox(height: 12),
+                _invRow('Invoice No', invoice.number),
+                _invRow('Date', date),
+                _invRow('Bike', invoice.vehicleRegistration),
+                _invRow('Payment', invoice.paymentMethod),
+              ],
+            ),
+          ).animate().fadeIn(),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Service Details',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: AppColors.divider),
+                ...invoice.lines.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'x${item.quantity}',
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _rupees(item.amountPaise),
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(color: AppColors.divider),
+                _sumRow('Subtotal', _rupees(_subtotal(invoice))),
+                _sumRow('GST (18%)', _rupees(invoice.gstPaise), color: AppColors.textSecondary),
+                const Divider(color: AppColors.divider),
+                _sumRow('Total Amount', _rupees(invoice.totalPaise), bold: true),
+              ],
+            ),
+          ).animate().fadeIn(delay: 200.ms),
+          const SizedBox(height: 16),
+          const Text(
+            '✅ Thank you for trusting MechUpp!',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          AppButton(
+            label: 'Download Invoice (PDF)',
+            icon: Icons.download_rounded,
+            onPressed: () =>
+                showAppSnackbar(context, 'Invoice downloaded to Downloads folder'),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+int _subtotal(Invoice invoice) =>
+    invoice.lines.fold(0, (sum, line) => sum + line.amountPaise);
+
+String _rupees(int paise) => '₹${paise ~/ 100}';
 
 Widget _invRow(String label, String value) {
   return Padding(
@@ -130,7 +221,10 @@ Widget _invRow(String label, String value) {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+        ),
       ],
     ),
   );
@@ -143,7 +237,14 @@ Widget _sumRow(String label, String value, {Color? color, bool bold = false}) {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-        Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
+        Text(
+          value,
+          style: TextStyle(
+            color: color ?? Colors.white,
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
       ],
     ),
   );
