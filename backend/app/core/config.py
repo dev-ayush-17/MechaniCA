@@ -24,7 +24,13 @@ class Settings(BaseSettings):
     provider_vehicles: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
     provider_bookings: Literal["fake", "firestore"] = "fake"
+    provider_scheduler: Literal["fake", "cloud_tasks"] = "fake"
     firebase_project_id: str | None = None
+    internal_job_token: str = "dev-internal-job"  # noqa: S105 - local stand-in for OIDC
+    cloud_tasks_location: str = "asia-south1"
+    cloud_tasks_queue: str = "mechupp-jobs"
+    cloud_tasks_handler_base_url: str = "http://localhost:8080"
+    cloud_tasks_service_account: str | None = None
     convenience_fee_paise: int = 4900
     four_wheeler_labor_bps: int = 15000
     gst_bps: int = 1800
