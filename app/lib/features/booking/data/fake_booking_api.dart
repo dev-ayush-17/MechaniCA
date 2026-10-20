@@ -64,4 +64,12 @@ class FakeBookingApi implements BookingApi {
         );
     return Ok(booking);
   }
+
+  final openedDisputes = <String>[];
+
+  @override
+  Future<Result<void>> openDispute(String bookingId, {required String reason}) async {
+    openedDisputes.add('$bookingId:$reason');
+    return const Ok(null);
+  }
 }

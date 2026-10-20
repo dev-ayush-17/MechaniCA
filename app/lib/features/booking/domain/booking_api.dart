@@ -15,4 +15,6 @@ abstract class BookingApi {
   });
 
   Future<Result<Booking>> cancel(String bookingId, {required String reason});
+
+  Future<Result<void>> openDispute(String bookingId, {required String reason});
 }

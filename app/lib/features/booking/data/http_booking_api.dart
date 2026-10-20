@@ -4,6 +4,7 @@ import '../../../core/api/generated/bookings/bookings_client.dart';
 import '../../../core/api/generated/models/booking_mode.dart' as api;
 import '../../../core/api/generated/models/cancel_booking_request.dart';
 import '../../../core/api/generated/models/create_booking_request.dart';
+import '../../../core/api/generated/models/open_dispute_request.dart';
 import '../../../core/api/generated/models/payment_method.dart' as api;
 import '../../../core/api/generated/models/urgency.dart' as api;
 import '../../../core/error/result.dart';
@@ -89,6 +90,21 @@ class HttpBookingApi implements BookingApi {
           version: body.version,
         ),
       );
+    } on DioException catch (e) {
+      return Err(failureFromDio(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> openDispute(String bookingId, {required String reason}) async {
+    try {
+      final token = await _token();
+      await _client.openBookingDisputeV1BookingsBookingIdDisputesPost(
+        bookingId: bookingId,
+        body: OpenDisputeRequest(reason: reason),
+        authorization: token == null ? null : 'Bearer $token',
+      );
+      return const Ok(null);
     } on DioException catch (e) {
       return Err(failureFromDio(e));
     }
