@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 from app.domain.coupon import (
@@ -7,7 +8,7 @@ from app.domain.coupon import (
     CouponRedemption,
     CouponType,
 )
-from app.domain.errors import CouponRejected
+from app.domain.errors import Conflict, CouponRejected, InvalidInput, NotFound
 
 _START = datetime(2026, 1, 1, tzinfo=UTC)
 _END = datetime(2027, 1, 1, tzinfo=UTC)
@@ -137,6 +138,38 @@ class FakeCouponService:
             if len(user_used) >= coupon.per_user_limit:
                 raise CouponRejected("Already used.")
         return coupon
+
+    async def list_all(self) -> list[Coupon]:
+        return list(self.coupons.values())
+
+    async def create(self, coupon: Coupon) -> Coupon:
+        code = coupon.code.strip().upper()
+        if code in self.coupons:
+            raise Conflict("That coupon code already exists.")
+        stored = replace(coupon, code=code)
+        self.coupons[code] = stored
+        return stored
+
+    async def update(self, coupon: Coupon) -> Coupon:
+        current = self.coupons.get(coupon.code.strip().upper())
+        if current is None:
+            raise NotFound("We could not find that coupon.")
+        if await self.redemption_count(current.code) > 0:
+            raise InvalidInput("Cannot edit a coupon that has redemptions.")
+        self.coupons[current.code] = coupon
+        return coupon
+
+    async def disable(self, code: str) -> Coupon:
+        current = self.coupons.get(code.strip().upper())
+        if current is None:
+            raise NotFound("We could not find that coupon.")
+        stored = replace(current, active=False)
+        self.coupons[stored.code] = stored
+        return stored
+
+    async def redemption_count(self, code: str) -> int:
+        needle = code.strip().upper()
+        return len([row for row in self.redemptions if row.coupon_code == needle])
 
     def _discount(self, coupon: Coupon, labor_paise: int) -> int:
         if coupon.type is CouponType.FLAT:

@@ -27,6 +27,10 @@ class PermissionDenied(DomainError):
     code = "permission_denied"
 
 
+class AccountSuspended(PermissionDenied):
+    code = "account_suspended"
+
+
 class NotFound(DomainError):
     code = "not_found"
 

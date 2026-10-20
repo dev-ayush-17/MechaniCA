@@ -1,10 +1,13 @@
 from dataclasses import dataclass, replace
+from uuid import uuid4
 
 from app.application.create_booking import parse_idempotency_key
+from app.domain.audit import AuditEvent
 from app.domain.errors import AlreadyRefunded, InvalidInput, NotFound, PermissionDenied
 from app.domain.payment import Payment, PaymentGatewayKind, PaymentStatus
 from app.domain.user import Principal, Role
 from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
+from app.ports.audit_log import AuditLog
 from app.ports.clock import Clock
 from app.ports.payment_gateway import PaymentGateway
 from app.ports.payment_repository import PaymentRepository
@@ -17,6 +20,7 @@ class RefundPayment:
     gateway: PaymentGateway
     wallet: WalletService
     clock: Clock
+    audit: AuditLog | None = None
 
     async def execute(
         self,
@@ -25,8 +29,10 @@ class RefundPayment:
         payment_id: str,
         amount_paise: int,
         idempotency_key: str | None,
+        request_id: str = "",
     ) -> Payment:
         if principal.role not in {Role.ADMIN, Role.SUPER_ADMIN}:
+            await self._audit(principal, "refund_denied", payment_id, request_id)
             raise PermissionDenied("Admin access required.")
         parse_idempotency_key(idempotency_key)
         if amount_paise <= 0:
@@ -67,4 +73,25 @@ class RefundPayment:
             updated_at=now,
             version=payment.version + 1,
         )
-        return await self.payments.save(updated, expected_version=payment.version)
+        saved = await self.payments.save(updated, expected_version=payment.version)
+        await self._audit(principal, "refund", payment_id, request_id)
+        return saved
+
+    async def _audit(
+        self, principal: Principal, action: str, payment_id: str, request_id: str
+    ) -> None:
+        if self.audit is None:
+            return
+        await self.audit.append(
+            AuditEvent(
+                id=uuid4().hex,
+                actor_id=principal.user_id,
+                role=principal.role.value,
+                action=action,
+                target_type="payment",
+                target_id=payment_id,
+                summary=action,
+                request_id=request_id,
+                created_at=self.clock.now(),
+            )
+        )

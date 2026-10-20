@@ -11,7 +11,9 @@ import '../models/booking_list_out.dart';
 import '../models/booking_out.dart';
 import '../models/cancel_booking_request.dart';
 import '../models/create_booking_request.dart';
+import '../models/dispute_out.dart';
 import '../models/line_decision_request.dart';
+import '../models/open_dispute_request.dart';
 import '../models/transition_request.dart';
 
 part 'bookings_client.g.dart';
@@ -46,6 +48,14 @@ abstract class BookingsClient {
   Future<BookingOut> cancelBookingV1BookingsBookingIdCancelPost({
     @Path('booking_id') required String bookingId,
     @Body() required CancelBookingRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// Open Booking Dispute
+  @POST('/v1/bookings/{booking_id}/disputes')
+  Future<DisputeOut> openBookingDisputeV1BookingsBookingIdDisputesPost({
+    @Path('booking_id') required String bookingId,
+    @Body() required OpenDisputeRequest body,
     @Header('authorization') String? authorization,
   });
 

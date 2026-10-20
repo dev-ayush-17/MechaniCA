@@ -19,6 +19,7 @@ from app.domain.booking_state import ACTIVE_STATUSES, BookingStatus
 from app.domain.catalog import QuoteInput
 from app.domain.coupon import CouponContext
 from app.domain.errors import (
+    AccountSuspended,
     BookingInProgress,
     IdempotencyConflict,
     IdempotencyKeyRequired,
@@ -29,14 +30,16 @@ from app.domain.errors import (
 )
 from app.domain.geo import haversine_km
 from app.domain.pricing import PricingService
-from app.domain.user import Principal, Role
+from app.domain.user import Principal, Role, UserStatus
 from app.ports.address_repository import AddressRepository
+from app.ports.analytics_service import AnalyticsService
 from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
 from app.ports.coupon_service import CouponService
 from app.ports.dispatch_service import DispatchService
 from app.ports.idempotency_store import IdempotencyRecord, IdempotencyStore
+from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
 from app.ports.wallet_service import WalletService
 
@@ -76,6 +79,8 @@ class CreateBooking:
     coupons: CouponService | None = None
     wallet: WalletService | None = None
     dispatch: DispatchService | None = None
+    users: UserRepository | None = None
+    analytics: AnalyticsService | None = None
 
     async def execute(
         self,
@@ -93,6 +98,10 @@ class CreateBooking:
     ) -> Booking:
         if principal.role != Role.CUSTOMER:
             raise PermissionDenied("Customer account required.")
+        if self.users is not None:
+            account = await self.users.get(principal.user_id)
+            if account is not None and account.status is UserStatus.SUSPENDED:
+                raise AccountSuspended("This account is suspended.")
         key = parse_idempotency_key(idempotency_key)
         body: dict[str, object] = {
             "vehicleId": vehicle_id,
@@ -207,6 +216,16 @@ class CreateBooking:
             reloaded = await self.bookings.get(saved.id)
             if reloaded is not None:
                 saved = reloaded
+        if self.analytics is not None:
+            await self.analytics.track(
+                "booking_submitted",
+                {
+                    "mode": saved.mode.value,
+                    "urgency": saved.urgency.value,
+                    "serviceCode": saved.service_code,
+                    "method": saved.payment_method.value,
+                },
+            )
         return saved
 
     async def _replay(

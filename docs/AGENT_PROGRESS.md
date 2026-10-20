@@ -312,4 +312,30 @@ Out of this PR: loyalty earn/burn, fuel/membership/referral/documents backends, 
 
 Not run locally: Firestore/RTDB rules tests (no Java). App not built for Android/iOS here.
 
-Next: PR against `main`. Do not merge. Do not start M15/M16.
+## M15 notes
+
+Split: API + named tests on `feat/m15-admin` (this PR). Admin web + "Report a problem" on `feat/m15-admin-ui`. Both `--base main`, same spec [M15-admin.md](milestones/M15-admin.md). Handwritten backend exceeded ~1,500 lines.
+
+Requirements: FR-ADM-001..009.
+
+Done (PR 1 API):
+
+- Ports: `DisputeRepository`, `AnalyticsService` (log adapter). `AuditLog.list_recent` is read-only.
+- Admin routes: users/search + suspend, verification applications, bookings filter, revenue from the payment ledger, coupon CRUD (no edit after redemptions), disputes note/resolve, audit, analytics counts.
+- Customer `POST /v1/bookings/{id}/disputes` after arrived. Second open conflicts.
+- Support can note and cannot refund/resolve. Admin refund reuses M10 and writes audit. Suspended users get `403 account_suspended` on booking create.
+- Server `AnalyticsService.track` drops forbidden properties (phone, token, …) and records booking/payment/dispatch events.
+- Named tests: `support_cannot_resolve_with_refund`, `suspend_blocks_booking_create`, `coupon_with_redemptions_cannot_be_edited`, `analytics_drops_phone_property`, `dispute_second_open_conflicts`. RBAC is asserted on the API, not only hidden buttons.
+
+Left / follow-ups (PR 2 UI):
+
+- `main_admin.dart` Flutter web, 1024 px width gate, queues (users, verification, orders, revenue, coupons, disputes, audit).
+- Booking details "Report a problem" only after arrived.
+- Do not import maps/camera/image_picker/firebase_database into the admin target.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
+- Admin Chrome build. `flutter analyze` for the UI PR.
+
+Next: open the API PR, then the UI PR. Do not start M14/M16 in this worktree.

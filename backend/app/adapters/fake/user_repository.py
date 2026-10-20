@@ -16,6 +16,16 @@ class FakeUserRepository:
         self._users[user.id] = user
         return user
 
+    async def search(self, query: str) -> list[User]:
+        needle = query.strip().lower()
+        if not needle:
+            return list(self._users.values())
+        return [
+            user
+            for user in self._users.values()
+            if needle in user.name.lower() or needle in user.phone_e164
+        ]
+
     async def list_contacts(self, owner_id: str) -> list[EmergencyContact]:
         return list(self._contacts.get(owner_id, {}).values())
 

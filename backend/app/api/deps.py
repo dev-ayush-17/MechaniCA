@@ -13,6 +13,7 @@ from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.chat_service import FakeChatService
 from app.adapters.fake.coupon_service import FakeCouponService
 from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
+from app.adapters.fake.dispute_repository import FakeDisputeRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.invoice_repository import FakeInvoiceRepository
@@ -32,8 +33,11 @@ from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.tracking_link_store import FakeTrackingLinkStore
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.fake.wallet_service import FakeWalletService
+from app.adapters.log.analytics import LogAnalyticsService
 from app.adapters.pdf import render_invoice_pdf
 from app.adapters.system_clock import SystemClock
+from app.application.admin_coupons import AdminCoupons
+from app.application.admin_queries import AdminQueries
 from app.application.apply_payment import ApplyGatewayEvent
 from app.application.bootstrap_user import BootstrapUser
 from app.application.cancel_booking import CancelBooking
@@ -44,6 +48,7 @@ from app.application.create_payment import CreatePayment
 from app.application.create_quote import CreateQuote
 from app.application.create_tracking_link import CreateTrackingLink
 from app.application.dispatch import SequentialDispatch
+from app.application.disputes import AddDisputeNote, OpenDispute, ResolveDispute
 from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
@@ -68,6 +73,7 @@ from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_chat_media import SignChatMedia
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.suspend_user import SuspendUser
 from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
 from app.application.update_profile import UpdateProfile
@@ -80,6 +86,7 @@ from app.domain.errors import PermissionDenied, Unauthenticated
 from app.domain.pricing import PricingService
 from app.domain.user import Principal, Role
 from app.ports.address_repository import AddressRepository
+from app.ports.analytics_service import AnalyticsService
 from app.ports.audit_log import AuditLog
 from app.ports.auth_verifier import AuthVerifier
 from app.ports.booking_repository import BookingRepository
@@ -88,6 +95,7 @@ from app.ports.chat_service import ChatService
 from app.ports.clock import Clock
 from app.ports.coupon_service import CouponService
 from app.ports.device_token_repository import DeviceTokenRepository
+from app.ports.dispute_repository import DisputeRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.invoice_repository import InvoiceRepository
@@ -347,6 +355,32 @@ async def admin_principal_dep(
     return principal
 
 
+async def staff_principal_dep(
+    principal: Annotated[Principal, Depends(principal_dep)],
+) -> Principal:
+    if principal.role not in (Role.SUPPORT, Role.ADMIN, Role.SUPER_ADMIN):
+        raise PermissionDenied("Staff access required.")
+    return principal
+
+
+@lru_cache
+def _disputes() -> FakeDisputeRepository:
+    return FakeDisputeRepository()
+
+
+def dispute_repository_dep() -> DisputeRepository:
+    return _disputes()
+
+
+@lru_cache
+def _analytics() -> LogAnalyticsService:
+    return LogAnalyticsService(clock=_clock())
+
+
+def analytics_service_dep() -> AnalyticsService:
+    return _analytics()
+
+
 def create_mechanic_draft_dep(
     mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
@@ -601,6 +635,7 @@ def dispatch_service_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
     scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
     locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
+    analytics: Annotated[AnalyticsService, Depends(analytics_service_dep)],
 ) -> SequentialDispatch:
     return SequentialDispatch(
         bookings=bookings,
@@ -610,6 +645,7 @@ def dispatch_service_dep(
         clock=clock,
         scheduler=scheduler,
         locations=locations,
+        analytics=analytics,
     )
 
 
@@ -699,6 +735,8 @@ def create_booking_dep(
     coupons: Annotated[CouponService, Depends(coupon_service_dep)],
     wallet: Annotated[WalletService, Depends(wallet_service_dep)],
     dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+    analytics: Annotated[AnalyticsService, Depends(analytics_service_dep)],
 ) -> CreateBooking:
     return CreateBooking(
         catalog=catalog,
@@ -712,6 +750,8 @@ def create_booking_dep(
         coupons=coupons,
         wallet=wallet,
         dispatch=dispatch,
+        users=users,
+        analytics=analytics,
     )
 
 
@@ -802,6 +842,7 @@ def apply_gateway_event_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
     scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
     locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
+    analytics: Annotated[AnalyticsService, Depends(analytics_service_dep)],
 ) -> ApplyGatewayEvent:
     return ApplyGatewayEvent(
         payments=payments,
@@ -812,6 +853,7 @@ def apply_gateway_event_dep(
         clock=clock,
         scheduler=scheduler,
         locations=locations,
+        analytics=analytics,
     )
 
 
@@ -828,8 +870,11 @@ def refund_payment_dep(
     gateway: Annotated[PaymentGateway, Depends(payment_gateway_dep)],
     wallet: Annotated[WalletService, Depends(wallet_service_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
 ) -> RefundPayment:
-    return RefundPayment(payments=payments, gateway=gateway, wallet=wallet, clock=clock)
+    return RefundPayment(
+        payments=payments, gateway=gateway, wallet=wallet, clock=clock, audit=audit
+    )
 
 
 def list_earnings_dep(
@@ -1067,3 +1112,76 @@ def register_device_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> RegisterDevice:
     return RegisterDevice(devices=devices, clock=clock)
+
+
+def open_dispute_dep(
+    disputes: Annotated[DisputeRepository, Depends(dispute_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+) -> OpenDispute:
+    return OpenDispute(disputes=disputes, bookings=bookings, clock=clock, audit=audit)
+
+
+def add_dispute_note_dep(
+    disputes: Annotated[DisputeRepository, Depends(dispute_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+) -> AddDisputeNote:
+    return AddDisputeNote(disputes=disputes, clock=clock, audit=audit)
+
+
+def resolve_dispute_dep(
+    disputes: Annotated[DisputeRepository, Depends(dispute_repository_dep)],
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    wallet: Annotated[WalletService, Depends(wallet_service_dep)],
+    refunds: Annotated[RefundPayment, Depends(refund_payment_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+) -> ResolveDispute:
+    return ResolveDispute(
+        disputes=disputes,
+        payments=payments,
+        wallet=wallet,
+        refunds=refunds,
+        clock=clock,
+        audit=audit,
+    )
+
+
+def suspend_user_dep(
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> SuspendUser:
+    return SuspendUser(users=users, audit=audit, clock=clock)
+
+
+def admin_queries_dep(
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    payments: Annotated[PaymentRepository, Depends(payment_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    disputes: Annotated[DisputeRepository, Depends(dispute_repository_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+    analytics: Annotated[AnalyticsService, Depends(analytics_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> AdminQueries:
+    return AdminQueries(
+        users=users,
+        bookings=bookings,
+        payments=payments,
+        mechanics=mechanics,
+        disputes=disputes,
+        audit=audit,
+        analytics=analytics,
+        clock=clock,
+    )
+
+
+def admin_coupons_dep(
+    coupons: Annotated[CouponService, Depends(coupon_service_dep)],
+    audit: Annotated[AuditLog, Depends(audit_log_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> AdminCoupons:
+    return AdminCoupons(coupons=coupons, audit=audit, clock=clock)
