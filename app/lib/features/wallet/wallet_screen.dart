@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/booking/domain/pricing.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'domain/wallet_snapshot.dart';
 
 // ─── WALLET SCREEN ────────────────────────────────────────────────────────────
 
@@ -21,24 +23,22 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(walletProvider.notifier).load('usr_001');
+      ref.read(walletLedgerProvider.notifier).load();
     });
   }
 
-  IconData _txnIcon(String type) {
-    switch (type) {
-      case 'cashback': return Icons.percent_rounded;
-      case 'referral': return Icons.people_rounded;
-      case 'payment': return Icons.payment_rounded;
+  IconData _txnIcon(String reason) {
+    switch (reason) {
       case 'topup': return Icons.add_rounded;
       case 'refund': return Icons.undo_rounded;
+      case 'payment': return Icons.payment_rounded;
       default: return Icons.swap_horiz_rounded;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final wallet = ref.watch(walletProvider);
+    final wallet = ref.watch(walletLedgerProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -69,7 +69,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           children: [
                             const Text('Wallet Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
                             const SizedBox(height: 8),
-                            Text('₹${wallet.balance.toStringAsFixed(0)}',
+                            Text(formatPaise(wallet.balancePaise),
                                 style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 16),
                             Row(
@@ -113,67 +113,90 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, i) {
-                      final txn = wallet.transactions[i];
-                      final icon = _txnIcon(txn.type);
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: (txn.isCredit ? AppColors.success : AppColors.error).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(icon, size: 20, color: txn.isCredit ? AppColors.success : AppColors.error),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(txn.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                                  Text(txn.subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '${txn.isCredit ? '+' : '-'}₹${txn.amount.toInt()}',
-                                  style: TextStyle(
-                                    color: txn.isCredit ? AppColors.success : AppColors.error,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  '${txn.date.day} May',
-                                  style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(delay: Duration(milliseconds: i * 50));
-                    },
-                    childCount: wallet.transactions.length,
+                if (wallet.items.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                      child: Text(
+                        'No transactions yet.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) {
+                        final txn = wallet.items[i];
+                        return _LedgerRow(item: txn, icon: _txnIcon(txn.reason), index: i);
+                      },
+                      childCount: wallet.items.length,
+                    ),
                   ),
-                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
               ],
             ),
     );
+  }
+}
+
+class _LedgerRow extends StatelessWidget {
+  const _LedgerRow({required this.item, required this.icon, required this.index});
+
+  final WalletLedgerItem item;
+  final IconData icon;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: (item.isCredit ? AppColors.success : AppColors.error).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: item.isCredit ? AppColors.success : AppColors.error),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.reason, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(item.direction, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${item.isCredit ? '+' : '-'}${formatPaise(item.amountPaise)}',
+                style: TextStyle(
+                  color: item.isCredit ? AppColors.success : AppColors.error,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                '${item.createdAt.day}/${item.createdAt.month}',
+                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: index * 50));
   }
 }
 
@@ -291,10 +314,11 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
               isLoading: _isLoading,
               onPressed: () async {
                 setState(() => _isLoading = true);
-                await ref.read(walletProvider.notifier).addMoney('usr_001', _amount);
+                final paise = (_amount * 100).round();
+                await ref.read(walletLedgerProvider.notifier).addMoney(paise);
                 if (context.mounted) {
                   setState(() => _isLoading = false);
-                  showAppSnackbar(context, '₹${_amount.toInt()} added to wallet!');
+                  showAppSnackbar(context, 'Waiting for confirmation');
                   context.pop();
                 }
               },

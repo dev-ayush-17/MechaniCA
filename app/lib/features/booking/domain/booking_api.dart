@@ -11,6 +11,7 @@ abstract class BookingApi {
     required String urgency,
     required String idempotencyKey,
     DateTime? scheduledStart,
+    String couponCode = '',
   });
 
   Future<Result<Booking>> cancel(String bookingId, {required String reason});

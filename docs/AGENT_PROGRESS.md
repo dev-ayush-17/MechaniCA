@@ -71,9 +71,9 @@ M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is
 
 ## M10 notes
 
-Split: API + tests this PR (`feat/m10-payments`). UI (wallet/offers/pay step, mechanic earnings screen, wizard coupon checks) is a second PR against the same spec. Handwritten backend already exceeded ~1,500 lines.
+Split: API + tests on `feat/m10-payments` (PR 1). UI on `feat/m10-payments-ui` (PR 2). Both `--base main`, same spec. Handwritten backend exceeded ~1,500 lines.
 
-Done:
+Done (PR 1 API):
 
 - Ports: `PaymentGateway`, `PaymentRepository`, `WalletService`, `CouponService`. Fake gateway signs with `mechupp_test_webhook_secret`. Cashfree adapter refuses sandbox keys when `APP_ENV=prod`.
 - Webhook verify on the raw body, replay by event id, amount/order mismatch leaves `pending` and writes `payment_mismatch`.
@@ -83,24 +83,25 @@ Done:
 - Recording notifier until M09. No invoice PDFs. No PAN/CVV/UPI PIN fields.
 - Named tests pass: `webhook_bad_signature_does_not_pay`, `webhook_replay_is_noop`, `webhook_amount_mismatch_does_not_pay`, `wallet_debit_cannot_go_negative`, `coupon_redeem_once`, `cash_requires_both_marks`, `client_sdk_success_is_not_paid`.
 
-Left for PR 2 (same spec, `--base main`):
+Done (PR 2 UI):
 
-- Wire `wallet_screen`, `offers_screen`, booking pay step ("Waiting for confirmation").
-- Characterization tests then delete wizard-local coupon checks.
-- Mechanic earnings screen copy: "Recorded earnings. Bank payout is not live yet."
-- Dart `FakeQuoteApi` still returns "Coupons arrive in M10." for nonempty codes; quotes API already applies `FLAT50`.
+- Wallet screen reads the ledger. Empty copy: "No transactions yet." Top-up waits for server confirmation.
+- Offers screen lists server coupons. Wizard coupon apply goes through `QuoteApi`. Invalid codes show the server message. `FakeQuoteApi` applies `FLAT50`.
+- Booking pay step: fake SDK success shows "Waiting for confirmation" and never "Paid" until GET says paid.
+- Mechanic earnings screen: "Recorded earnings. Bank payout is not live yet."
 
 Not run locally:
 
 - Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
 - Cashfree sandbox (no live keys). Fake gateway is the default.
-- Flutter UI of this milestone (deferred to PR 2). `flutter analyze` / `flutter test` still run against generated client + existing screens.
+- Cashfree checkout SDK (no live keys). Fake checkout returns "success" and does not mark paid.
 
 Follow-ups:
 
 - Firestore adapters for payments/wallet/coupons (in-memory fakes are the default, matching other M10 ports).
 - M09 NotificationSender swap in `deps.py` when that PR merges.
 - Invoice PDF is M11.
+- Live Cashfree SDK checkout on device.
 
 ## M13 notes
 

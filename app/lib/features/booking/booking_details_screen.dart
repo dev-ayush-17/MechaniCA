@@ -9,6 +9,7 @@ import '../../models/booking_model.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import 'domain/payment_method.dart';
 import 'presentation/cancel_booking_sheet.dart';
 import 'presentation/dispatch_status_copy.dart';
 
@@ -129,6 +130,14 @@ class BookingDetailsScreen extends ConsumerWidget {
               ),
             ],
             if (booking.status == BookingStatus.completed) ...[
+              AppButton(
+                label: 'Pay now',
+                onPressed: () => context.push(RouteNames.pay, extra: {
+                  'bookingId': booking.id,
+                  'method': paymentMethodCode(booking.paymentMethod),
+                }),
+              ),
+              const SizedBox(height: 10),
               AppButton(
                 label: 'View Invoice',
                 icon: Icons.receipt_long_rounded,

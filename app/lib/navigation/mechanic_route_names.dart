@@ -4,6 +4,7 @@ class MechanicRouteNames {
   static const login = '/login';
   static const otp = '/otp';
   static const home = '/home';
+  static const earnings = '/earnings';
   static const partsProof = '/jobs/proofs';
   static const jobChat = '/job-chat';
   static const offer = '/mechanic/offers/:offerId';

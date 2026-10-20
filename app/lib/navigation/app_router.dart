@@ -13,6 +13,7 @@ import '../features/booking/booking_flow_screen.dart';
 import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
 import '../features/job_chat/presentation/job_chat_screen.dart';
+import '../features/payments/presentation/pay_step.dart';
 import '../features/tracking/live_tracking_screen.dart';
 import '../features/inspection/digital_inspection_screen.dart';
 import '../features/parts_proof/presentation/customer_proofs_screen.dart';
@@ -111,6 +112,16 @@ final appRouter = GoRouter(
       builder: (_, state) {
         final bookingId = state.extra as String? ?? '';
         return BookingDetailsScreen(bookingId: bookingId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.pay,
+      builder: (_, state) {
+        final args = state.extra as Map<String, dynamic>? ?? {};
+        return PayBookingScreen(
+          bookingId: args['bookingId'] as String? ?? '',
+          method: args['method'] as String? ?? 'upi',
+        );
       },
     ),
     GoRoute(

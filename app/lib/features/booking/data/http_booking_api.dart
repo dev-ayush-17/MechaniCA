@@ -31,6 +31,7 @@ class HttpBookingApi implements BookingApi {
     required String urgency,
     required String idempotencyKey,
     DateTime? scheduledStart,
+    String couponCode = '',
   }) async {
     try {
       final token = await _token();
@@ -43,6 +44,7 @@ class HttpBookingApi implements BookingApi {
           paymentMethod: api.PaymentMethod.fromJson(paymentMethod),
           urgency: api.Urgency.fromJson(urgency),
           scheduledStart: scheduledStart,
+          couponCode: couponCode,
         ),
         idempotencyKey: idempotencyKey,
         authorization: token == null ? null : 'Bearer $token',

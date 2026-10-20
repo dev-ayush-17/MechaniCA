@@ -78,6 +78,21 @@ import '../features/notifications/domain/notification_inbox.dart';
 import '../features/notifications/domain/pending_deep_link.dart';
 import '../features/notifications/domain/push_permission.dart';
 import '../features/notifications/presentation/notifications_controller.dart';
+import '../features/offers/data/fake_coupon_api.dart';
+import '../features/offers/data/http_coupon_api.dart';
+import '../features/offers/domain/coupon_api.dart';
+import '../features/offers/domain/coupon_offer.dart';
+import '../features/payments/data/fake_earnings_api.dart';
+import '../features/payments/data/fake_payment_api.dart';
+import '../features/payments/data/http_earnings_api.dart';
+import '../features/payments/data/http_payment_api.dart';
+import '../features/payments/domain/earnings.dart';
+import '../features/payments/domain/earnings_api.dart';
+import '../features/payments/domain/payment_api.dart';
+import '../features/wallet/data/fake_wallet_api.dart';
+import '../features/wallet/data/http_wallet_api.dart';
+import '../features/wallet/domain/wallet_api.dart';
+import '../features/wallet/presentation/wallet_controller.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -376,6 +391,75 @@ final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
   final updatedAt = await ref.watch(catalogLocalStoreProvider).lastCachedAt();
   return result.when(
     onOk: (items) => CatalogSnapshot(services: items, updatedAt: updatedAt),
+    onErr: (failure) => throw Exception(failure.message),
+  );
+});
+
+Future<String?> _idToken(Ref ref) async {
+  return (await ref.read(authServiceProvider).currentSession())?.idToken;
+}
+
+final paymentApiProvider = Provider<PaymentApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakePaymentApi(),
+    AuthProviderKind.firebase => HttpPaymentApi(
+        client: ref.watch(restClientProvider).payments,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final walletApiProvider = Provider<WalletApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeWalletApi(),
+    AuthProviderKind.firebase => HttpWalletApi(
+        client: ref.watch(restClientProvider).wallet,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final walletLedgerProvider =
+    StateNotifierProvider<WalletLedgerNotifier, WalletLedgerState>(
+  (ref) => WalletLedgerNotifier(ref.watch(walletApiProvider)),
+);
+
+final couponApiProvider = Provider<CouponApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeCouponApi(),
+    AuthProviderKind.firebase => HttpCouponApi(
+        client: ref.watch(restClientProvider).coupons,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final couponsProvider = FutureProvider<List<CouponOffer>>((ref) async {
+  final result = await ref.watch(couponApiProvider).list();
+  return result.when(
+    onOk: (items) => items,
+    onErr: (failure) => throw Exception(failure.message),
+  );
+});
+
+final earningsApiProvider = Provider<EarningsApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeEarningsApi(),
+    AuthProviderKind.firebase => HttpEarningsApi(
+        client: ref.watch(restClientProvider).mechanic,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final earningsProvider = FutureProvider<EarningsList>((ref) async {
+  final result = await ref.watch(earningsApiProvider).list();
+  return result.when(
+    onOk: (items) => items,
     onErr: (failure) => throw Exception(failure.message),
   );
 });

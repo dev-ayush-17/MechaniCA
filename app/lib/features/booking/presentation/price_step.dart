@@ -50,7 +50,7 @@ class _PriceStepState extends ConsumerState<PriceStep> {
           serviceCode: service.id,
           vehicleId: flow.selectedBike?.id ?? '',
           vehicleType: VehicleType.twoWheeler,
-          couponCode: '',
+          couponCode: flow.couponCode ?? '',
         );
     if (!mounted) return;
     result.when(
