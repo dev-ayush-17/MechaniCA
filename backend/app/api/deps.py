@@ -19,7 +19,9 @@ from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
 from app.adapters.fake.offer_repository import FakeOfferRepository
+from app.adapters.fake.parts_proof_repository import FakePartsProofRepository
 from app.adapters.fake.readiness import FakeReadiness
+from app.adapters.fake.review_repository import FakeReviewRepository
 from app.adapters.fake.telephony import FakeTelephony
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -38,7 +40,9 @@ from app.application.manage_vehicles import ManageVehicles
 from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.notify import Notify
+from app.application.parts_proofs import CreatePartsProof, HidePartsProof, ListPartsProofs
 from app.application.register_device import RegisterDevice
+from app.application.reviews import EditReview, HideReview, ListReviews, SubmitReview
 from app.application.send_message import SendMessage
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_chat_media import SignChatMedia
@@ -68,7 +72,9 @@ from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
 from app.ports.offer_repository import OfferRepository
+from app.ports.parts_proof_repository import PartsProofRepository
 from app.ports.readiness import ReadinessCheck
+from app.ports.review_repository import ReviewRepository
 from app.ports.role_claims import RoleClaims
 from app.ports.telephony import TelephonyPort
 from app.ports.user_repository import UserRepository
@@ -515,6 +521,38 @@ def create_booking_dep(
     )
 
 
+@lru_cache
+def _proofs() -> PartsProofRepository:
+    return FakePartsProofRepository()
+
+
+def parts_proof_repository_dep() -> PartsProofRepository:
+    return _proofs()
+
+
+def create_parts_proof_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+    storage: Annotated[FileStorage, Depends(file_storage_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> CreatePartsProof:
+    return CreatePartsProof(bookings=bookings, proofs=proofs, storage=storage, clock=clock)
+
+
+def list_parts_proofs_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> ListPartsProofs:
+    return ListPartsProofs(bookings=bookings, proofs=proofs)
+
+
+def hide_parts_proof_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
+) -> HidePartsProof:
+    return HidePartsProof(bookings=bookings, proofs=proofs)
+
+
 def get_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
 ) -> GetBooking:
@@ -537,6 +575,62 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+@lru_cache
+def _reviews() -> ReviewRepository:
+    return FakeReviewRepository()
+
+
+def review_repository_dep() -> ReviewRepository:
+    return _reviews()
+
+
+def _blocked_words(settings: Settings) -> tuple[str, ...]:
+    return tuple(word.strip() for word in settings.review_blocked_words.split(",") if word.strip())
+
+
+def submit_review_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> SubmitReview:
+    return SubmitReview(
+        bookings=bookings,
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def edit_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> EditReview:
+    return EditReview(
+        reviews=reviews,
+        mechanics=mechanics,
+        clock=clock,
+        blocked_words=_blocked_words(settings),
+    )
+
+
+def list_reviews_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+) -> ListReviews:
+    return ListReviews(reviews=reviews)
+
+
+def hide_review_dep(
+    reviews: Annotated[ReviewRepository, Depends(review_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+) -> HideReview:
+    return HideReview(reviews=reviews, mechanics=mechanics)
 
 
 @lru_cache
@@ -619,9 +713,10 @@ def cancel_booking_dep(
 def transition_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
     notify: Annotated[Notify, Depends(notify_dep)],
 ) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock, notify=notify)
+    return TransitionBooking(bookings=bookings, clock=clock, proofs=proofs, notify=notify)
 
 
 def register_device_dep(

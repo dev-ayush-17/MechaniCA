@@ -33,6 +33,7 @@ class RouteNames {
 
   // Inspection & Invoice
   static const String inspection = '/inspection';
+  static const String inspectionMock = '/inspection/mock';
   static const String photoGallery = '/inspection/gallery';
   static const String invoice = '/invoice';
 
@@ -81,4 +82,7 @@ class RouteNames {
   // History
   static const String history = '/history';
   static const String serviceDetail = '/history/detail';
+
+  static const String reviewSubmit = '/reviews/submit';
+  static const String reviews = '/reviews';
 }

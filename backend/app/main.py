@@ -12,6 +12,7 @@ from app.api.v1 import (
     notifications,
     offers,
     quotes,
+    reviews,
     vehicles,
 )
 from app.api.v1.internal import jobs as internal_jobs
@@ -37,6 +38,8 @@ def create_app() -> FastAPI:
     app.include_router(mechanic.router)
     app.include_router(mechanic.upload_router)
     app.include_router(admin_verification.router)
+    app.include_router(reviews.proofs_router)
+    app.include_router(reviews.reviews_router)
     return app
 
 

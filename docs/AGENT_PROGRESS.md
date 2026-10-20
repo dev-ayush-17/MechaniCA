@@ -69,6 +69,37 @@ Follow-ups, not done here (scope):
 
 M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.
 
+## M13 notes
+
+| Field | Value |
+| --- | --- |
+| Branch | `feat/m13-parts-reviews` |
+| Status | Done. PR opening. |
+| Requirements | FR-MEC-008, FR-REV-001..004 |
+
+Done:
+
+- Complete is blocked when a part-replacement line exists and fewer than three proofs are stored. Jobs with no part lines still complete.
+- Proof paths are server-chosen (`partsProof/{bookingId}/{lineId}/{kind}/{uuid}.jpg`) with booking/line/timestamp metadata.
+- Mechanic capture + offline queue (`image_picker` 1.2.3, reason: capture parts photos).
+- Customer inspection route shows server proofs (before/after/old part). Old mock stays at `/inspection/mock` behind a debug button.
+- Reviews: one per booking, phone numbers rejected, staff hide via API, aggregates recomputed on the server.
+- Firestore rules: reviews and proofs are not client-writable; proofs are not deletable by the mechanic; `ratingAvg`/`ratingCount` stay server-only.
+
+Left / follow-ups:
+
+- Firestore adapters for `ReviewRepository` and `PartsProofRepository` (fakes are bound; real adapters next).
+- Pixel-level recompression beyond `image_picker` maxWidth/quality 80.
+- Review photo upload UI (API already accepts up to 3 paths).
+- Wire submit-review from the paid booking details screen (M10 payment status).
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): this machine has no Java. CI installs Java 21.
+- App not built for Android or iOS here.
+
+Next: wait for CI on the M13 PR. Do not start another milestone in this worktree.
+
 ## M12 notes
 
 Branch: `feat/m12-chat`. FR-COM-001–004.
