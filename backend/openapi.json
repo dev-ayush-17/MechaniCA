@@ -1617,6 +1617,76 @@
         "title": "ProofOut",
         "type": "object"
       },
+      "PublicTrackingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "destLat": {
+            "title": "Destlat",
+            "type": "number"
+          },
+          "destLng": {
+            "title": "Destlng",
+            "type": "number"
+          },
+          "etaSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etaseconds"
+          },
+          "mechanicFirstName": {
+            "title": "Mechanicfirstname",
+            "type": "string"
+          },
+          "mechanicLat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mechaniclat"
+          },
+          "mechanicLng": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mechaniclng"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "vehicleLabel": {
+            "title": "Vehiclelabel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mechanicFirstName",
+          "vehicleLabel",
+          "status",
+          "etaSeconds",
+          "mechanicLat",
+          "mechanicLng",
+          "destLat",
+          "destLng"
+        ],
+        "title": "PublicTrackingOut",
+        "type": "object"
+      },
       "QuoteOut": {
         "properties": {
           "cgstPaise": {
@@ -2116,6 +2186,31 @@
           "amountPaise"
         ],
         "title": "TopupRequest",
+        "type": "object"
+      },
+      "TrackingLinkOut": {
+        "additionalProperties": false,
+        "properties": {
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "path",
+          "expiresAt"
+        ],
+        "title": "TrackingLinkOut",
         "type": "object"
       },
       "TransitionRequest": {
@@ -4222,6 +4317,94 @@
         "summary": "Hide Parts Proof",
         "tags": [
           "proofs"
+        ]
+      }
+    },
+    "/v1/bookings/{booking_id}/tracking-links": {
+      "post": {
+        "operationId": "create_tracking_link_v1_bookings__booking_id__tracking_links_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingLinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Create Tracking Link",
+        "tags": [
+          "tracking"
         ]
       }
     },
@@ -6620,6 +6803,48 @@
         "summary": "Cash Confirm",
         "tags": [
           "payments"
+        ]
+      }
+    },
+    "/v1/public/tracking/{token}": {
+      "get": {
+        "operationId": "get_public_tracking_v1_public_tracking__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicTrackingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Get Public Tracking",
+        "tags": [
+          "tracking"
         ]
       }
     },

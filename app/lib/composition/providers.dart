@@ -93,6 +93,9 @@ import '../features/wallet/data/fake_wallet_api.dart';
 import '../features/wallet/data/http_wallet_api.dart';
 import '../features/wallet/domain/wallet_api.dart';
 import '../features/wallet/presentation/wallet_controller.dart';
+import '../features/tracking/data/adapters/rtdb_location_tracking_service.dart';
+import '../features/tracking/data/fake_location_tracking_service.dart';
+import '../features/tracking/domain/location_tracking_service.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -101,6 +104,20 @@ final appConfigProvider =
     Provider<AppConfig>((ref) => AppConfig.fromEnvironment());
 
 final clockProvider = Provider<Clock>((ref) => const SystemClock());
+
+final trackingRoleProvider = Provider<String>((ref) => 'customer');
+
+final locationTrackingServiceProvider = Provider<LocationTrackingService>((ref) {
+  final config = ref.watch(appConfigProvider);
+  if (config.providerLocation == LocationProviderKind.rtdb &&
+      config.providerAuth == AuthProviderKind.firebase) {
+    return createRtdbLocationTrackingService(
+      config: config,
+      role: ref.watch(trackingRoleProvider),
+    );
+  }
+  return FakeLocationTrackingService(role: ref.watch(trackingRoleProvider));
+});
 
 final loggerProvider = Provider<Logger>((ref) => const DeveloperLogger());
 

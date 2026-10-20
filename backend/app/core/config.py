@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     provider_scheduler: Literal["fake", "cloud_tasks"] = "fake"
     provider_chat: Literal["fake", "firestore"] = "fake"
     provider_telephony: Literal["fake", "unavailable"] = "fake"
+    provider_maps: Literal["fake", "google"] = "fake"
+    maps_api_key: str | None = None
+    provider_location: Literal["fake", "rtdb"] = "fake"
+    firebase_database_url: str | None = None
     # None means on in dev/test/staging and off in prod (FR-COM-002).
     masked_call_enabled: bool | None = None
     firebase_project_id: str | None = None
@@ -88,6 +92,13 @@ class Settings(BaseSettings):
             raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_NOTIFY=fcm")
         if self.provider_chat == "firestore" and not self.firebase_project_id:
             raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_CHAT=firestore")
+        if self.provider_location == "rtdb" and (
+            not self.firebase_project_id or not self.firebase_database_url
+        ):
+            raise ValueError(
+                "MECHUPP_FIREBASE_PROJECT_ID and MECHUPP_FIREBASE_DATABASE_URL "
+                "are required for PROVIDER_LOCATION=rtdb"
+            )
         return self
 
     def is_masked_call_enabled(self) -> bool:

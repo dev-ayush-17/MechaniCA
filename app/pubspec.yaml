@@ -42,6 +42,7 @@ dependencies:
   freezed_annotation: 3.1.0
   firebase_core: 3.15.0
   firebase_auth: 5.5.0
+  firebase_database: 11.3.8 # RTDB live location adapter (FR-TRK-004).
   drift: 2.35.2
   drift_flutter: 0.3.1
   sqlite3_flutter_libs: 0.6.0+eol
