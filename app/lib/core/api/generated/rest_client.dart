@@ -11,6 +11,7 @@ import 'catalog/catalog_client.dart';
 import 'internal/internal_client.dart';
 import 'me/me_client.dart';
 import 'mechanic/mechanic_client.dart';
+import 'notifications/notifications_client.dart';
 import 'offers/offers_client.dart';
 import 'quotes/quotes_client.dart';
 import 'uploads/uploads_client.dart';
@@ -36,6 +37,7 @@ class RestClient {
   InternalClient? _internal;
   MeClient? _me;
   MechanicClient? _mechanic;
+  NotificationsClient? _notifications;
   OffersClient? _offers;
   QuotesClient? _quotes;
   UploadsClient? _uploads;
@@ -54,6 +56,8 @@ class RestClient {
   MeClient get me => _me ??= MeClient(_dio, baseUrl: _baseUrl);
 
   MechanicClient get mechanic => _mechanic ??= MechanicClient(_dio, baseUrl: _baseUrl);
+
+  NotificationsClient get notifications => _notifications ??= NotificationsClient(_dio, baseUrl: _baseUrl);
 
   OffersClient get offers => _offers ??= OffersClient(_dio, baseUrl: _baseUrl);
 

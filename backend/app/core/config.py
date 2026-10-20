@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     provider_vehicles: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
     provider_bookings: Literal["fake", "firestore"] = "fake"
+    provider_notifications: Literal["fake", "firestore"] = "fake"
+    provider_notify: Literal["fake", "fcm"] = "fake"
+    sms_enabled: bool = False
     provider_scheduler: Literal["fake", "cloud_tasks"] = "fake"
     firebase_project_id: str | None = None
     internal_job_token: str = "dev-internal-job"  # noqa: S105 - local stand-in for OIDC
@@ -58,6 +61,12 @@ class Settings(BaseSettings):
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_BOOKINGS=firestore"
             )
+        if self.provider_notifications == "firestore" and not self.firebase_project_id:
+            raise ValueError(
+                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_NOTIFICATIONS=firestore"
+            )
+        if self.provider_notify == "fcm" and not self.firebase_project_id:
+            raise ValueError("MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_NOTIFY=fcm")
         return self
 
 

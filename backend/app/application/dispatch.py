@@ -22,6 +22,7 @@ from app.domain.dispatch import (
 from app.domain.errors import InvalidTransition, NotFound, OfferGone, PermissionDenied
 from app.domain.geo import haversine_km
 from app.domain.mechanic import Mechanic
+from app.domain.notification_templates import Channel
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
 from app.ports.job_scheduler import JobScheduler, ScheduledJob
@@ -91,8 +92,10 @@ class SequentialDispatch:
         await self._notify(
             OutboundNotification(
                 user_id=candidate.mechanic_id,
-                channel="push",
+                channel=Channel.PUSH,
                 template_id="offerCreated",
+                title="New job nearby",
+                body=booking.service_name,
                 data={
                     "bookingId": booking.id,
                     "serviceName": booking.service_name,
@@ -124,8 +127,10 @@ class SequentialDispatch:
         await self._notify(
             OutboundNotification(
                 user_id=booking.customer_id,
-                channel="push",
+                channel=Channel.PUSH,
                 template_id="mechanicAssigned",
+                title="Mechanic assigned",
+                body="Your mechanic is on the way.",
                 data={"bookingId": booking.id, "mechanicId": mechanic_id},
                 deep_link=f"/tracking?id={booking.id}",
             )
@@ -149,8 +154,10 @@ class SequentialDispatch:
         await self._notify(
             OutboundNotification(
                 user_id=offer.mechanic_id,
-                channel="inApp",
+                channel=Channel.IN_APP,
                 template_id="offerExpired",
+                title="Offer expired",
+                body="This job was offered to someone else.",
                 data={"offerId": offer.id},
                 deep_link="/mechanic/home",
             )
@@ -179,8 +186,10 @@ class SequentialDispatch:
         await self._notify(
             OutboundNotification(
                 user_id=booking.customer_id,
-                channel="push",
+                channel=Channel.PUSH,
                 template_id="bookingFailed",
+                title="No mechanic available",
+                body="We could not find a mechanic. Try again.",
                 data={"bookingId": booking.id, "urgency": booking.urgency.value},
                 deep_link=f"/booking/details?id={booking.id}",
             )

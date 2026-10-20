@@ -10,10 +10,12 @@ from app.adapters.fake.audit_log import FakeAuditLog
 from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.booking_repository import FakeBookingRepository
 from app.adapters.fake.catalog_repository import FakeCatalogRepository
+from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.job_scheduler import FakeJobScheduler
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
+from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
 from app.adapters.fake.offer_repository import FakeOfferRepository
 from app.adapters.fake.readiness import FakeReadiness
@@ -29,8 +31,11 @@ from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
+from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
 from app.application.mechanic_heartbeat import MechanicHeartbeat
+from app.application.notify import Notify
+from app.application.register_device import RegisterDevice
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
@@ -49,10 +54,12 @@ from app.ports.auth_verifier import AuthVerifier
 from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
+from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.job_scheduler import JobScheduler
 from app.ports.mechanic_repository import MechanicRepository
+from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
 from app.ports.offer_repository import OfferRepository
 from app.ports.readiness import ReadinessCheck
@@ -325,13 +332,53 @@ def offer_repository_dep() -> OfferRepository:
 
 
 @lru_cache
-def _notifications() -> RecordingNotificationSender:
-    # M09 owns real FCM. This fake records send() and never throws.
-    return RecordingNotificationSender()
+def _notifications() -> NotificationRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.notification_repository import FirestoreNotificationRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreNotificationRepository(settings.firebase_project_id)
+    return FakeNotificationRepository()
+
+
+def notification_repository_dep() -> NotificationRepository:
+    return _notifications()
+
+
+@lru_cache
+def _devices() -> DeviceTokenRepository:
+    settings = get_settings()
+    if settings.provider_notifications == "firestore":
+        from app.adapters.firebase.device_token_repository import FirestoreDeviceTokenRepository
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreDeviceTokenRepository(settings.firebase_project_id)
+    return FakeDeviceTokenRepository()
+
+
+def device_token_repository_dep() -> DeviceTokenRepository:
+    return _devices()
+
+
+@lru_cache
+def _notification_sender() -> NotificationSender:
+    settings = get_settings()
+    if settings.provider_notify == "fcm":
+        from app.adapters.fcm import FcmNotificationSender
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FcmNotificationSender(
+            settings.firebase_project_id,
+            notifications=_notifications(),
+            devices=_devices(),
+            clock=_clock(),
+        )
+    return RecordingNotificationSender(notifications=_notifications(), clock=_clock())
 
 
 def notification_sender_dep() -> NotificationSender:
-    return _notifications()
+    return _notification_sender()
 
 
 @lru_cache
@@ -461,21 +508,6 @@ def create_booking_dep(
     )
 
 
-def cancel_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
-) -> CancelBooking:
-    return CancelBooking(bookings=bookings, clock=clock, policy=policy)
-
-
-def transition_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock)
-
-
 def get_booking_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
 ) -> GetBooking:
@@ -498,3 +530,42 @@ def decide_extra_line_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
 ) -> DecideExtraLine:
     return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+def manage_notifications_dep(
+    notifications: Annotated[NotificationRepository, Depends(notification_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ManageNotifications:
+    return ManageNotifications(notifications=notifications, clock=clock)
+
+
+def notify_dep(
+    sender: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+) -> Notify:
+    return Notify(sender=sender, devices=devices, sms_enabled=settings.sms_enabled)
+
+
+def cancel_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> CancelBooking:
+    return CancelBooking(bookings=bookings, clock=clock, policy=policy, notify=notify)
+
+
+def transition_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    notify: Annotated[Notify, Depends(notify_dep)],
+) -> TransitionBooking:
+    return TransitionBooking(bookings=bookings, clock=clock, notify=notify)
+
+
+def register_device_dep(
+    devices: Annotated[DeviceTokenRepository, Depends(device_token_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> RegisterDevice:
+    return RegisterDevice(devices=devices, clock=clock)

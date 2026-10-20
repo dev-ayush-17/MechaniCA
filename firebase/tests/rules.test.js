@@ -54,6 +54,14 @@ beforeEach(async () => {
       active: true,
       sortOrder: 1,
     });
+    await setDoc(doc(db, 'users/cust/notifications/n1'), {
+      templateId: 'mechanicAssigned',
+      title: 'Mechanic assigned',
+      body: 'Imran will reach you for General Service.',
+      deepLink: '/tracking?id=b1',
+      readAt: null,
+      createdAt: new Date('2026-06-01T10:00:00Z'),
+    });
     await setDoc(doc(db, 'offers/o1'), {
       bookingId: 'b1',
       mechanicId: 'mech',
@@ -125,6 +133,25 @@ describe('firestore rules', () => {
   it('signed_in_can_read_catalog', async () => {
     await assertSucceeds(
       getDoc(doc(env.authenticatedContext('cust').firestore(), 'serviceCatalog/general_service')),
+    );
+  });
+
+  it('rules_deny_client_notification_write', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(
+      setDoc(doc(db, 'users/cust/notifications/n2'), {
+        title: 'injected',
+        body: 'no',
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(db, 'users/cust/notifications/n1'), { readAt: new Date() }),
+    );
+    await assertSucceeds(
+      getDoc(doc(db, 'users/cust/notifications/n1')),
+    );
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('other').firestore(), 'users/cust/notifications/n1')),
     );
   });
 

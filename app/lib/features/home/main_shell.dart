@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 
 class MainShell extends ConsumerWidget {
   final Widget child;
@@ -28,7 +28,7 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = _tabIndex(context);
-    final unreadCount = ref.watch(notificationProvider).whenOrNull(
+    final unreadCount = ref.watch(notificationsControllerProvider).whenOrNull(
               data: (list) => list.where((n) => !n.isRead).length,
             ) ??
         0;
