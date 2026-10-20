@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../navigation/route_names.dart';
 import '../../composition/providers.dart';
 import '../../widgets/shared/app_widgets.dart';
@@ -492,6 +494,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
           _settingsSection('Security', [
             _toggle('Biometric Login', _biometrics, (v) => setState(() => _biometrics = v)),
+          ]),
+          const SizedBox(height: 16),
+          _settingsSection('Privacy', [
+            _settingRow(l10nOf(context).privacyPolicy, Icons.privacy_tip_outlined, () {
+              launchUrl(
+                Uri.parse('https://mechupp.example/privacy'),
+                mode: LaunchMode.externalApplication,
+              );
+            }),
           ]),
           const SizedBox(height: 16),
           _settingsSection('Data', [

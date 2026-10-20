@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +54,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final showDemoHint = ref.watch(appConfigProvider).env == AppEnv.dev;
+    final showDemoHint =
+        !kReleaseMode && ref.watch(appConfigProvider).env == AppEnv.dev;
 
     final defaultPinTheme = PinTheme(
       width: 54,
