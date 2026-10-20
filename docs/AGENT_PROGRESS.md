@@ -226,3 +226,41 @@ Not run locally:
 - Firestore rules tests (`firebase/tests/rules.test.js`) were **not run**. This machine has no Java. CI installs Java 21.
 - `FcmNotificationSender` has not sent a real push.
 - The app was not built for Android or iOS here. Widget tests cover empty copy, denied banner copy, and a single OS prompt.
+
+## M08 notes
+
+Split: API + location port + RTDB rules on `feat/m08-tracking` (PR 1). Tracking UI + MapsService cache on `feat/m08-tracking-ui` (PR 2). Both `--base main`, same spec [M08-tracking.md](milestones/M08-tracking.md). Handwritten diff hit the ~1,500 line cap after the location port.
+
+Requirements: FR-TRK-001..007.
+
+Done (PR 1 API):
+
+- Jump filter (>2 km in 5 s dropped) and stale-at-60s as pure functions in Dart and Python. Named tests `stale_after_60_seconds`, `jump_over_2km_dropped`.
+- API location gate: `locationOpen` on `bookingGates/{bookingId}` when status is `mechanicAssigned` / `enRoute` / `arrived`. Closed on `inService` and terminal. Clients never write gates.
+- `POST /v1/bookings/{id}/tracking-links` (customer, 6 h). `GET /v1/public/tracking/{token}` returns mechanic first name, vehicle, status, ETA, points. No phone, no price, no user ids. 404 copy: "This tracking link has ended." Named tests `token_hides_phone_and_price`, `token_dies_when_paid`.
+- RTDB rules for `liveLocations/{bookingId}/{ownRole}` while the gate is open. Named tests `rules_allow_own_location_write`, `rules_deny_other_party_location_write`.
+- Flutter `LocationTrackingService` port, in-memory fake, RTDB adapter (publish/subscribe own node only). Bound in `composition/providers.dart`.
+
+Done (PR 2 UI):
+
+- Fake workshop timeline (`pickedUp` / `inWorkshop` / `outForDelivery`) removed. Live tracking shows map states for product statuses. `inService`+ is a progress view.
+- Distance and ETA are text even if map tiles fail. Point older than 60 s: grey pin + "Last seen…". enRoute + >5 min: trouble banner (dispatch is not restarted).
+- Fake `MapsService` is the default (Patna `RouteSummary`). Google HTTPS adapter exists under `data/adapters/` and is bound only when `PROVIDER_MAPS=google` and `MAPS_API_KEY` is set. No maps key in git.
+- Route cache: at most every 30 s, or when the origin moves more than 300 m. Maps fail: last ETA if younger than 5 min, else "ETA unavailable."
+- Share tracking creates a token and shares the public URL (`share_plus` already pinned; reason: share tracking link). "Share my location" defaults ON for SOS, OFF for scheduled.
+- Mechanic copy: "MechUpp is sharing your trip location." Geofence 150 m may suggest Arrived; it does not set status.
+- Emergency tracking route reuses `LiveTrackingScreen`.
+
+Not run locally:
+
+- Firestore/RTDB rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- Google Maps on a device (no key). Fake map is the demo default.
+- Two-emulator live RTDB session.
+
+Follow-ups, not this milestone:
+
+- Device GPS sampler / geolocator loop using the duty-cycle helpers (`dutyInterval` 5 s / 15 s, stop 2 min after arrived). Port `publish` is ready.
+- Emergency-contact picking (M14). Hindi (M16). Turn-by-turn in-app (out of scope; Directions opens Google Maps).
+- `google_maps_flutter` tiles. Fake placeholder is enough; Directions HTTP is the real Maps adapter.
+
+Packages: `firebase_database` 11.3.8 (RTDB live location, PR 1). No new packages on PR 2 (`share_plus` 11.0.0 already present).

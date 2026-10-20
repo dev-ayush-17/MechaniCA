@@ -2,5 +2,7 @@
   "APP_ENV": "dev",
   "API_BASE_URL": "http://10.0.2.2:8000",
   "USE_FIREBASE_EMULATOR": true,
-  "PROVIDER_AUTH": "fake"
+  "PROVIDER_AUTH": "fake",
+  "PROVIDER_MAPS": "fake",
+  "MAPS_API_KEY": ""
 }

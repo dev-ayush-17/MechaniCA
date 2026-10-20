@@ -62,6 +62,7 @@ import '../core/api/generated/messages/messages_client.dart';
 import '../core/api/generated/notifications/notifications_client.dart';
 import '../core/api/generated/offers/offers_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
+import '../core/api/generated/tracking/tracking_client.dart';
 import '../features/job_chat/data/fake_chat_service.dart';
 import '../features/job_chat/data/fake_telephony.dart';
 import '../features/job_chat/data/http_chat_service.dart';
@@ -93,9 +94,17 @@ import '../features/wallet/data/fake_wallet_api.dart';
 import '../features/wallet/data/http_wallet_api.dart';
 import '../features/wallet/domain/wallet_api.dart';
 import '../features/wallet/presentation/wallet_controller.dart';
+import '../features/tracking/data/adapters/google_maps_service.dart';
 import '../features/tracking/data/adapters/rtdb_location_tracking_service.dart';
+import '../features/tracking/data/cached_maps_service.dart';
 import '../features/tracking/data/fake_location_tracking_service.dart';
+import '../features/tracking/data/fake_maps_service.dart';
+import '../features/tracking/data/fake_tracking_link_api.dart';
+import '../features/tracking/data/http_tracking_link_api.dart';
 import '../features/tracking/domain/location_tracking_service.dart';
+import '../features/tracking/domain/maps_service.dart';
+import '../features/tracking/domain/tracking_link_api.dart';
+import '../features/tracking/presentation/tracking_controller.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -117,6 +126,52 @@ final locationTrackingServiceProvider = Provider<LocationTrackingService>((ref) 
     );
   }
   return FakeLocationTrackingService(role: ref.watch(trackingRoleProvider));
+});
+
+final mapsServiceProvider = Provider<MapsService>((ref) {
+  final config = ref.watch(appConfigProvider);
+  final inner =
+      config.providerMaps == MapsProviderKind.google && config.mapsApiKey.isNotEmpty
+          ? GoogleMapsService(
+              dio: Dio(
+                BaseOptions(
+                  connectTimeout: const Duration(seconds: 10),
+                  receiveTimeout: const Duration(seconds: 10),
+                ),
+              ),
+              apiKey: config.mapsApiKey,
+            )
+          : FakeMapsService();
+  return CachedMapsService(inner: inner, clock: ref.watch(clockProvider));
+});
+
+final trackingLinkApiProvider = Provider<TrackingLinkApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeTrackingLinkApi(),
+    AuthProviderKind.firebase => HttpTrackingLinkApi(
+        client: TrackingClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final trackingControllerProvider = StateNotifierProvider.autoDispose
+    .family<TrackingController, TrackingUiState, TrackingArgs>((ref, args) {
+  return TrackingController(
+    bookingId: args.bookingId,
+    status: args.status,
+    urgency: args.urgency,
+    destLat: args.destLat,
+    destLng: args.destLng,
+    locations: ref.watch(locationTrackingServiceProvider),
+    maps: ref.watch(mapsServiceProvider),
+    clock: ref.watch(clockProvider),
+    links: ref.watch(trackingLinkApiProvider),
+  );
 });
 
 final loggerProvider = Provider<Logger>((ref) => const DeveloperLogger());
