@@ -81,6 +81,7 @@ class BookingOut(BookingCreateOut):
     vehicle_id: str
     service_name: str
     payment_method: str
+    address_id: str
     mechanic_id: str | None
     scheduled_start: datetime | None
     cancel_reason: str | None
@@ -155,6 +156,7 @@ def _out(booking: Booking) -> BookingOut:
         vehicle_id=booking.vehicle_id,
         service_name=booking.service_name,
         payment_method=booking.payment_method.value,
+        address_id=booking.address.id,
         mechanic_id=booking.mechanic_id,
         scheduled_start=booking.scheduled_start,
         cancel_reason=booking.cancel_reason,

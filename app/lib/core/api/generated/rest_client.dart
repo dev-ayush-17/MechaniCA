@@ -5,6 +5,7 @@
 import 'package:dio/dio.dart';
 
 import 'fallback/fallback_client.dart';
+import 'addresses/addresses_client.dart';
 import 'admin/admin_client.dart';
 import 'bookings/bookings_client.dart';
 import 'proofs/proofs_client.dart';
@@ -39,6 +40,7 @@ class RestClient {
   static String get version => '0.1.0';
 
   FallbackClient? _fallback;
+  AddressesClient? _addresses;
   AdminClient? _admin;
   BookingsClient? _bookings;
   ProofsClient? _proofs;
@@ -60,6 +62,8 @@ class RestClient {
   WalletClient? _wallet;
 
   FallbackClient get fallback => _fallback ??= FallbackClient(_dio, baseUrl: _baseUrl);
+
+  AddressesClient get addresses => _addresses ??= AddressesClient(_dio, baseUrl: _baseUrl);
 
   AdminClient get admin => _admin ??= AdminClient(_dio, baseUrl: _baseUrl);
 

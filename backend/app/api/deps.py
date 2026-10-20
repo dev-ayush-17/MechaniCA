@@ -51,8 +51,11 @@ from app.application.get_booking import GetBooking
 from app.application.get_public_tracking import GetPublicTracking
 from app.application.invoices import DefaultInvoiceService, GetInvoice
 from app.application.list_earnings import ListEarnings
+from app.application.manage_addresses import ManageAddresses
+from app.application.manage_contacts import ManageContacts
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
+from app.application.update_profile import UpdateProfile
 from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.notify import Notify
@@ -663,6 +666,25 @@ def _addresses() -> AddressRepository:
 
 def address_repository_dep() -> AddressRepository:
     return _addresses()
+
+
+def manage_addresses_dep(
+    addresses: Annotated[AddressRepository, Depends(address_repository_dep)],
+) -> ManageAddresses:
+    return ManageAddresses(addresses=addresses)
+
+
+def manage_contacts_dep(
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+) -> ManageContacts:
+    return ManageContacts(users=users)
+
+
+def update_profile_dep(
+    users: Annotated[UserRepository, Depends(user_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> UpdateProfile:
+    return UpdateProfile(users=users, clock=clock)
 
 
 def create_booking_dep(

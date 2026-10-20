@@ -71,6 +71,7 @@ class RouteNames {
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
   static const String addresses = '/profile/addresses';
+  static const String emergencyContacts = '/profile/contacts';
   static const String settings = '/profile/settings';
 
   // Fuel

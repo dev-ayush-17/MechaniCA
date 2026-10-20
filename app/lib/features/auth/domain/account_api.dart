@@ -11,12 +11,22 @@ class Account {
     required this.role,
     required this.name,
     required this.phoneE164,
+    this.email,
   });
 
   final String id;
   final String role;
   final String name;
   final String phoneE164;
+  final String? email;
+
+  Account copyWith({String? name, String? email}) => Account(
+        id: id,
+        role: role,
+        name: name ?? this.name,
+        phoneE164: phoneE164,
+        email: email ?? this.email,
+      );
 }
 
 /// The caller's account on our API: `POST /v1/me/bootstrap` and `GET /v1/me`.
@@ -29,4 +39,10 @@ abstract interface class AccountApi {
   });
 
   Future<Result<Account>> me(Session session);
+
+  Future<Result<Account>> update(
+    Session session, {
+    required String name,
+    String? email,
+  });
 }

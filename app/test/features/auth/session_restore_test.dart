@@ -38,6 +38,14 @@ class _StubAccounts implements AccountApi {
 
   @override
   Future<Result<Account>> me(Session session) async => _result;
+
+  @override
+  Future<Result<Account>> update(
+    Session session, {
+    required String name,
+    String? email,
+  }) async =>
+      _result;
 }
 
 const _account = Account(

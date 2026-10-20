@@ -7,6 +7,7 @@ part of 'booking_out.dart';
 // **************************************************************************
 
 BookingOut _$BookingOutFromJson(Map<String, dynamic> json) => BookingOut(
+      addressId: json['addressId'] as String,
       cancelReason: json['cancelReason'] as String?,
       displayNumber: json['displayNumber'] as String,
       estimate: EstimateOut.fromJson(json['estimate'] as Map<String, dynamic>),
@@ -33,6 +34,7 @@ BookingOut _$BookingOutFromJson(Map<String, dynamic> json) => BookingOut(
 
 Map<String, dynamic> _$BookingOutToJson(BookingOut instance) =>
     <String, dynamic>{
+      'addressId': instance.addressId,
       'cancelFeePaise': instance.cancelFeePaise,
       'cancelReason': instance.cancelReason,
       'dispatchAttempt': instance.dispatchAttempt,

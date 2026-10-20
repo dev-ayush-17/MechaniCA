@@ -4,6 +4,7 @@
 
 // Clients
 export 'fallback/fallback_client.dart';
+export 'addresses/addresses_client.dart';
 export 'admin/admin_client.dart';
 export 'bookings/bookings_client.dart';
 export 'proofs/proofs_client.dart';
@@ -25,6 +26,8 @@ export 'vehicles/vehicles_client.dart';
 export 'wallet/wallet_client.dart';
 // Data classes
 export 'models/add_line_request.dart';
+export 'models/address_list_out.dart';
+export 'models/address_out.dart';
 export 'models/application_request.dart';
 export 'models/availability_request.dart';
 export 'models/booking_accept_out.dart';
@@ -40,10 +43,14 @@ export 'models/cash_decision_request.dart';
 export 'models/cashfree_session_out.dart';
 export 'models/chat_message_list_out.dart';
 export 'models/chat_message_out.dart';
+export 'models/contact_list_out.dart';
+export 'models/contact_out.dart';
 export 'models/coupon_list_out.dart';
 export 'models/coupon_out.dart';
 export 'models/coupon_quote_out.dart';
+export 'models/create_address_request.dart';
 export 'models/create_booking_request.dart';
+export 'models/create_contact_request.dart';
 export 'models/create_payment_request.dart';
 export 'models/create_proof_request.dart';
 export 'models/create_vehicle_request.dart';
@@ -71,6 +78,8 @@ export 'models/mechanic_out.dart';
 export 'models/notification_list_out.dart';
 export 'models/notification_out.dart';
 export 'models/offer_out.dart';
+export 'models/patch_address_request.dart';
+export 'models/patch_me_request.dart';
 export 'models/patch_vehicle_request.dart';
 export 'models/payment_method.dart';
 export 'models/payment_out.dart';

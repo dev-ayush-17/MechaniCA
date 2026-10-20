@@ -27,6 +27,7 @@ import '../features/booking/domain/sos_payload.dart';
 import '../features/emergency/emergency_screen.dart';
 import '../features/documents/documents_screen.dart';
 import '../features/support/support_screen.dart';
+import '../features/profile/contacts_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/fuel/fuel_tracker_screen.dart';
 import '../features/health/health_score_screen.dart';
@@ -282,6 +283,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.addresses,
       builder: (_, __) => const AddressesScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.emergencyContacts,
+      builder: (_, __) => const EmergencyContactsScreen(),
     ),
     GoRoute(
       path: RouteNames.settings,

@@ -121,6 +121,7 @@ class HttpBookingApi implements BookingApi {
       version: body.version,
       vehicleId: body.vehicleId,
       serviceName: body.serviceName,
+      addressId: body.addressId,
       scheduledStart: body.scheduledStart,
       paymentMethod: body.paymentMethod,
     );

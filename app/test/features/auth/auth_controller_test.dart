@@ -19,6 +19,14 @@ class _FailingAccounts implements AccountApi {
 
   @override
   Future<Result<Account>> me(Session session) async => const Err(Unavailable());
+
+  @override
+  Future<Result<Account>> update(
+    Session session, {
+    required String name,
+    String? email,
+  }) async =>
+      const Err(Unavailable());
 }
 
 AuthNotifier _notifier(AccountApi accounts, FakeAuthService service) =>
