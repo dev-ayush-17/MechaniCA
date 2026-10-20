@@ -9,7 +9,6 @@ import 'package:mechupp_app/features/auth/data/fake_account_api.dart';
 import 'package:mechupp_app/features/auth/data/fake_auth_service.dart';
 import 'package:mechupp_app/features/auth/domain/account_api.dart';
 import 'package:mechupp_app/features/auth/domain/auth_service.dart';
-import 'package:mechupp_app/features/auth/presentation/auth_controller.dart';
 import 'package:mechupp_app/features/profile/profile_screen.dart';
 import 'package:mechupp_app/widgets/shared/app_widgets.dart';
 

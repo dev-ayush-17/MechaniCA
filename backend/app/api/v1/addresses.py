@@ -81,7 +81,8 @@ async def list_addresses(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[ManageAddresses, Depends(manage_addresses_dep)],
 ) -> AddressListOut:
-    return AddressListOut(items=[AddressOut.of(item) for item in await use_case.list_for(principal)])
+    items = [AddressOut.of(item) for item in await use_case.list_for(principal)]
+    return AddressListOut(items=items)
 
 
 @router.post("", response_model=AddressOut, status_code=201)

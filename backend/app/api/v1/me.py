@@ -20,8 +20,8 @@ from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.manage_contacts import ManageContacts
 from app.application.register_device import RegisterDevice
 from app.application.update_profile import UpdateProfile
-from app.domain.contact import EmergencyContact
 from app.core.logging import log_info
+from app.domain.contact import EmergencyContact
 from app.domain.errors import NotFound
 from app.domain.user import Principal, User
 from app.ports.user_repository import UserRepository

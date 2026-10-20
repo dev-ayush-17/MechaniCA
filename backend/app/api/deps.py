@@ -55,7 +55,6 @@ from app.application.manage_addresses import ManageAddresses
 from app.application.manage_contacts import ManageContacts
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
-from app.application.update_profile import UpdateProfile
 from app.application.mask_call import MaskCall
 from app.application.mechanic_heartbeat import MechanicHeartbeat
 from app.application.notify import Notify
@@ -71,6 +70,7 @@ from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
 from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
+from app.application.update_profile import UpdateProfile
 from app.application.verify_mechanic import VerifyMechanic
 from app.application.wallet_topup import CreateWalletTopup
 from app.core.config import Settings, get_settings

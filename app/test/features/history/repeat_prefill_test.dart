@@ -10,7 +10,7 @@ import 'package:mechupp_app/models/booking_model.dart';
 void main() {
   test('repeat_recalculates_price', () async {
     const oldTotalPaise = 999999;
-    final booking = Booking(
+    const booking = Booking(
       id: 'bk_old',
       displayNumber: 'MCOLD',
       status: BookingStatus.paid,

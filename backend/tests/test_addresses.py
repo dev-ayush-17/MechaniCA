@@ -3,8 +3,8 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.adapters.fake.auth import FakeAuth
 from app.adapters.fake.address_repository import FakeAddressRepository
+from app.adapters.fake.auth import FakeAuth
 from app.api.deps import (
     address_repository_dep,
     auth_verifier_dep,
