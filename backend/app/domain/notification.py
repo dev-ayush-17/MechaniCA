@@ -1,19 +1,16 @@
-"""Outbound notification shape. M09 owns the real sender; M10 records sends."""
+"""In-app notification document stored at users/{userId}/notifications/{id}."""
 
 from dataclasses import dataclass
-from enum import StrEnum
-
-
-class NotificationChannel(StrEnum):
-    PUSH = "push"
-    IN_APP = "inApp"
-    SMS = "sms"
+from datetime import datetime
 
 
 @dataclass(frozen=True)
-class OutboundNotification:
+class InAppNotification:
+    id: str
     user_id: str
-    channel: NotificationChannel
     template_id: str
-    data: dict[str, str]
+    title: str
+    body: str
     deep_link: str
+    read_at: datetime | None
+    created_at: datetime

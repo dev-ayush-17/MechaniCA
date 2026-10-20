@@ -35,6 +35,7 @@ from app.ports.booking_repository import BookingRepository
 from app.ports.catalog_repository import CatalogRepository
 from app.ports.clock import Clock
 from app.ports.coupon_service import CouponService
+from app.ports.dispatch_service import DispatchService
 from app.ports.idempotency_store import IdempotencyRecord, IdempotencyStore
 from app.ports.vehicle_repository import VehicleRepository
 from app.ports.wallet_service import WalletService
@@ -60,7 +61,9 @@ def display_number_for(booking_id: str) -> str:
 
 @dataclass(frozen=True)
 class CreateBooking:
-    """Create one on-site booking. Prices through PricingService. No dispatch."""
+    """Create one on-site booking. Prices through PricingService. Instant
+    confirmed jobs start sequential dispatch when a DispatchService is bound.
+    """
 
     catalog: CatalogRepository
     vehicles: VehicleRepository
@@ -70,8 +73,9 @@ class CreateBooking:
     pricing: PricingService
     clock: Clock
     policy: BookingPolicy
-    coupons: CouponService
-    wallet: WalletService
+    coupons: CouponService | None = None
+    wallet: WalletService | None = None
+    dispatch: DispatchService | None = None
 
     async def execute(
         self,
@@ -106,7 +110,7 @@ class CreateBooking:
         if existing is not None:
             return existing
 
-        if (await self.wallet.balance(principal.user_id)).paise < 0:
+        if self.wallet is not None and (await self.wallet.balance(principal.user_id)).paise < 0:
             raise InsufficientWallet("Clear your cancellation fee before booking again.")
 
         effective_mode = BookingMode.INSTANT if urgency is Urgency.SOS else mode
@@ -131,7 +135,7 @@ class CreateBooking:
         base = self.pricing.quote(QuoteInput(service=service, vehicle_type=vehicle.vehicle_type))
         discount = 0
         code = coupon_code.strip()
-        if code:
+        if code and self.coupons is not None:
             prior = await self.bookings.list_by_customer(principal.user_id)
             quoted = await self.coupons.validate(
                 code,
@@ -194,6 +198,15 @@ class CreateBooking:
             key,
             IdempotencyRecord(body_hash=body_hash, booking_id=saved.id, created_at=now),
         )
+        if (
+            self.dispatch is not None
+            and saved.status is BookingStatus.CONFIRMED
+            and saved.mode is BookingMode.INSTANT
+        ):
+            await self.dispatch.offer(saved.id)
+            reloaded = await self.bookings.get(saved.id)
+            if reloaded is not None:
+                saved = reloaded
         return saved
 
     async def _replay(

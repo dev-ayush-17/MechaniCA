@@ -55,6 +55,7 @@ def _line_to_doc(line: BookingLine) -> dict[str, object]:
         "gstPaise": line.gst_paise,
         "status": line.status.value,
         "partReplacement": line.part_replacement,
+        "createdAt": line.created_at,
     }
 
 
@@ -67,6 +68,7 @@ def _line_from_doc(data: dict[str, object]) -> BookingLine:
         gst_paise=int(str(data["gstPaise"])),
         status=LineStatus(str(data["status"])),
         part_replacement=bool(data.get("partReplacement", False)),
+        created_at=_parse_time(data["createdAt"]) if data.get("createdAt") else None,
     )
 
 
@@ -98,6 +100,8 @@ def _to_doc(booking: Booking) -> dict[str, object]:
         "updatedAt": booking.updated_at,
         "version": booking.version,
         "couponCode": booking.coupon_code,
+        "failureReason": booking.failure_reason,
+        "dispatchAttempt": booking.dispatch_attempt,
     }
 
 
@@ -135,6 +139,8 @@ def _from_doc(booking_id: str, data: dict[str, object]) -> Booking:
         updated_at=_parse_time(data["updatedAt"]),
         version=int(str(data.get("version", 1))),
         coupon_code=str(data.get("couponCode") or ""),
+        failure_reason=str(data["failureReason"]) if data.get("failureReason") else None,
+        dispatch_attempt=int(str(data.get("dispatchAttempt", 0))),
     )
 
 
@@ -161,4 +167,8 @@ class FirestoreBookingRepository:
 
     async def list_by_mechanic(self, mechanic_id: str) -> list[Booking]:
         snaps = self._col().where("mechanicId", "==", mechanic_id).stream()
+        return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]
+
+    async def list_by_status(self, status: BookingStatus) -> list[Booking]:
+        snaps = self._col().where("status", "==", status.value).stream()
         return [_from_doc(s.id, s.to_dict() or {}) for s in snaps]

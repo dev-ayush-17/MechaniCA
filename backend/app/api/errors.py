@@ -20,6 +20,7 @@ from app.domain.errors import (
     InvalidInput,
     NotFound,
     PermissionDenied,
+    RateLimited,
     Unauthenticated,
     Unavailable,
 )
@@ -52,6 +53,7 @@ _STATUS: dict[type[DomainError], int] = {
     Conflict: 409,
     InsufficientWallet: 402,
     CouponRejected: 422,
+    RateLimited: 429,
     Unavailable: 503,
 }
 
@@ -61,6 +63,7 @@ _HTTP_CODES = {
     403: "permission_denied",
     404: "not_found",
     405: "invalid_input",
+    429: "rate_limited",
     503: "unavailable",
 }
 
@@ -124,9 +127,18 @@ def install_error_handling(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def on_domain_error(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, DomainError)  # noqa: S101 - narrows the handler's argument type
-        headers = {"WWW-Authenticate": "Bearer"} if isinstance(exc, Unauthenticated) else None
+        headers: dict[str, str] = {}
+        if isinstance(exc, Unauthenticated):
+            headers["WWW-Authenticate"] = "Bearer"
+        if isinstance(exc, RateLimited):
+            headers["Retry-After"] = str(exc.retry_after_seconds)
         return _envelope(
-            request, _status_for(exc), exc.code, exc.message, dict(exc.fields), headers
+            request,
+            _status_for(exc),
+            exc.code,
+            exc.message,
+            dict(exc.fields),
+            headers or None,
         )
 
     @app.exception_handler(RequestValidationError)

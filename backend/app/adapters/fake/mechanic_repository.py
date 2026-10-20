@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from app.domain.errors import Conflict, NotFound
-from app.domain.mechanic import Mechanic, MechanicDocument, VerificationStatus
+from app.domain.geo import haversine_km
+from app.domain.mechanic import Mechanic, MechanicDocument, ServiceArea, VerificationStatus
 
 
 class FakeMechanicRepository:
@@ -126,6 +127,19 @@ class FakeMechanicRepository:
     async def list_documents(self, mechanic_id: str) -> list[MechanicDocument]:
         return list(self._documents.get(mechanic_id, []))
 
+    async def find_online_near(
+        self, lat: float, lng: float, radius_km: float, limit: int
+    ) -> list[Mechanic]:
+        found: list[tuple[float, Mechanic]] = []
+        for mechanic in self._mechanics.values():
+            if not mechanic.verified or not mechanic.online or mechanic.service_area is None:
+                continue
+            distance = haversine_km(lat, lng, mechanic.service_area.lat, mechanic.service_area.lng)
+            if distance <= radius_km:
+                found.append((distance, mechanic))
+        found.sort(key=lambda item: item[0])
+        return [mechanic for _, mechanic in found[:limit]]
+
     def seed_draft(self, mechanic_id: str, now: datetime) -> Mechanic:
         draft = Mechanic(
             id=mechanic_id,
@@ -144,3 +158,33 @@ class FakeMechanicRepository:
         )
         self._mechanics[mechanic_id] = draft
         return draft
+
+    def seed_online(
+        self,
+        mechanic_id: str,
+        *,
+        now: datetime,
+        lat: float,
+        lng: float,
+        radius_km: float,
+        rating_avg: float = 4.8,
+        rating_count: int = 20,
+        display_name: str = "Mechanic",
+    ) -> Mechanic:
+        mechanic = Mechanic(
+            id=mechanic_id,
+            display_name=display_name,
+            photo_path="",
+            years_experience=5,
+            languages=("en", "hi"),
+            service_area=ServiceArea(lat=lat, lng=lng, radius_km=radius_km, geohash=""),
+            verified=True,
+            verification_status=VerificationStatus.APPROVED,
+            online=True,
+            last_heartbeat_at=now,
+            rating_avg=rating_avg,
+            rating_count=rating_count,
+            version=1,
+        )
+        self._mechanics[mechanic_id] = mechanic
+        return mechanic

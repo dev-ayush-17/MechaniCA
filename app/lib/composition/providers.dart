@@ -41,12 +41,43 @@ import '../features/catalog/data/http_quote_api.dart';
 import '../features/catalog/data/offline_catalog_repository.dart';
 import '../features/catalog/domain/catalog_repository.dart';
 import '../features/catalog/domain/catalog_snapshot.dart';
+import '../features/mechanic_jobs/data/fake_job_transition_api.dart';
+import '../features/mechanic_jobs/data/fake_offer_api.dart';
+import '../features/mechanic_jobs/data/http_job_transition_api.dart';
+import '../features/mechanic_jobs/data/http_offer_api.dart';
+import '../features/mechanic_jobs/domain/job_transition_api.dart';
+import '../features/mechanic_jobs/domain/offer_api.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
+import '../features/parts_proof/data/fake_parts_proof_repository.dart';
+import '../features/parts_proof/data/http_parts_proof_repository.dart';
+import '../features/parts_proof/domain/parts_proof.dart';
+import '../features/reviews/data/fake_review_repository.dart';
+import '../features/reviews/data/http_review_repository.dart';
+import '../features/reviews/domain/review.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
+import '../core/api/generated/messages/messages_client.dart';
+import '../core/api/generated/notifications/notifications_client.dart';
+import '../core/api/generated/offers/offers_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
+import '../features/job_chat/data/fake_chat_service.dart';
+import '../features/job_chat/data/fake_telephony.dart';
+import '../features/job_chat/data/http_chat_service.dart';
+import '../features/job_chat/data/http_telephony.dart';
+import '../features/job_chat/data/offline_chat_service.dart';
+import '../features/job_chat/data/url_launcher_dialer.dart' show Dialer, UrlLauncherDialer;
+import '../features/job_chat/domain/chat_service.dart';
+import '../features/job_chat/domain/telephony_port.dart';
+import '../features/notifications/data/fake_notification_inbox.dart';
+import '../features/notifications/data/fake_push_permission.dart';
+import '../features/notifications/data/http_notification_inbox.dart';
+import '../features/notifications/domain/inbox_notification.dart';
+import '../features/notifications/domain/notification_inbox.dart';
+import '../features/notifications/domain/pending_deep_link.dart';
+import '../features/notifications/domain/push_permission.dart';
+import '../features/notifications/presentation/notifications_controller.dart';
 
 export '../features/auth/presentation/auth_controller.dart';
 export '../providers/app_providers.dart';
@@ -58,8 +89,12 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
 final loggerProvider = Provider<Logger>((ref) => const DeveloperLogger());
 
-final featureFlagsProvider =
-    Provider<FeatureFlags>((ref) => const StaticFeatureFlags());
+final featureFlagsProvider = Provider<FeatureFlags>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return StaticFeatureFlags({
+    'masked_call_enabled': config.env != AppEnv.prod,
+  });
+});
 
 /// `PROVIDER_AUTH` picks the adapter. Rollback is the fake binding.
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -145,6 +180,36 @@ final accountApiProvider = Provider<AccountApi>((ref) {
   };
 });
 
+final jobTransitionApiProvider = Provider<JobTransitionApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeJobTransitionApi(),
+    AuthProviderKind.firebase => HttpJobTransitionApi(
+        client: BookingsClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final offerApiProvider = Provider<OfferApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeOfferApi(),
+    AuthProviderKind.firebase => HttpOfferApi(
+        client: OffersClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
 final mechanicRepositoryProvider = Provider<MechanicRepository>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
@@ -207,6 +272,26 @@ final quoteApiProvider = Provider<QuoteApi>((ref) {
   );
 });
 
+final partsProofRepositoryProvider = Provider<PartsProofRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakePartsProofRepository(),
+    AuthProviderKind.firebase => HttpPartsProofRepository(
+        client: ref.watch(restClientProvider),
+      ),
+  };
+});
+
+final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeReviewRepository(),
+    AuthProviderKind.firebase => HttpReviewRepository(
+        client: ref.watch(restClientProvider),
+      ),
+  };
+});
+
 final bookingApiProvider = Provider<BookingApi>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
@@ -222,8 +307,72 @@ final bookingApiProvider = Provider<BookingApi>((ref) {
   };
 });
 
+final chatServiceProvider = Provider<ChatService>((ref) {
+  final config = ref.watch(appConfigProvider);
+  final ChatService remote = switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeChatService(),
+    AuthProviderKind.firebase => HttpChatService(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+  return OfflineChatService(
+    remote: remote,
+    isOnline: () => ref.read(networkOnlineProvider),
+  );
+});
+
+final telephonyPortProvider = Provider<TelephonyPort>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeTelephony(),
+    AuthProviderKind.firebase => HttpTelephony(
+        client: MessagesClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final notificationInboxProvider = Provider<NotificationInbox>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeNotificationInbox(),
+    AuthProviderKind.firebase => HttpNotificationInbox(
+        client: NotificationsClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final dialerProvider = Provider<Dialer>((ref) => UrlLauncherDialer());
+
+final notificationsControllerProvider = StateNotifierProvider<
+    NotificationsController, AsyncValue<List<InboxNotification>>>(
+  (ref) => NotificationsController(ref.watch(notificationInboxProvider)),
+);
+
+final pushPermissionProvider =
+    Provider<PushPermission>((ref) => FakePushPermission());
+
+final pendingDeepLinkProvider = Provider<PendingDeepLinkStore>(
+  (ref) => PendingDeepLinkStore(),
+);
+
 final catalogServicesProvider = FutureProvider<CatalogSnapshot>((ref) async {
-  final result = await ref.watch(catalogRepositoryProvider).listActiveServices();
+  final result =
+      await ref.watch(catalogRepositoryProvider).listActiveServices();
   final updatedAt = await ref.watch(catalogLocalStoreProvider).lastCachedAt();
   return result.when(
     onOk: (items) => CatalogSnapshot(services: items, updatedAt: updatedAt),
