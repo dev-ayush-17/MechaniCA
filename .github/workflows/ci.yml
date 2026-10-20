@@ -24,6 +24,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python tool/check_import_boundaries.py
+      - run: python tool/check_secrets.py
       - run: python -m unittest discover -s tool -q
       - run: sh tool/test_hooks.sh
         env:
