@@ -98,21 +98,20 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.icon != null) ...[
                         Icon(widget.icon, color: widget.isOutlined ? bgColor : fgColor, size: 18),
                         const SizedBox(width: 8),
                       ],
-                      Flexible(
-                        child: Text(
-                          widget.label,
-                          textAlign: TextAlign.center,
-                          softWrap: true,
-                          style: TextStyle(
-                            color: widget.isOutlined ? bgColor : fgColor,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                        style: TextStyle(
+                          color: widget.isOutlined ? bgColor : fgColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
