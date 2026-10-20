@@ -69,6 +69,38 @@ Follow-ups, not done here (scope):
 
 M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.
 
+## M07 notes
+
+Branch: `feat/m07-dispatch` from `origin/main` (M06 merged). Isolated worktree `C:/Users/l/AppDev/Aethenox-m07`.
+
+Done:
+
+- Sequential dispatch: one open offer per booking, max three attempts, ranking from chapter 14 / ADR-013.
+- Offer accept/reject HTTP. Second accept loses (`offer_gone`). ExpireOffer and extra-line timeout are safe to run twice.
+- Fake `JobScheduler` in dev (`MECHUPP_PROVIDER_SCHEDULER=fake`). Cloud Tasks adapter exists and is never bound in fake/dev.
+- Sweep expires leftover offers and pending extra lines if a task was not placed.
+- Recording `NotificationSender` fake: `send()` is recorded and never throws into the booking path. No FCM.
+- Mechanic offer screen (accept/reject) and legal status buttons. Complete allowed when there are no part lines; part-replacement lines still block (M13).
+- Extra-work 10-minute timeout auto-rejects the pending line without changing totals.
+- Customer booking-details copy: finding / still looking / failed / SOS failed (chapter 14).
+- Named tests: `dispatch_second_accept_loses`, `dispatch_third_miss_fails`, `sos_timeout_is_20_seconds`, `mechanic_with_active_job_is_skipped`, `expired_offer_is_idempotent`, `outside_service_area_excluded`. Widget tests for the offer screen and failed copy.
+
+Left / follow-ups (not this PR):
+
+- Real FCM adapter (M09).
+- Map tiles and live tracking (M08). Tracking may still use the old animation.
+- Parts photos required to complete (M13).
+- Production Cloud Tasks project (owner). Do not block on GCP.
+
+Next: M08 tracking after this PR merges. Parallel milestones (M09, M10, M12, M13) stay on their own branches.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java on this machine. CI installs Java 21.
+- Firebase emulators.
+- Cloud Tasks against a GCP project.
+- Android / iOS device builds. Widget tests cover offer UI, status buttons, and failed copy.
+
 ## M09 notes
 
 M09 notifications is done on `feat/m09-notifications` from `origin/main` (a6f48ed). Isolated worktree `C:/Users/l/AppDev/Aethenox-m09`.

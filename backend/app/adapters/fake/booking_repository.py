@@ -1,4 +1,5 @@
 from app.domain.booking import Booking
+from app.domain.booking_state import BookingStatus
 
 
 class FakeBookingRepository:
@@ -16,3 +17,9 @@ class FakeBookingRepository:
 
     async def list_by_customer(self, customer_id: str) -> list[Booking]:
         return [b for b in self.bookings.values() if b.customer_id == customer_id]
+
+    async def list_by_mechanic(self, mechanic_id: str) -> list[Booking]:
+        return [b for b in self.bookings.values() if b.mechanic_id == mechanic_id]
+
+    async def list_by_status(self, status: BookingStatus) -> list[Booking]:
+        return [b for b in self.bookings.values() if b.status is status]

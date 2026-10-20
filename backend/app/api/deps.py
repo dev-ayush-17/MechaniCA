@@ -13,9 +13,11 @@ from app.adapters.fake.catalog_repository import FakeCatalogRepository
 from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
+from app.adapters.fake.job_scheduler import FakeJobScheduler
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
+from app.adapters.fake.offer_repository import FakeOfferRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.system_clock import SystemClock
@@ -24,6 +26,9 @@ from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_quote import CreateQuote
+from app.application.dispatch import SequentialDispatch
+from app.application.expire_extra_line import ExpireExtraLine
+from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.manage_notifications import ManageNotifications
@@ -34,6 +39,7 @@ from app.application.register_device import RegisterDevice
 from app.application.set_mechanic_availability import SetMechanicAvailability
 from app.application.sign_upload import SignUpload
 from app.application.submit_mechanic_application import SubmitMechanicApplication
+from app.application.sweep_jobs import SweepExpiredOffers
 from app.application.transition_booking import TransitionBooking
 from app.application.verify_mechanic import VerifyMechanic
 from app.core.config import Settings, get_settings
@@ -51,9 +57,11 @@ from app.ports.clock import Clock
 from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
+from app.ports.job_scheduler import JobScheduler
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
+from app.ports.offer_repository import OfferRepository
 from app.ports.readiness import ReadinessCheck
 from app.ports.role_claims import RoleClaims
 from app.ports.user_repository import UserRepository
@@ -315,70 +323,12 @@ def booking_repository_dep() -> BookingRepository:
 
 
 @lru_cache
-def _idempotency() -> IdempotencyStore:
-    settings = get_settings()
-    if settings.provider_bookings == "firestore":
-        from app.adapters.firebase.idempotency_store import FirestoreIdempotencyStore
-
-        assert settings.firebase_project_id is not None  # noqa: S101
-        return FirestoreIdempotencyStore(settings.firebase_project_id)
-    return FakeIdempotencyStore()
+def _offers() -> FakeOfferRepository:
+    return FakeOfferRepository()
 
 
-def idempotency_store_dep() -> IdempotencyStore:
-    return _idempotency()
-
-
-@lru_cache
-def _addresses() -> AddressRepository:
-    return FakeAddressRepository()
-
-
-def address_repository_dep() -> AddressRepository:
-    return _addresses()
-
-
-def create_booking_dep(
-    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
-    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    addresses: Annotated[AddressRepository, Depends(address_repository_dep)],
-    idempotency: Annotated[IdempotencyStore, Depends(idempotency_store_dep)],
-    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
-) -> CreateBooking:
-    return CreateBooking(
-        catalog=catalog,
-        vehicles=vehicles,
-        bookings=bookings,
-        addresses=addresses,
-        idempotency=idempotency,
-        pricing=pricing,
-        clock=clock,
-        policy=policy,
-    )
-
-
-def get_booking_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-) -> GetBooking:
-    return GetBooking(bookings=bookings)
-
-
-def add_extra_line_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-    settings: Annotated[Settings, Depends(settings_dep)],
-) -> AddExtraLine:
-    return AddExtraLine(bookings=bookings, clock=clock, gst_bps=settings.gst_bps)
-
-
-def decide_extra_line_dep(
-    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-) -> DecideExtraLine:
-    return DecideExtraLine(bookings=bookings, clock=clock)
+def offer_repository_dep() -> OfferRepository:
+    return _offers()
 
 
 @lru_cache
@@ -394,13 +344,6 @@ def _notifications() -> NotificationRepository:
 
 def notification_repository_dep() -> NotificationRepository:
     return _notifications()
-
-
-def manage_notifications_dep(
-    notifications: Annotated[NotificationRepository, Depends(notification_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
-) -> ManageNotifications:
-    return ManageNotifications(notifications=notifications, clock=clock)
 
 
 @lru_cache
@@ -436,6 +379,164 @@ def _notification_sender() -> NotificationSender:
 
 def notification_sender_dep() -> NotificationSender:
     return _notification_sender()
+
+
+@lru_cache
+def _scheduler() -> JobScheduler:
+    settings = get_settings()
+    if settings.provider_scheduler == "cloud_tasks":
+        from app.adapters.gcp.cloud_tasks_scheduler import CloudTasksJobScheduler
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        assert settings.cloud_tasks_service_account is not None  # noqa: S101
+        return CloudTasksJobScheduler(
+            project_id=settings.firebase_project_id,
+            location=settings.cloud_tasks_location,
+            queue=settings.cloud_tasks_queue,
+            handler_base_url=settings.cloud_tasks_handler_base_url,
+            service_account_email=settings.cloud_tasks_service_account,
+        )
+    return FakeJobScheduler()
+
+
+def job_scheduler_dep() -> JobScheduler:
+    return _scheduler()
+
+
+async def require_internal_job_dep(
+    x_internal_job_token: Annotated[str | None, Header()] = None,
+) -> None:
+    settings = get_settings()
+    if not x_internal_job_token or x_internal_job_token != settings.internal_job_token:
+        raise Unauthenticated("Internal job token required.")
+
+
+def dispatch_service_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    notifications: Annotated[NotificationSender, Depends(notification_sender_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
+) -> SequentialDispatch:
+    return SequentialDispatch(
+        bookings=bookings,
+        offers=offers,
+        mechanics=mechanics,
+        notifications=notifications,
+        clock=clock,
+        scheduler=scheduler,
+    )
+
+
+def expire_offer_dep(
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+) -> ExpireOffer:
+    return ExpireOffer(dispatch=dispatch)
+
+
+def expire_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ExpireExtraLine:
+    return ExpireExtraLine(bookings=bookings, clock=clock)
+
+
+def sweep_expired_offers_dep(
+    offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    extra_lines: Annotated[ExpireExtraLine, Depends(expire_extra_line_dep)],
+) -> SweepExpiredOffers:
+    return SweepExpiredOffers(
+        offers=offers,
+        bookings=bookings,
+        mechanics=mechanics,
+        dispatch=dispatch,
+        clock=clock,
+        extra_lines=extra_lines,
+    )
+
+
+@lru_cache
+def _idempotency() -> IdempotencyStore:
+    settings = get_settings()
+    if settings.provider_bookings == "firestore":
+        from app.adapters.firebase.idempotency_store import FirestoreIdempotencyStore
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        return FirestoreIdempotencyStore(settings.firebase_project_id)
+    return FakeIdempotencyStore()
+
+
+def idempotency_store_dep() -> IdempotencyStore:
+    return _idempotency()
+
+
+@lru_cache
+def _addresses() -> AddressRepository:
+    return FakeAddressRepository()
+
+
+def address_repository_dep() -> AddressRepository:
+    return _addresses()
+
+
+def create_booking_dep(
+    catalog: Annotated[CatalogRepository, Depends(catalog_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    addresses: Annotated[AddressRepository, Depends(address_repository_dep)],
+    idempotency: Annotated[IdempotencyStore, Depends(idempotency_store_dep)],
+    pricing: Annotated[PricingService, Depends(pricing_service_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
+    dispatch: Annotated[SequentialDispatch, Depends(dispatch_service_dep)],
+) -> CreateBooking:
+    return CreateBooking(
+        catalog=catalog,
+        vehicles=vehicles,
+        bookings=bookings,
+        addresses=addresses,
+        idempotency=idempotency,
+        pricing=pricing,
+        clock=clock,
+        policy=policy,
+        dispatch=dispatch,
+    )
+
+
+def get_booking_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+) -> GetBooking:
+    return GetBooking(bookings=bookings)
+
+
+def add_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+    settings: Annotated[Settings, Depends(settings_dep)],
+    scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
+) -> AddExtraLine:
+    return AddExtraLine(
+        bookings=bookings, clock=clock, gst_bps=settings.gst_bps, scheduler=scheduler
+    )
+
+
+def decide_extra_line_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> DecideExtraLine:
+    return DecideExtraLine(bookings=bookings, clock=clock)
+
+
+def manage_notifications_dep(
+    notifications: Annotated[NotificationRepository, Depends(notification_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> ManageNotifications:
+    return ManageNotifications(notifications=notifications, clock=clock)
 
 
 def notify_dep(

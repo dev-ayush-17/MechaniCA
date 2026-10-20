@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from app.application.notify import Notify
-from app.domain.booking import Booking
+from app.domain.booking import Booking, LineStatus
 from app.domain.booking_state import BookingStatus, actor_for, assert_transition
 from app.domain.errors import InvalidTransition, NotFound, PermissionDenied
 from app.domain.notification_templates import Recipient
@@ -33,6 +33,15 @@ class TransitionBooking:
         if expected_version is not None and booking.version != expected_version:
             raise InvalidTransition("This booking changed. Refresh and try again.")
         assert_transition(booking.status, target, actor_for(principal.role))
+        if target is BookingStatus.COMPLETED:
+            if any(line.status is LineStatus.PENDING_APPROVAL for line in booking.lines):
+                raise InvalidTransition(
+                    "Pending extra work must be approved or rejected first."
+                )
+            if any(line.part_replacement for line in booking.lines):
+                raise InvalidTransition(
+                    "Jobs with part lines cannot complete until photos are stored."
+                )
         mechanic_id = booking.mechanic_id
         if principal.role == Role.MECHANIC:
             mechanic_id = principal.user_id

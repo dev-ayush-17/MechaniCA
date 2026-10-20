@@ -27,15 +27,19 @@ class BookingOut {
     required this.urgency,
     required this.vehicleId,
     required this.version,
+    this.failureReason,
     this.cancelFeePaise = 0,
+    this.dispatchAttempt = 0,
   });
   
   factory BookingOut.fromJson(Map<String, Object?> json) => _$BookingOutFromJson(json);
   
   final int cancelFeePaise;
   final String? cancelReason;
+  final int dispatchAttempt;
   final String displayNumber;
   final EstimateOut estimate;
+  final String? failureReason;
   final String id;
   final List<BookingLineOut> lines;
   final String? mechanicId;

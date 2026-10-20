@@ -49,6 +49,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /offers/{offerId} {
+      allow read: if signedIn() && resource.data.mechanicId == request.auth.uid;
+      allow write: if false;
+    }
+
     // Deny anything not listed above.
     match /{document=**} { allow read, write: if false; }
   }

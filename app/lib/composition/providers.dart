@@ -41,12 +41,19 @@ import '../features/catalog/data/http_quote_api.dart';
 import '../features/catalog/data/offline_catalog_repository.dart';
 import '../features/catalog/domain/catalog_repository.dart';
 import '../features/catalog/domain/catalog_snapshot.dart';
+import '../features/mechanic_jobs/data/fake_job_transition_api.dart';
+import '../features/mechanic_jobs/data/fake_offer_api.dart';
+import '../features/mechanic_jobs/data/http_job_transition_api.dart';
+import '../features/mechanic_jobs/data/http_offer_api.dart';
+import '../features/mechanic_jobs/domain/job_transition_api.dart';
+import '../features/mechanic_jobs/domain/offer_api.dart';
 import '../features/mechanic_onboarding/data/fake_mechanic_repository.dart';
 import '../features/mechanic_onboarding/data/http_mechanic_repository.dart';
 import '../features/mechanic_onboarding/domain/mechanic_repository.dart';
 import '../core/api/generated/bookings/bookings_client.dart';
 import '../core/api/generated/catalog/catalog_client.dart';
 import '../core/api/generated/notifications/notifications_client.dart';
+import '../core/api/generated/offers/offers_client.dart';
 import '../core/api/generated/quotes/quotes_client.dart';
 import '../features/notifications/data/fake_notification_inbox.dart';
 import '../features/notifications/data/fake_push_permission.dart';
@@ -150,6 +157,36 @@ final accountApiProvider = Provider<AccountApi>((ref) {
     AuthProviderKind.firebase => HttpAccountApi(
         client: ref.watch(restClientProvider),
         auth: ref.watch(authServiceProvider),
+      ),
+  };
+});
+
+final jobTransitionApiProvider = Provider<JobTransitionApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeJobTransitionApi(),
+    AuthProviderKind.firebase => HttpJobTransitionApi(
+        client: BookingsClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
+      ),
+  };
+});
+
+final offerApiProvider = Provider<OfferApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeOfferApi(),
+    AuthProviderKind.firebase => HttpOfferApi(
+        client: OffersClient(
+          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+          baseUrl: config.apiBaseUrl,
+        ),
+        token: () async =>
+            (await ref.read(authServiceProvider).currentSession())?.idToken,
       ),
   };
 });

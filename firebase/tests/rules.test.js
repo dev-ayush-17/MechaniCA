@@ -62,6 +62,11 @@ beforeEach(async () => {
       readAt: null,
       createdAt: new Date('2026-06-01T10:00:00Z'),
     });
+    await setDoc(doc(db, 'offers/o1'), {
+      bookingId: 'b1',
+      mechanicId: 'mech',
+      status: 'open',
+    });
   });
 });
 
@@ -147,6 +152,21 @@ describe('firestore rules', () => {
     );
     await assertFails(
       getDoc(doc(env.authenticatedContext('other').firestore(), 'users/cust/notifications/n1')),
+    );
+  });
+
+  it('clients_cannot_write_offers', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertFails(updateDoc(doc(db, 'offers/o1'), { status: 'accepted' }));
+    await assertFails(setDoc(doc(db, 'offers/o2'), { mechanicId: 'mech' }));
+  });
+
+  it('assigned_mechanic_can_read_offer', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('mech').firestore(), 'offers/o1')),
+    );
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'offers/o1')),
     );
   });
 
