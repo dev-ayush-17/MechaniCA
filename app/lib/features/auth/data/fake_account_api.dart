@@ -41,4 +41,32 @@ class FakeAccountApi implements AccountApi {
         ? const Err(NotFound('Finish sign-in first.'))
         : Ok(account);
   }
+
+  @override
+  Future<Result<Account>> update(
+    Session session, {
+    required String name,
+    String? email,
+  }) async {
+    final trimmed = name.trim();
+    if (trimmed.length < 2 || trimmed.length > 60) {
+      return const Err(InvalidInput('Name must be 2 to 60 characters.'));
+    }
+    final cleanedEmail = email?.trim();
+    if (cleanedEmail != null &&
+        cleanedEmail.isNotEmpty &&
+        !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanedEmail)) {
+      return const Err(InvalidInput('Enter a valid email address.'));
+    }
+    final existing = _accounts[session.userId];
+    if (existing == null) {
+      return const Err(NotFound('Finish sign-in first.'));
+    }
+    final updated = existing.copyWith(
+      name: trimmed,
+      email: (cleanedEmail == null || cleanedEmail.isEmpty) ? null : cleanedEmail,
+    );
+    _accounts[session.userId] = updated;
+    return Ok(updated);
+  }
 }

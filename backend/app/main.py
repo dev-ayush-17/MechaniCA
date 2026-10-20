@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api import health
 from app.api.errors import install_error_handling
 from app.api.v1 import (
+    addresses,
     admin,
     admin_verification,
     bookings,
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
     install_error_handling(app)
     app.include_router(health.router)
     app.include_router(me.router)
+    app.include_router(addresses.router)
     app.include_router(vehicles.router)
     app.include_router(catalog.router)
     app.include_router(quotes.router)

@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from app.domain.contact import EmergencyContact
 from app.domain.user import User
 
 
@@ -9,3 +10,9 @@ class UserRepository(Protocol):
     async def upsert(self, user: User) -> User: ...
 
     async def search(self, query: str) -> list[User]: ...
+
+    async def list_contacts(self, owner_id: str) -> list[EmergencyContact]: ...
+
+    async def save_contact(self, contact: EmergencyContact) -> EmergencyContact: ...
+
+    async def delete_contact(self, owner_id: str, contact_id: str) -> None: ...

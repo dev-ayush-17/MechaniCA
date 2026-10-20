@@ -8,6 +8,8 @@ import 'package:mechupp_app/features/tracking/data/fake_location_tracking_servic
 import 'package:mechupp_app/features/tracking/data/fake_maps_service.dart';
 import 'package:mechupp_app/features/tracking/domain/location_point.dart';
 import 'package:mechupp_app/features/tracking/domain/tracking_copy.dart';
+import 'package:mechupp_app/features/profile/data/fake_contact_api.dart';
+import 'package:mechupp_app/features/profile/domain/emergency_contact.dart';
 import 'package:mechupp_app/features/tracking/live_tracking_screen.dart';
 
 void main() {
@@ -63,6 +65,42 @@ void main() {
     await pumpScreen(tester, locations: seeded(recordedAt: now));
     expect(find.text('4.2 km'), findsOneWidget);
     expect(find.text('12 min'), findsOneWidget);
+  });
+
+  testWidgets('share sheet lists emergency contact names', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          locationTrackingServiceProvider.overrideWithValue(
+            seeded(recordedAt: now),
+          ),
+          mapsServiceProvider.overrideWithValue(FakeMapsService()),
+          clockProvider.overrideWithValue(FakeClock(now)),
+          contactApiProvider.overrideWithValue(
+            FakeContactApi([
+              const EmergencyContact(
+                id: 'c1',
+                name: 'Anita',
+                phoneE164: '+919876543210',
+              ),
+            ]),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const LiveTrackingScreen(bookingId: 'b1', status: 'enRoute'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text(kShareTracking));
+    await tester.pumpAndSettle();
+
+    expect(find.text(kShareWithContacts), findsOneWidget);
+    expect(find.text('Anita'), findsOneWidget);
+    expect(find.text(kShareNoSms), findsOneWidget);
+    expect(find.text(kShareLink), findsOneWidget);
   });
 
   testWidgets('eta unavailable when maps fail and no recent cache', (tester) async {

@@ -131,6 +131,65 @@ class LiveTrackingScreen extends ConsumerWidget {
   }
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {
+    await ref.read(contactsControllerProvider.notifier).load();
+    if (!context.mounted) return;
+    final contacts = ref.read(contactsControllerProvider).items;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  kShareWithContacts,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (contacts.isEmpty)
+                  const Text(
+                    kNoEmergencyContacts,
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  )
+                else
+                  ...contacts.map(
+                    (contact) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        contact.name,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      subtitle: const Text(
+                        kShareNoSms,
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: kShareLink,
+                  onPressed: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _shareToken(context, ref);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _shareToken(BuildContext context, WidgetRef ref) async {
     await ref.read(trackingControllerProvider(_args).notifier).shareLink();
     final path = ref.read(trackingControllerProvider(_args)).sharePath;
     if (path == null || !context.mounted) return;

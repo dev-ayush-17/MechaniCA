@@ -9,17 +9,23 @@ import '../../core/error/result.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../models/booking_model.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
+import '../profile/domain/saved_address.dart';
+import '../vehicles/domain/bike_mapper.dart';
+import '../vehicles/domain/vehicle.dart';
 import 'domain/booking.dart';
 import 'domain/payment_method.dart';
+import 'domain/repeat_prefill.dart';
 import 'presentation/coupon_apply_field.dart';
 import 'presentation/price_step.dart';
 import 'presentation/service_step.dart';
 
 class BookingFlowScreen extends ConsumerStatefulWidget {
-  const BookingFlowScreen({super.key});
+  const BookingFlowScreen({super.key, this.repeat});
+
+  final RepeatPrefill? repeat;
+
   @override
   ConsumerState<BookingFlowScreen> createState() => _BookingFlowScreenState();
 }
@@ -31,10 +37,58 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(bikeProvider.notifier).loadBikes('usr_001');
-      ref.read(catalogServicesProvider);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    ref.read(bookingFlowProvider.notifier).reset();
+    final userId = ref.read(authProvider).session?.userId;
+    if (userId != null) {
+      await ref.read(vehiclesControllerProvider.notifier).load(userId);
+    }
+    await ref.read(addressesControllerProvider.notifier).load();
+    try {
+      await ref.read(catalogServicesProvider.future);
+    } catch (_) {}
+    if (!mounted) return;
+    _applyRepeat();
+  }
+
+  void _applyRepeat() {
+    final repeat = widget.repeat;
+    if (repeat == null) return;
+    final vehicles = ref.read(vehiclesControllerProvider).vehicles;
+    Vehicle? vehicle;
+    for (final item in vehicles) {
+      if (item.id == repeat.vehicleId) {
+        vehicle = item;
+        break;
+      }
+    }
+    if (vehicle != null) {
+      ref.read(bookingFlowProvider.notifier).selectBike(vehicle.toBikeModel());
+    }
+    final catalog = ref.read(catalogServicesProvider).valueOrNull;
+    if (catalog != null) {
+      for (final svc in catalog.services) {
+        if (svc.code == repeat.serviceCode) {
+          ref.read(bookingFlowProvider.notifier).selectService(serviceModelFromDefinition(svc));
+          break;
+        }
+      }
+    }
+    final addresses = ref.read(addressesControllerProvider).items;
+    SavedAddress? address;
+    for (final item in addresses) {
+      if (item.id == repeat.addressId) {
+        address = item;
+        break;
+      }
+    }
+    ref.read(bookingFlowProvider.notifier).setAddressId(repeat.addressId);
+    if (address != null) {
+      ref.read(bookingFlowProvider.notifier).setPickupAddress(address.fullAddress);
+    }
   }
 
   void _next() {
@@ -63,7 +117,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     final result = await ref.read(bookingApiProvider).create(
           vehicleId: flow.selectedBike!.id,
           serviceCode: flow.selectedService!.id,
-          addressId: 'addr_home',
+          addressId: flow.addressId.isEmpty ? 'addr_home' : flow.addressId,
           paymentMethod: paymentMethodCode(flow.paymentMethod),
           mode: 'instant',
           urgency: 'normal',
@@ -82,7 +136,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
   Future<void> _persistCreated(BookingFlowState flow, Booking created) async {
     final booking = BookingModel(
       id: created.id,
-      userId: 'usr_001',
+      userId: ref.read(authProvider).session?.userId ?? '',
       bikeId: flow.selectedBike!.id,
       bikeName: flow.selectedBike!.name,
       bikeNumber: flow.selectedBike!.registrationNumber,
@@ -185,7 +239,7 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     switch (_step) {
       case 0: return _Step1Bike(onNext: _next);
       case 1: return ServiceStep(onNext: _next);
-      case 2: return _Step3DateTime(onNext: _next);
+      case 2: return _Step3DateTime(onNext: _next, leaveDateEmpty: widget.repeat != null);
       case 3: return _Step4Pickup(onNext: _next);
       case 4: return _Step5Address(onNext: _next);
       case 5: return PriceStep(onConfirm: _confirmBooking);
@@ -202,17 +256,17 @@ class _Step1Bike extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bikesAsync = ref.watch(bikeProvider);
+    final vehiclesState = ref.watch(vehiclesControllerProvider);
     final flow = ref.watch(bookingFlowProvider);
+    final bikes = vehiclesState.asBikeModels;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: bikesAsync.when(
-            loading: () => const ShimmerList(count: 2),
-            error: (_, __) => const Center(child: Text('Failed to load bikes')),
-            data: (bikes) => ListView.builder(
+          child: vehiclesState.isLoading
+              ? const ShimmerList(count: 2)
+              : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: bikes.length,
               itemBuilder: (_, i) {
@@ -260,7 +314,6 @@ class _Step1Bike extends ConsumerWidget {
                 );
               },
             ),
-          ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -275,14 +328,23 @@ class _Step1Bike extends ConsumerWidget {
 
 class _Step3DateTime extends ConsumerStatefulWidget {
   final VoidCallback onNext;
-  const _Step3DateTime({required this.onNext});
+  final bool leaveDateEmpty;
+  const _Step3DateTime({required this.onNext, this.leaveDateEmpty = false});
   @override
   ConsumerState<_Step3DateTime> createState() => _Step3DateTimeState();
 }
 
 class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  DateTime? _selectedDate;
   String? _selectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.leaveDateEmpty) {
+      _selectedDate = DateTime.now().add(const Duration(days: 1));
+    }
+  }
 
   final _times = ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
 
@@ -310,7 +372,9 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
                     itemCount: _dates.length,
                     itemBuilder: (_, i) {
                       final d = _dates[i];
-                      final selected = d.day == _selectedDate.day && d.month == _selectedDate.month;
+                      final selected = _selectedDate != null &&
+                          d.day == _selectedDate!.day &&
+                          d.month == _selectedDate!.month;
                       return GestureDetector(
                         onTap: () => setState(() => _selectedDate = d),
                         child: AnimatedContainer(
@@ -367,10 +431,10 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
           padding: const EdgeInsets.all(16),
           child: AppButton(
             label: 'Next',
-            onPressed: _selectedTime != null
+            onPressed: _selectedDate != null && _selectedTime != null
                 ? () {
                     ref.read(bookingFlowProvider.notifier)
-                      ..selectDate(_selectedDate)
+                      ..selectDate(_selectedDate!)
                       ..selectTime(_selectedTime!);
                     widget.onNext();
                   }
@@ -500,7 +564,16 @@ class _Step5Address extends ConsumerStatefulWidget {
 }
 
 class _Step5AddressState extends ConsumerState<_Step5Address> {
-  final _addrCtrl = TextEditingController(text: 'Rajendra Nagar, Patna, Bihar');
+  late final TextEditingController _addrCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = ref.read(bookingFlowProvider).pickupAddress;
+    _addrCtrl = TextEditingController(
+      text: existing ?? 'Rajendra Nagar, Patna, Bihar',
+    );
+  }
 
   @override
   void dispose() {
@@ -511,6 +584,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
   @override
   Widget build(BuildContext context) {
     final flow = ref.watch(bookingFlowProvider);
+    final saved = ref.watch(addressesControllerProvider).items;
 
     return Column(
       children: [
@@ -531,11 +605,12 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
                     suffix: const Padding(padding: EdgeInsets.all(14), child: Icon(Icons.my_location, color: AppColors.primaryRed, size: 18)),
                   ),
                   const SizedBox(height: 8),
-                  // Saved addresses
-                  ...mockAddresses.map((a) => GestureDetector(
+                  ...saved.map((a) => GestureDetector(
                     onTap: () {
                       _addrCtrl.text = a.fullAddress;
-                      ref.read(bookingFlowProvider.notifier).setPickupAddress(a.fullAddress);
+                      ref.read(bookingFlowProvider.notifier)
+                        ..setPickupAddress(a.fullAddress)
+                        ..setAddressId(a.id);
                     },
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 8),
@@ -543,7 +618,11 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider),
+                        border: Border.all(
+                          color: flow.addressId == a.id
+                              ? AppColors.primaryRed
+                              : AppColors.divider,
+                        ),
                       ),
                       child: Row(
                         children: [

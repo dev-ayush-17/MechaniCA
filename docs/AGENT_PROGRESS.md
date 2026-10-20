@@ -292,6 +292,26 @@ Not run locally:
 
 Next: PR against `main`. Do not merge. Do not start M08/M14/M15/M16 in this worktree.
 
+## M14 notes
+
+Branch: `feat/m14-dashboard` from `origin/main` (eba138d, Wave 5 M08+M11). Isolated worktree. FR-USR-001/002/003/006/007/009, FR-VEH-005.
+
+Done:
+
+- Home cards bind to `BookingApi.listMine` and the primary vehicle. Empty home is "Book a service", not a mock job. Wallet tile has no invented rupee total.
+- History tabs Upcoming / Active / Past, pull to refresh, empty copy "No services yet." Book again on a paid job prefills vehicle, service, and address. Date stays empty. Quote API recalculates price (`repeat_recalculates_price`).
+- Profile edit (name 2–60, optional email, phone read-only). Addresses GET/POST/PATCH/DELETE `/v1/addresses` (PIN 6 digits, max 10). Emergency contacts GET/POST/DELETE `/v1/me/contacts` (max 3). Extended `AddressRepository` and `UserRepository`. No new port.
+- Health is a pure function of last paid/completed service date: good ≤90 days, fair ≤180, poor otherwise. Same score on every category. Copy: "Based on your last service. A full checkup will replace this."
+- Tracking share sheet lists emergency-contact names as suggested recipients. Creates the M08 token only. Does not SMS.
+
+Named tests: `health_good_within_90_days`, `repeat_recalculates_price`, `address_requires_pincode`, `max_three_emergency_contacts`, `home_does_not_invent_a_wallet_total`.
+
+Shared files (additive slices only): `backend/app/api/deps.py`, `app/lib/composition/providers.dart`, `app/lib/navigation/*`, `backend/openapi.json` + generated Dart.
+
+Out of this PR: loyalty earn/burn, fuel/membership/referral/documents backends, home visual redesign, admin, disputes (M15), invoice PDF, RTDB rules, payments apply.
+
+Not run locally: Firestore/RTDB rules tests (no Java). App not built for Android/iOS here.
+
 ## M15 notes
 
 Split: API + named tests on `feat/m15-admin` (this PR). Admin web + "Report a problem" on `feat/m15-admin-ui`. Both `--base main`, same spec [M15-admin.md](milestones/M15-admin.md). Handwritten backend exceeded ~1,500 lines.
