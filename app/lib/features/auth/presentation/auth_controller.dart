@@ -135,6 +135,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  void hydrate(Session session, Account account) {
+    state = AuthState(session: session, account: account);
+  }
+
+  void applyAccount(Account account) {
+    state = AuthState(session: state.session, account: account);
+  }
+
   Future<void> logout() async {
     final result = await _service.signOut();
     result.when(

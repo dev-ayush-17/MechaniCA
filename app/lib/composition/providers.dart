@@ -36,7 +36,17 @@ import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
 import '../features/booking/data/fake_booking_api.dart';
 import '../features/booking/data/http_booking_api.dart';
+import '../features/booking/domain/booking.dart';
 import '../features/booking/domain/booking_api.dart';
+import '../features/home/presentation/home_controller.dart';
+import '../features/profile/data/fake_address_api.dart';
+import '../features/profile/data/fake_contact_api.dart';
+import '../features/profile/data/http_address_api.dart';
+import '../features/profile/data/http_contact_api.dart';
+import '../features/profile/domain/address_api.dart';
+import '../features/profile/domain/contact_api.dart';
+import '../features/profile/presentation/addresses_controller.dart';
+import '../features/profile/presentation/contacts_controller.dart';
 import '../features/booking/domain/quote_api.dart';
 import '../features/catalog/data/cached_quote_api.dart';
 import '../features/catalog/data/catalog_local_store.dart';
@@ -390,6 +400,11 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   };
 });
 
+final homeBookingsProvider =
+    StateNotifierProvider<HomeController, AsyncValue<List<Booking>>>(
+  (ref) => HomeController(ref.watch(bookingApiProvider)),
+);
+
 final bookingApiProvider = Provider<BookingApi>((ref) {
   final config = ref.watch(appConfigProvider);
   return switch (config.providerAuth) {
@@ -579,4 +594,36 @@ final saveInvoicePdfProvider = Provider<SaveInvoicePdf>(
 
 final shareInvoicePdfProvider = Provider<ShareInvoicePdf>(
   (ref) => shareInvoicePdf,
+);
+
+final addressApiProvider = Provider<AddressApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeAddressApi(),
+    AuthProviderKind.firebase => HttpAddressApi(
+        client: ref.watch(restClientProvider).addresses,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final addressesControllerProvider =
+    StateNotifierProvider<AddressesController, AddressesState>(
+  (ref) => AddressesController(ref.watch(addressApiProvider)),
+);
+
+final contactApiProvider = Provider<ContactApi>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return switch (config.providerAuth) {
+    AuthProviderKind.fake => FakeContactApi(),
+    AuthProviderKind.firebase => HttpContactApi(
+        client: ref.watch(restClientProvider).me,
+        token: () => _idToken(ref),
+      ),
+  };
+});
+
+final contactsControllerProvider =
+    StateNotifierProvider<ContactsController, ContactsState>(
+  (ref) => ContactsController(ref.watch(contactApiProvider)),
 );

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/api/generated/bookings/bookings_client.dart';
+import '../../../core/api/generated/models/booking_out.dart';
 import '../../../core/api/generated/models/booking_mode.dart' as api;
 import '../../../core/api/generated/models/cancel_booking_request.dart';
 import '../../../core/api/generated/models/create_booking_request.dart';
@@ -108,5 +109,37 @@ class HttpBookingApi implements BookingApi {
     } on DioException catch (e) {
       return Err(failureFromDio(e));
     }
+  }
+
+  @override
+  Future<Result<List<Booking>>> listMine() async {
+    try {
+      final token = await _token();
+      final body = await _client.listBookingsV1BookingsGet(
+        authorization: token == null ? null : 'Bearer $token',
+      );
+      return Ok(body.items.map(_fromOut).toList());
+    } on DioException catch (e) {
+      return Err(failureFromDio(e));
+    }
+  }
+
+  Booking _fromOut(BookingOut body) {
+    return Booking(
+      id: body.id,
+      displayNumber: body.displayNumber,
+      status: bookingStatusFromApi(body.status),
+      serviceCode: body.serviceCode,
+      mode: body.mode,
+      urgency: body.urgency,
+      totalPaise: body.estimate.totalPaise,
+      cancelFeePaise: body.cancelFeePaise,
+      version: body.version,
+      vehicleId: body.vehicleId,
+      serviceName: body.serviceName,
+      addressId: body.addressId,
+      scheduledStart: body.scheduledStart,
+      paymentMethod: body.paymentMethod,
+    );
   }
 }

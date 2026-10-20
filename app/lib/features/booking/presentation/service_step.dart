@@ -4,11 +4,10 @@ import 'package:intl/intl.dart';
 
 import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../models/service_model.dart';
 import '../../../widgets/shared/app_states.dart';
 import '../../../widgets/shared/app_widgets.dart';
-import '../../catalog/domain/service_definition.dart';
 import '../domain/pricing.dart';
+import '../domain/repeat_prefill.dart';
 
 class ServiceStep extends ConsumerWidget {
   const ServiceStep({super.key, required this.onNext});
@@ -50,7 +49,7 @@ class ServiceStep extends ConsumerWidget {
                       return GestureDetector(
                         onTap: () => ref
                             .read(bookingFlowProvider.notifier)
-                            .selectService(_toServiceModel(svc)),
+                            .selectService(serviceModelFromDefinition(svc)),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.only(bottom: 10),
@@ -162,16 +161,3 @@ class ServiceStep extends ConsumerWidget {
   }
 }
 
-ServiceModel _toServiceModel(ServiceDefinition svc) {
-  return ServiceModel(
-    id: svc.code,
-    name: svc.name,
-    description: svc.description,
-    price: (svc.baseLaborPaise ~/ 100).toDouble(),
-    iconName: 'build',
-    category: 'service',
-    duration: svc.durationLabel,
-    isPopular: svc.code == 'general_service',
-    includes: const [],
-  );
-}

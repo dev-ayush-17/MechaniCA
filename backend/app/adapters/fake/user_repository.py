@@ -1,3 +1,4 @@
+from app.domain.contact import EmergencyContact
 from app.domain.user import User
 
 
@@ -6,6 +7,7 @@ class FakeUserRepository:
 
     def __init__(self) -> None:
         self._users: dict[str, User] = {}
+        self._contacts: dict[str, dict[str, EmergencyContact]] = {}
 
     async def get(self, user_id: str) -> User | None:
         return self._users.get(user_id)
@@ -23,3 +25,14 @@ class FakeUserRepository:
             for user in self._users.values()
             if needle in user.name.lower() or needle in user.phone_e164
         ]
+
+    async def list_contacts(self, owner_id: str) -> list[EmergencyContact]:
+        return list(self._contacts.get(owner_id, {}).values())
+
+    async def save_contact(self, contact: EmergencyContact) -> EmergencyContact:
+        bucket = self._contacts.setdefault(contact.owner_id, {})
+        bucket[contact.id] = contact
+        return contact
+
+    async def delete_contact(self, owner_id: str, contact_id: str) -> None:
+        self._contacts.get(owner_id, {}).pop(contact_id, None)

@@ -43,6 +43,21 @@ class HttpAccountApi implements AccountApi {
     });
   }
 
+  @override
+  Future<Result<Account>> update(
+    Session session, {
+    required String name,
+    String? email,
+  }) {
+    return _call(session, (token) async {
+      final user = await _client.me.patchMeV1MePatch(
+        body: api.PatchMeRequest(name: name, email: email),
+        authorization: 'Bearer $token',
+      );
+      return _toAccount(user);
+    });
+  }
+
   /// Runs [request]. On 401 it refreshes the token once and retries; if that
   /// also fails the caller gets [Unauthenticated] and signs out locally.
   Future<Result<Account>> _call(
@@ -69,6 +84,7 @@ class HttpAccountApi implements AccountApi {
         role: user.role,
         name: user.name,
         phoneE164: user.phoneE164,
+        email: user.email,
       );
 }
 
