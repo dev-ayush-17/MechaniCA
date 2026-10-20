@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,5 +60,38 @@ void main() {
     expect(find.text('MC-202606-000042'), findsOneWidget);
     expect(find.text('₹1059'), findsWidgets);
     expect(find.text('₹664'), findsNothing);
+  });
+
+  testWidgets('share opens the share sheet with a pdf file', (tester) async {
+    final shared = <String>[];
+    final api = FakeInvoiceApi(invoices: {'b-paid': _paid()});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          invoiceApiProvider.overrideWithValue(api),
+          saveInvoicePdfProvider.overrideWithValue((bookingId, bytes) async {
+            final file = File('${Directory.systemTemp.path}/invoice-$bookingId.pdf');
+            file.writeAsBytesSync(bytes, flush: true);
+            return file.path;
+          }),
+          shareInvoicePdfProvider.overrideWithValue((path) async {
+            shared.add(path);
+          }),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const InvoiceScreen(bookingId: 'b-paid'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byIcon(Icons.share_outlined));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    expect(shared, hasLength(1));
+    expect(shared.first.endsWith('.pdf'), isTrue);
+    expect(File(shared.first).existsSync(), isTrue);
   });
 }

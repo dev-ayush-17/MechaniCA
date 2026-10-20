@@ -85,6 +85,7 @@ import '../features/offers/domain/coupon_api.dart';
 import '../features/offers/domain/coupon_offer.dart';
 import '../features/invoice/data/fake_invoice_api.dart';
 import '../features/invoice/data/http_invoice_api.dart';
+import '../features/invoice/data/invoice_file_actions.dart';
 import '../features/invoice/domain/invoice.dart';
 import '../features/invoice/domain/invoice_api.dart';
 import '../features/payments/data/fake_earnings_api.dart';
@@ -488,3 +489,17 @@ final invoiceProvider =
     FutureProvider.family<Result<Invoice>, String>((ref, bookingId) {
   return ref.watch(invoiceApiProvider).get(bookingId);
 });
+
+typedef SaveInvoicePdf = Future<String> Function(
+  String bookingId,
+  List<int> bytes,
+);
+typedef ShareInvoicePdf = Future<void> Function(String path);
+
+final saveInvoicePdfProvider = Provider<SaveInvoicePdf>(
+  (ref) => saveInvoicePdf,
+);
+
+final shareInvoicePdfProvider = Provider<ShareInvoicePdf>(
+  (ref) => shareInvoicePdf,
+);

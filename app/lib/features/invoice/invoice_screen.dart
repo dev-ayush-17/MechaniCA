@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../composition/providers.dart';
+import '../../core/error/result.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/shared/app_widgets.dart';
 import 'domain/invoice.dart';
@@ -12,6 +13,27 @@ import 'domain/invoice.dart';
 class InvoiceScreen extends ConsumerWidget {
   final String bookingId;
   const InvoiceScreen({super.key, required this.bookingId});
+
+  Future<void> _export(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool share,
+  }) async {
+    final result = await ref.read(invoiceApiProvider).downloadPdf(bookingId);
+    if (!context.mounted) return;
+    switch (result) {
+      case Err(:final failure):
+        showAppSnackbar(context, failure.message, isError: true);
+      case Ok(:final value):
+        final path = await ref.read(saveInvoicePdfProvider)(bookingId, value);
+        if (!context.mounted) return;
+        if (share) {
+          await ref.read(shareInvoicePdfProvider)(path);
+        } else {
+          showAppSnackbar(context, 'Invoice downloaded');
+        }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +50,7 @@ class InvoiceScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined),
-            onPressed: () => showAppSnackbar(context, 'Invoice shared!'),
+            onPressed: () => _export(context, ref, share: true),
           ),
         ],
       ),
@@ -36,7 +58,10 @@ class InvoiceScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _InvoiceError(message: error.toString()),
         data: (result) => result.when(
-          onOk: (invoice) => _InvoiceBody(invoice: invoice),
+          onOk: (invoice) => _InvoiceBody(
+            invoice: invoice,
+            onDownload: () => _export(context, ref, share: false),
+          ),
           onErr: (failure) => _InvoiceError(message: failure.message),
         ),
       ),
@@ -65,9 +90,10 @@ class _InvoiceError extends StatelessWidget {
 }
 
 class _InvoiceBody extends StatelessWidget {
-  const _InvoiceBody({required this.invoice});
+  const _InvoiceBody({required this.invoice, required this.onDownload});
 
   final Invoice invoice;
+  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -199,8 +225,7 @@ class _InvoiceBody extends StatelessWidget {
           AppButton(
             label: 'Download Invoice (PDF)',
             icon: Icons.download_rounded,
-            onPressed: () =>
-                showAppSnackbar(context, 'Invoice downloaded to Downloads folder'),
+            onPressed: onDownload,
           ),
           const SizedBox(height: 40),
         ],
