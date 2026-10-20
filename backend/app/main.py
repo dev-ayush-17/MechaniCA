@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api import health
 from app.api.errors import install_error_handling
 from app.api.v1 import (
+    admin,
     admin_verification,
     bookings,
     catalog,
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     app.include_router(mechanic.router)
     app.include_router(mechanic.upload_router)
     app.include_router(admin_verification.router)
+    app.include_router(admin.router)
     app.include_router(reviews.proofs_router)
     app.include_router(reviews.reviews_router)
     app.include_router(payments.router)

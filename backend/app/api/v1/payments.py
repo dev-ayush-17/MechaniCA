@@ -319,15 +319,18 @@ async def staff_cash_confirm(
 @admin_router.post("/refunds", response_model=PaymentOut)
 async def create_refund(
     body: RefundRequest,
+    request: Request,
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[RefundPayment, Depends(refund_payment_dep)],
     idempotency_key: Annotated[str | None, Header()] = None,
 ) -> PaymentOut:
+    request_id = request.headers.get("X-Request-Id", getattr(request.state, "request_id", ""))
     payment = await use_case.execute(
         principal,
         payment_id=body.payment_id,
         amount_paise=body.amount_paise,
         idempotency_key=idempotency_key,
+        request_id=str(request_id),
     )
     return PaymentOut.of(payment)
 

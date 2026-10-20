@@ -46,3 +46,6 @@ class FakePaymentRepository:
             for p in self.payments.values()
             if p.status is PaymentStatus.PENDING and p.updated_at < cutoff
         ]
+
+    async def list_all(self) -> list[Payment]:
+        return list(self.payments.values())

@@ -24,6 +24,7 @@ from app.domain.errors import InvalidTransition, NotFound, OfferGone, Permission
 from app.domain.geo import haversine_km
 from app.domain.mechanic import Mechanic
 from app.domain.notification_templates import Channel
+from app.ports.analytics_service import AnalyticsService
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
 from app.ports.job_scheduler import JobScheduler, ScheduledJob
@@ -54,6 +55,7 @@ class SequentialDispatch:
     config: DispatchConfig = DispatchConfig()
     scheduler: JobScheduler | None = None
     locations: LocationTrackingService | None = None
+    analytics: AnalyticsService | None = None
 
     async def offer(self, booking_id: str) -> Offer | None:
         booking = await self._load_booking(booking_id)
@@ -92,6 +94,7 @@ class SequentialDispatch:
         updated = booking.with_status(BookingStatus.CONFIRMED, now=now, dispatch_attempt=attempt)
         await self.bookings.save(updated)
         await self._schedule_timeout(saved.id, saved.expires_at)
+        await self._track("dispatch_offer_received", {"attempt": attempt})
         await self._notify(
             OutboundNotification(
                 user_id=candidate.mechanic_id,
@@ -128,6 +131,7 @@ class SequentialDispatch:
         )
         saved = await self.bookings.save(assigned)
         await self._sync_gate(saved)
+        await self._track("dispatch_offer_accepted", {"attempt": offer.attempt})
         await self._notify(
             OutboundNotification(
                 user_id=booking.customer_id,
@@ -148,6 +152,9 @@ class SequentialDispatch:
         if offer.status is not OfferStatus.OPEN:
             return
         await self.offers.save(replace(offer, status=OfferStatus.REJECTED))
+        await self._track(
+            "dispatch_offer_rejected", {"attempt": offer.attempt, "reason": "rejected"}
+        )
         await self._advance(offer.booking_id)
 
     async def expire(self, offer_id: str) -> None:
@@ -155,6 +162,9 @@ class SequentialDispatch:
         if offer.status is not OfferStatus.OPEN:
             return
         await self.offers.save(replace(offer, status=OfferStatus.EXPIRED))
+        await self._track(
+            "dispatch_offer_rejected", {"attempt": offer.attempt, "reason": "timeout"}
+        )
         await self._notify(
             OutboundNotification(
                 user_id=offer.mechanic_id,
@@ -328,6 +338,11 @@ class SequentialDispatch:
         if self.locations is None:
             return
         await sync_location_gate(self.locations, booking)
+
+    async def _track(self, name: str, properties: dict[str, object]) -> None:
+        if self.analytics is None:
+            return
+        await self.analytics.track(name, properties)
 
     async def _notify(self, message: OutboundNotification) -> None:
         try:

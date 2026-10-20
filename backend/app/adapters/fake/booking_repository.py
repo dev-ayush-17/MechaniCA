@@ -23,3 +23,6 @@ class FakeBookingRepository:
 
     async def list_by_status(self, status: BookingStatus) -> list[Booking]:
         return [b for b in self.bookings.values() if b.status is status]
+
+    async def list_all(self) -> list[Booking]:
+        return list(self.bookings.values())

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
@@ -11,12 +11,15 @@ from app.api.deps import (
     create_booking_dep,
     decide_extra_line_dep,
     get_booking_dep,
+    open_dispute_dep,
     principal_dep,
     transition_booking_dep,
 )
-from app.api.errors import error_responses
+from app.api.errors import REQUEST_ID_HEADER, error_responses
+from app.api.v1.admin import DisputeOut
 from app.application.cancel_booking import CancelBooking
 from app.application.create_booking import CreateBooking
+from app.application.disputes import OpenDispute
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
 from app.application.transition_booking import TransitionBooking
@@ -246,6 +249,25 @@ async def add_extra_line(
             kind=body.kind,
         )
     )
+
+
+class OpenDisputeRequest(_Camel):
+    reason: str
+
+
+@router.post("/{booking_id}/disputes", response_model=DisputeOut, status_code=201)
+async def open_booking_dispute(
+    booking_id: str,
+    body: OpenDisputeRequest,
+    request: Request,
+    principal: Annotated[Principal, Depends(principal_dep)],
+    use_case: Annotated[OpenDispute, Depends(open_dispute_dep)],
+) -> DisputeOut:
+    request_id = request.headers.get(REQUEST_ID_HEADER, getattr(request.state, "request_id", ""))
+    opened = await use_case.execute(
+        principal, booking_id, reason=body.reason, request_id=str(request_id)
+    )
+    return DisputeOut.of(opened)
 
 
 @router.post("/{booking_id}/lines/{line_id}/decision", response_model=BookingOut)

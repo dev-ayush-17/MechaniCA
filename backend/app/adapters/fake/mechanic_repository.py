@@ -140,6 +140,13 @@ class FakeMechanicRepository:
         found.sort(key=lambda item: item[0])
         return [mechanic for _, mechanic in found[:limit]]
 
+    async def list_pending(self) -> list[Mechanic]:
+        return [
+            mechanic
+            for mechanic in self._mechanics.values()
+            if mechanic.verification_status is VerificationStatus.PENDING
+        ]
+
     def seed_draft(self, mechanic_id: str, now: datetime) -> Mechanic:
         draft = Mechanic(
             id=mechanic_id,

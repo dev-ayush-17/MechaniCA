@@ -12,6 +12,7 @@ from app.domain.errors import NotFound
 from app.domain.notification_templates import Channel
 from app.domain.payment import GatewayEvent, Payment, PaymentReason, PaymentStatus
 from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
+from app.ports.analytics_service import AnalyticsService
 from app.ports.audit_log import AuditLog
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
@@ -34,6 +35,7 @@ class ApplyGatewayEvent:
     clock: Clock
     scheduler: JobScheduler | None = None
     locations: LocationTrackingService | None = None
+    analytics: AnalyticsService | None = None
 
     async def execute(self, event: GatewayEvent) -> Payment:
         payment = await self.payments.get_by_gateway_order(event.gateway_order_id)
@@ -87,6 +89,7 @@ class ApplyGatewayEvent:
             )
             saved = await self.payments.save(stored, expected_version=payment.version)
             await self._notify(saved, "paymentFailed")
+            await self._track("payment_failed", saved)
             return saved
 
         stored = replace(
@@ -120,7 +123,13 @@ class ApplyGatewayEvent:
                     await sync_location_gate(self.locations, paid)
                 await schedule_invoice_render(self.scheduler, saved.booking_id, now)
         await self._notify(saved, "paymentPaid")
+        await self._track("payment_succeeded", saved)
         return saved
+
+    async def _track(self, name: str, payment: Payment) -> None:
+        if self.analytics is None:
+            return
+        await self.analytics.track(name, {"method": payment.method.value})
 
     async def _notify(self, payment: Payment, template_id: str) -> None:
         try:
