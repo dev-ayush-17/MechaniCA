@@ -7,11 +7,11 @@ Living log. Update this at the end of every session.
 | Field | Value |
 | --- | --- |
 | Phase | Implementation |
-| Branch | `feat/m06-booking` |
-| Milestone in progress | M06 booking core. Code and tests are done. PR opening. |
-| Next milestone | M07 dispatch. Needs this M06 PR merged. |
-| Demo | Runs from `app/` with `flutter run`. Confirm submits `POST /v1/bookings` (fake adapter in demo). Offline confirm shows "Connect to book." and keeps the draft. Cancel after `arrived` shows support copy. |
-| Known broken | Nothing known. `flutter analyze` on touched booking files is clean. |
+| Branch | `main` (`844f1d1`) |
+| Milestone in progress | None. Wave 4 is merged. |
+| Next milestone | M08 live tracking and M11 invoices, in parallel. |
+| Demo | Runs from `app/` with `flutter run`. Booking, dispatch, notifications, chat, parts/reviews, and payments are on main (fakes in demo). |
+| Known broken | Nothing known. |
 
 ## Completed
 
@@ -21,6 +21,7 @@ Living log. Update this at the end of every session.
 | 2026-10-19 | PRD chapters 01–25, ADRs 001–014, agent rules, milestone specs (PR #3) |
 | 2026-10-19 | M00 foundation (PR #4), M01 frontend foundations (PR #5), M02 auth (PR #6), rename to MechUpp (PR #7), M03 vehicles (PR #9), M04 mechanics (PR #8), M05 catalog/pricing (PR #10). All merged. |
 | 2026-10-19 | M06: product booking statuses, idempotent `POST /v1/bookings`, transitions, cancel fees, SOS payload, extra-line approve/reject. Wizard submit and cancel UI. |
+| 2026-10-20 | Wave 4 merged: M07 dispatch (#15), M09 notifications (#14), M12 chat (#13), M13 parts/reviews (#12), M10 payments API (#16) + UI (#17). |
 
 ## M06 notes and follow-ups
 
@@ -67,7 +68,7 @@ Follow-ups, not done here (scope):
 
 ## Next session
 
-M07 dispatch per [MILESTONES.md](MILESTONES.md). Start only after this M06 PR is merged.
+M08 tracking and M11 invoices in parallel from this `main`. Specs: [M08-tracking.md](milestones/M08-tracking.md), [M11-invoices.md](milestones/M11-invoices.md). Do not start M14/M15/M16.
 
 ## M10 notes
 
