@@ -10,6 +10,7 @@ import '../features/home/home_screen.dart';
 import '../features/home/notifications_screen.dart';
 import '../features/bikes/my_bikes_screen.dart';
 import '../features/booking/booking_flow_screen.dart';
+import '../features/booking/domain/repeat_prefill.dart';
 import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
 import '../features/job_chat/presentation/job_chat_screen.dart';
@@ -99,7 +100,12 @@ final appRouter = GoRouter(
     // ── Booking ───────────────────────────────────────────────────────────────
     GoRoute(
       path: RouteNames.booking,
-      builder: (_, __) => const BookingFlowScreen(),
+      builder: (_, state) {
+        final extra = state.extra;
+        return BookingFlowScreen(
+          repeat: extra is RepeatPrefill ? extra : null,
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.bookingSuccess,

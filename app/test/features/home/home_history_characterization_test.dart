@@ -8,47 +8,6 @@ import 'package:mechupp_app/features/history/history_screen.dart';
 import 'package:mechupp_app/features/home/domain/home_copy.dart';
 import 'package:mechupp_app/features/home/home_screen.dart';
 import 'package:mechupp_app/features/wallet/data/fake_wallet_api.dart';
-import 'package:mechupp_app/models/booking_model.dart';
-import 'package:mechupp_app/repositories/booking_repository.dart';
-
-class _EmptyBookingRepository implements BookingRepository {
-  @override
-  Future<List<BookingModel>> getBookings(String userId) async => [];
-
-  @override
-  Future<BookingModel> getBookingById(String bookingId) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BookingModel> createBooking(BookingModel booking) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BookingModel> updateBookingStatus(String bookingId, BookingStatus status) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> cancelBooking(String bookingId, String reason) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BookingModel> rescheduleBooking(
-    String bookingId,
-    DateTime newDate,
-    String newTime,
-  ) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BookingModel> rateBooking(String bookingId, int rating, String review) {
-    throw UnimplementedError();
-  }
-}
 
 void main() {
   void ignoreOverflowErrors() {
@@ -100,7 +59,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          bookingRepositoryProvider.overrideWithValue(_EmptyBookingRepository()),
+          bookingApiProvider.overrideWithValue(FakeBookingApi()),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
@@ -111,6 +70,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('No Bookings'), findsWidgets);
+    expect(find.text(kNoServicesYet), findsWidgets);
   });
 }

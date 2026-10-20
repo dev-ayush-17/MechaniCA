@@ -151,6 +151,7 @@ class BookingFlowState {
   final String? selectedTime;
   final bool isPickupDrop;
   final String? pickupAddress;
+  final String addressId;
   final String? couponCode;
   final double discount;
   final String paymentMethod;
@@ -162,6 +163,7 @@ class BookingFlowState {
     this.selectedTime,
     this.isPickupDrop = true,
     this.pickupAddress,
+    this.addressId = '',
     this.couponCode,
     this.discount = 0.0,
     this.paymentMethod = 'UPI',
@@ -179,6 +181,7 @@ class BookingFlowState {
     String? selectedTime,
     bool? isPickupDrop,
     String? pickupAddress,
+    String? addressId,
     String? couponCode,
     double? discount,
     String? paymentMethod,
@@ -190,6 +193,7 @@ class BookingFlowState {
       selectedTime: selectedTime ?? this.selectedTime,
       isPickupDrop: isPickupDrop ?? this.isPickupDrop,
       pickupAddress: pickupAddress ?? this.pickupAddress,
+      addressId: addressId ?? this.addressId,
       couponCode: couponCode ?? this.couponCode,
       discount: discount ?? this.discount,
       paymentMethod: paymentMethod ?? this.paymentMethod,
@@ -206,6 +210,7 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
   void selectTime(String time) => state = state.copyWith(selectedTime: time);
   void setPickupDrop(bool v) => state = state.copyWith(isPickupDrop: v);
   void setPickupAddress(String addr) => state = state.copyWith(pickupAddress: addr);
+  void setAddressId(String id) => state = state.copyWith(addressId: id);
   void setPaymentMethod(String method) => state = state.copyWith(paymentMethod: method);
   void applyCoupon(String code, double discount) =>
       state = state.copyWith(couponCode: code, discount: discount);
