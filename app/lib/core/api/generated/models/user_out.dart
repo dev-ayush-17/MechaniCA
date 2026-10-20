@@ -16,14 +16,18 @@ class UserOut {
     required this.role,
     required this.status,
     required this.updatedAt,
+    this.email,
+    this.photoPath,
   });
   
   factory UserOut.fromJson(Map<String, Object?> json) => _$UserOutFromJson(json);
   
   final DateTime createdAt;
+  final String? email;
   final String id;
   final String name;
   final String phoneE164;
+  final String? photoPath;
   final String role;
   final String status;
   final DateTime updatedAt;

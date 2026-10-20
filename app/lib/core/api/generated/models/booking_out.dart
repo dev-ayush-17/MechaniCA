@@ -12,6 +12,7 @@ part 'booking_out.g.dart';
 @JsonSerializable()
 class BookingOut {
   const BookingOut({
+    required this.addressId,
     required this.cancelReason,
     required this.displayNumber,
     required this.estimate,
@@ -34,6 +35,7 @@ class BookingOut {
   
   factory BookingOut.fromJson(Map<String, Object?> json) => _$BookingOutFromJson(json);
   
+  final String addressId;
   final int cancelFeePaise;
   final String? cancelReason;
   final int dispatchAttempt;

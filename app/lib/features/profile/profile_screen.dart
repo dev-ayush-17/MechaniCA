@@ -5,8 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../navigation/route_names.dart';
 import '../../composition/providers.dart';
-import '../../providers/app_providers.dart';
-import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -17,8 +15,11 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final u = mockUser;
-    final accountRole = ref.watch(authProvider).account?.role;
+    final account = ref.watch(authProvider).account;
+    final name = (account?.name.isNotEmpty ?? false) ? account!.name : 'Your profile';
+    final phone = account?.phoneE164 ?? '';
+    final accountRole = account?.role;
+    final bookings = ref.watch(homeBookingsProvider).whenOrNull(data: (list) => list.length) ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,7 +51,7 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   Stack(
                     children: [
-                      CircleAvatar(radius: 38, backgroundColor: AppColors.primaryRed, child: Text(u.name[0], style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700))),
+                      CircleAvatar(radius: 38, backgroundColor: AppColors.primaryRed, child: Text(name[0], style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700))),
                       Positioned(bottom: 0, right: 0, child: Container(
                         width: 22, height: 22,
                         decoration: BoxDecoration(color: AppColors.success, shape: BoxShape.circle, border: Border.all(color: AppColors.background, width: 2)),
@@ -62,13 +63,13 @@ class ProfileScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(u.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                        Text(u.phone, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Text(name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                        Text(phone, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                         const SizedBox(height: 6),
-                        Row(children: [
-                          const Icon(Icons.star_rounded, color: AppColors.gold, size: 16),
-                          const SizedBox(width: 4),
-                          Text('${u.membershipPlan} Member', style: const TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600)),
+                        const Row(children: [
+                          Icon(Icons.star_rounded, color: AppColors.gold, size: 16),
+                          SizedBox(width: 4),
+                          Text('MechUpp Member', style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600)),
                         ]),
                       ],
                     ),
@@ -81,13 +82,13 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Stats row
-            const Row(
+            Row(
               children: [
-                _StatCard3('8', 'Bookings', Icons.build_rounded),
-                SizedBox(width: 8),
-                _StatCard3('₹2,150', 'Saved', Icons.percent_rounded),
-                SizedBox(width: 8),
-                _StatCard3('4.9★', 'Rating', Icons.star_rounded),
+                _StatCard3('$bookings', 'Bookings', Icons.build_rounded),
+                const SizedBox(width: 8),
+                const _StatCard3('—', 'Saved', Icons.percent_rounded),
+                const SizedBox(width: 8),
+                const _StatCard3('—', 'Rating', Icons.star_rounded),
               ],
             ),
 
@@ -97,6 +98,7 @@ class ProfileScreen extends ConsumerWidget {
             _menuSection('Account', [
               _menuItem('Edit Profile', Icons.person_outline, () => context.push(RouteNames.editProfile)),
               _menuItem('My Addresses', Icons.location_on_outlined, () => context.push(RouteNames.addresses)),
+              _menuItem('Emergency Contacts', Icons.contact_phone_outlined, () => context.push(RouteNames.emergencyContacts)),
               _menuItem('Documents', Icons.description_outlined, () => context.push(RouteNames.documents)),
             ]),
             const SizedBox(height: 12),
@@ -217,12 +219,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _emailCtrl;
   bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: mockUser.name);
-    _emailCtrl = TextEditingController(text: mockUser.email);
+    final account = ref.read(authProvider).account;
+    _nameCtrl = TextEditingController(text: account?.name ?? '');
+    _emailCtrl = TextEditingController(text: account?.email ?? '');
   }
 
   @override
@@ -247,7 +251,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(radius: 46, backgroundColor: AppColors.primaryRed, child: Text(mockUser.name[0], style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w700))),
+                  CircleAvatar(radius: 46, backgroundColor: AppColors.primaryRed, child: Text((_nameCtrl.text.isEmpty ? 'U' : _nameCtrl.text[0]).toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w700))),
                   Positioned(bottom: 0, right: 0, child: GestureDetector(
                     onTap: () => showAppSnackbar(context, 'Upload photo feature coming soon'),
                     child: Container(width: 28, height: 28, decoration: BoxDecoration(color: AppColors.primaryRed, shape: BoxShape.circle, border: Border.all(color: AppColors.background, width: 2)), child: const Icon(Icons.edit_rounded, size: 14, color: Colors.white)),
@@ -260,19 +264,54 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             AppTextField(hint: 'Email', controller: _emailCtrl, label: 'Email', keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 16),
-            AppTextField(hint: mockUser.phone, label: 'Phone (Cannot be changed)', readOnly: true),
+            AppTextField(
+              hint: ref.watch(authProvider).account?.phoneE164 ?? '',
+              label: 'Phone (Cannot be changed)',
+              readOnly: true,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+            ],
             const Spacer(),
             AppButton(
               label: 'Save Changes',
               isLoading: _isLoading,
               onPressed: () async {
-                setState(() => _isLoading = true);
-                await Future.delayed(const Duration(milliseconds: 1000));
-                if (context.mounted) {
-                  setState(() => _isLoading = false);
-                  showAppSnackbar(context, 'Profile updated successfully!');
-                  context.pop();
+                final name = _nameCtrl.text.trim();
+                if (name.length < 2 || name.length > 60) {
+                  setState(() => _error = 'Name must be 2 to 60 characters.');
+                  return;
                 }
+                final session = ref.read(authProvider).session;
+                if (session == null) {
+                  setState(() => _error = 'Sign in again.');
+                  return;
+                }
+                setState(() {
+                  _isLoading = true;
+                  _error = null;
+                });
+                final result = await ref.read(accountApiProvider).update(
+                      session,
+                      name: name,
+                      email: _emailCtrl.text.trim(),
+                    );
+                if (!mounted) return;
+                result.when(
+                  onOk: (account) {
+                    ref.read(authProvider.notifier).applyAccount(account);
+                    setState(() => _isLoading = false);
+                    showAppSnackbar(context, 'Profile updated successfully!');
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  onErr: (failure) => setState(() {
+                    _isLoading = false;
+                    _error = failure.message;
+                  }),
+                );
               },
             ),
           ],
@@ -284,62 +323,133 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
 // ─── ADDRESSES SCREEN ─────────────────────────────────────────────────────────
 
-class AddressesScreen extends StatelessWidget {
+class AddressesScreen extends ConsumerStatefulWidget {
   const AddressesScreen({super.key});
+  @override
+  ConsumerState<AddressesScreen> createState() => _AddressesScreenState();
+}
+
+class _AddressesScreenState extends ConsumerState<AddressesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(addressesControllerProvider.notifier).load();
+    });
+  }
+
+  Future<void> _add() async {
+    final label = TextEditingController(text: 'Home');
+    final line1 = TextEditingController();
+    final city = TextEditingController(text: 'Patna');
+    final pin = TextEditingController();
+    final landmark = TextEditingController();
+    final lat = TextEditingController(text: '25.5941');
+    final lng = TextEditingController(text: '85.1376');
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Add address', style: TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppTextField(hint: 'Home', controller: label, label: 'Label'),
+              const SizedBox(height: 8),
+              AppTextField(hint: 'Street', controller: line1, label: 'Address line'),
+              const SizedBox(height: 8),
+              AppTextField(hint: 'Landmark', controller: landmark, label: 'Landmark'),
+              const SizedBox(height: 8),
+              AppTextField(hint: 'Patna', controller: city, label: 'City'),
+              const SizedBox(height: 8),
+              AppTextField(hint: '800001', controller: pin, label: 'PIN', keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              AppTextField(hint: '25.5941', controller: lat, label: 'Latitude', keyboardType: TextInputType.number),
+              const SizedBox(height: 8),
+              AppTextField(hint: '85.1376', controller: lng, label: 'Longitude', keyboardType: TextInputType.number),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (saved != true || !mounted) return;
+    final error = await ref.read(addressesControllerProvider.notifier).add(
+          label: label.text,
+          line1: line1.text,
+          city: city.text,
+          pincode: pin.text,
+          lat: double.tryParse(lat.text) ?? 25.5941,
+          lng: double.tryParse(lng.text) ?? 85.1376,
+          landmark: landmark.text,
+        );
+    if (!mounted) return;
+    showAppSnackbar(context, error ?? 'Address saved', isError: error != null);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(addressesControllerProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('My Addresses'),
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => context.pop()),
-        actions: [IconButton(icon: const Icon(Icons.add_rounded), onPressed: () {})],
+        actions: [IconButton(icon: const Icon(Icons.add_rounded), onPressed: _add)],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: mockAddresses.length,
-        itemBuilder: (_, i) {
-          final a = mockAddresses[i];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16),
-              border: a.isDefault ? Border.all(color: AppColors.primaryRed.withValues(alpha: 0.4)) : null,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(a.label == 'Home' ? Icons.home_rounded : a.label == 'Work' ? Icons.work_rounded : Icons.location_on_rounded, color: AppColors.primaryRed, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+      body: state.items.isEmpty
+          ? const EmptyState(icon: Icons.location_off_outlined, title: 'No addresses', subtitle: 'Add a home or work address')
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.items.length,
+              itemBuilder: (_, i) {
+                final a = state.items[i];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: a.isDefault ? Border.all(color: AppColors.primaryRed.withValues(alpha: 0.4)) : null,
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(children: [
-                        Text(a.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                        if (a.isDefault) ...[const SizedBox(width: 8), const StatusBadge(label: 'Default', color: AppColors.primaryRed)],
-                      ]),
-                      const SizedBox(height: 4),
-                      Text(a.fullAddress, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4)),
+                      Icon(a.label == 'Home' ? Icons.home_rounded : a.label == 'Work' ? Icons.work_rounded : Icons.location_on_rounded, color: AppColors.primaryRed, size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Text(a.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                              if (a.isDefault) ...[const SizedBox(width: 8), const StatusBadge(label: 'Default', color: AppColors.primaryRed)],
+                            ]),
+                            const SizedBox(height: 4),
+                            Text(a.fullAddress, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        color: AppColors.surfaceElevated,
+                        onSelected: (v) {
+                          if (v == 'delete') {
+                            ref.read(addressesControllerProvider.notifier).remove(a.id);
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: AppColors.error))),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-                PopupMenuButton<String>(
-                  color: AppColors.surfaceElevated,
-                  onSelected: (v) => showAppSnackbar(context, v == 'delete' ? 'Address deleted' : 'Address edited'),
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Edit', style: TextStyle(color: Colors.white))),
-                    const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: AppColors.error))),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

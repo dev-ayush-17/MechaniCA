@@ -40,3 +40,5 @@ class User:
     auth_subject: str
     created_at: datetime
     updated_at: datetime
+    email: str | None = None
+    photo_path: str | None = None

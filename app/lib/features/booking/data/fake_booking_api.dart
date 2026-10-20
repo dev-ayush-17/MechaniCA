@@ -4,11 +4,13 @@ import '../domain/booking.dart';
 import '../domain/booking_api.dart';
 
 class FakeBookingApi implements BookingApi {
-  FakeBookingApi({this.failCreateWith});
+  FakeBookingApi({this.failCreateWith, List<Booking>? seed})
+      : seeded = [...?seed];
 
   final AppFailure? failCreateWith;
   final List<Booking> created = [];
   final List<String> cancelled = [];
+  final List<Booking> seeded;
 
   @override
   Future<Result<Booking>> create({
@@ -63,5 +65,10 @@ class FakeBookingApi implements BookingApi {
           version: 2,
         );
     return Ok(booking);
+  }
+
+  @override
+  Future<Result<List<Booking>>> listMine() async {
+    return Ok([...seeded, ...created]);
   }
 }
