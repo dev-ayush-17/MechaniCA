@@ -226,3 +226,29 @@ Not run locally:
 - Firestore rules tests (`firebase/tests/rules.test.js`) were **not run**. This machine has no Java. CI installs Java 21.
 - `FcmNotificationSender` has not sent a real push.
 - The app was not built for Android or iOS here. Widget tests cover empty copy, denied banner copy, and a single OS prompt.
+
+## M11 notes
+
+Branch: `feat/m11-invoices` from `origin/main` (a06c200, M10 merged). Isolated worktree. FR-INV-001, FR-INV-002.
+
+Done:
+
+- `InvoiceService.render/get`, month-scoped numbers `MC-YYYYMM-######`, GST 18% as CGST 9% + SGST 9% in paise. Invoice total equals the paid payment.
+- PDF via **reportlab** (pinned `reportlab==5.0.1`) in `backend/app/adapters/pdf.py`. Reason: no OS packages in the Cloud Run image, unlike WeasyPrint.
+- After paid (gateway apply, wallet pay, cash confirm/staff confirm), schedule `POST /v1/internal/invoices/render`. Payment HTTP does not wait on PDF (NFR-PERF-007). `render` is idempotent (`second_render_keeps_version_one`).
+- `FileStorage.put` writes `invoices/{bookingId}/v{n}.pdf`. GET `/v1/invoices/{bookingId}` returns metadata + signed download URL. Owner or staff; other customers get 403. Clients cannot write `invoices` in Firestore.
+- Invoice screen loads by booking id (no `mockInvoices.first`). Download + share via `share_plus` 11.0.0 (`SharePlus.instance.share` of the PDF file). Reason pinned: share the invoice file.
+- Named tests: `invoice_total_matches_payment`, `second_render_keeps_version_one`, `customer_cannot_read_another_invoice`. Widget tests: missing booking id shows loading then error; `b-paid` shows that total.
+
+Left / follow-ups:
+
+- Firestore adapter for `InvoiceRepository` (in-memory fake is the default).
+- Real Cloud Storage `put` adapter (fake stores bytes in memory).
+- Emailing the PDF, credit notes / explicit v2 re-render API, membership invoices.
+
+Not run locally:
+
+- Firestore rules tests (`firebase/tests/rules.test.js`): no Java. CI installs Java 21.
+- App not built for Android or iOS here.
+
+Next: PR against `main`. Do not merge. Do not start M08/M14/M15/M16 in this worktree.
