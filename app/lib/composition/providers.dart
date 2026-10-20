@@ -2,6 +2,11 @@
 ///
 /// The demo's mock repository providers are re-exported unchanged so existing
 /// screens keep working. Each feature milestone replaces its mock binding here.
+///
+/// M15 admin web binds [AdminApi] in
+/// `features/admin/presentation/admin_providers.dart` so `main_admin.dart`
+/// never imports this file (maps/camera/RTDB stay out of the admin target).
+/// Customer dispute open is [BookingApi.openDispute] on [bookingApiProvider].
 library;
 
 import 'package:dio/dio.dart';

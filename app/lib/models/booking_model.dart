@@ -36,6 +36,18 @@ enum BookingStatus {
         completed || paid || cancelled || failed || disputed => false,
       };
 
+  bool get canReportProblem => switch (this) {
+        arrived || inService || completed || paid => true,
+        requested ||
+        confirmed ||
+        mechanicAssigned ||
+        enRoute ||
+        cancelled ||
+        failed ||
+        disputed =>
+          false,
+      };
+
   bool get canCancel => switch (this) {
         requested || confirmed || mechanicAssigned || enRoute => true,
         arrived ||

@@ -129,6 +129,12 @@ class BookingDetailsScreen extends ConsumerWidget {
                 onPressed: () => context.push(RouteNames.reschedule, extra: booking.id),
               ),
             ],
+            if (booking.status.canReportProblem) ...[
+              ReportProblemButton(
+                onPressed: () => _reportProblem(context, ref, booking),
+              ),
+              const SizedBox(height: 10),
+            ],
             if (booking.status == BookingStatus.completed) ...[
               AppButton(
                 label: 'Pay now',
@@ -154,6 +160,40 @@ class BookingDetailsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _reportProblem(
+    BuildContext context,
+    WidgetRef ref,
+    BookingModel booking,
+  ) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Report a problem'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'What went wrong?'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+    if (reason == null || reason.isEmpty) return;
+    final result = await ref.read(bookingApiProvider).openDispute(booking.id, reason: reason);
+    if (!context.mounted) return;
+    result.when(
+      onOk: (_) => showAppSnackbar(context, 'We opened a dispute.'),
+      onErr: (failure) => showAppSnackbar(context, failure.message, isError: true),
     );
   }
 
@@ -194,6 +234,22 @@ class BookingDetailsScreen extends ConsumerWidget {
       return AppColors.error;
     }
     return AppColors.primaryRed;
+  }
+}
+
+class ReportProblemButton extends StatelessWidget {
+  const ReportProblemButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppButton(
+      label: 'Report a problem',
+      isOutlined: true,
+      icon: Icons.report_outlined,
+      onPressed: onPressed,
+    );
   }
 }
 
