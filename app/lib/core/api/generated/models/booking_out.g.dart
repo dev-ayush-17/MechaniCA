@@ -26,15 +26,19 @@ BookingOut _$BookingOutFromJson(Map<String, dynamic> json) => BookingOut(
       urgency: json['urgency'] as String,
       vehicleId: json['vehicleId'] as String,
       version: (json['version'] as num).toInt(),
+      failureReason: json['failureReason'] as String?,
       cancelFeePaise: (json['cancelFeePaise'] as num?)?.toInt() ?? 0,
+      dispatchAttempt: (json['dispatchAttempt'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$BookingOutToJson(BookingOut instance) =>
     <String, dynamic>{
       'cancelFeePaise': instance.cancelFeePaise,
       'cancelReason': instance.cancelReason,
+      'dispatchAttempt': instance.dispatchAttempt,
       'displayNumber': instance.displayNumber,
       'estimate': instance.estimate,
+      'failureReason': instance.failureReason,
       'id': instance.id,
       'lines': instance.lines,
       'mechanicId': instance.mechanicId,

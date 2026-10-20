@@ -64,6 +64,25 @@ beforeEach(async () => {
       stars: 5,
       status: 'published',
     });
+    await setDoc(doc(db, 'bookings/b1/messages/m1'), {
+      senderId: 'cust',
+      senderRole: 'customer',
+      text: 'On the way?',
+      state: 'sent',
+    });
+    await setDoc(doc(db, 'users/cust/notifications/n1'), {
+      templateId: 'mechanicAssigned',
+      title: 'Mechanic assigned',
+      body: 'Imran will reach you for General Service.',
+      deepLink: '/tracking?id=b1',
+      readAt: null,
+      createdAt: new Date('2026-06-01T10:00:00Z'),
+    });
+    await setDoc(doc(db, 'offers/o1'), {
+      bookingId: 'b1',
+      mechanicId: 'mech',
+      status: 'open',
+    });
   });
 });
 
@@ -150,6 +169,40 @@ describe('firestore rules', () => {
     await assertFails(setDoc(doc(db, 'reviews/r2'), { bookingId: 'b1', stars: 5 }));
   });
 
+  it('rules_deny_client_notification_write', async () => {
+    const db = env.authenticatedContext('cust').firestore();
+    await assertFails(
+      setDoc(doc(db, 'users/cust/notifications/n2'), {
+        title: 'injected',
+        body: 'no',
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(db, 'users/cust/notifications/n1'), { readAt: new Date() }),
+    );
+    await assertSucceeds(
+      getDoc(doc(db, 'users/cust/notifications/n1')),
+    );
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('other').firestore(), 'users/cust/notifications/n1')),
+    );
+  });
+
+  it('clients_cannot_write_offers', async () => {
+    const db = env.authenticatedContext('mech').firestore();
+    await assertFails(updateDoc(doc(db, 'offers/o1'), { status: 'accepted' }));
+    await assertFails(setDoc(doc(db, 'offers/o2'), { mechanicId: 'mech' }));
+  });
+
+  it('assigned_mechanic_can_read_offer', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('mech').firestore(), 'offers/o1')),
+    );
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'offers/o1')),
+    );
+  });
+
   it('client_cannot_write_catalog', async () => {
     const db = env.authenticatedContext('cust').firestore();
     await assertFails(
@@ -158,5 +211,28 @@ describe('firestore rules', () => {
     await assertFails(
       updateDoc(doc(db, 'serviceCatalog/general_service'), { baseLaborPaise: 1 }),
     );
+  });
+
+  it('parties_can_read_messages', async () => {
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('cust').firestore(), 'bookings/b1/messages/m1')),
+    );
+    await assertSucceeds(
+      getDoc(doc(env.authenticatedContext('mech').firestore(), 'bookings/b1/messages/m1')),
+    );
+  });
+
+  it('strangers_cannot_read_messages', async () => {
+    await assertFails(
+      getDoc(doc(env.authenticatedContext('other').firestore(), 'bookings/b1/messages/m1')),
+    );
+  });
+
+  it('client_cannot_write_messages', async () => {
+    const cust = env.authenticatedContext('cust').firestore();
+    const mech = env.authenticatedContext('mech').firestore();
+    await assertFails(setDoc(doc(cust, 'bookings/b1/messages/m2'), { text: 'nope' }));
+    await assertFails(updateDoc(doc(cust, 'bookings/b1/messages/m1'), { text: 'edit' }));
+    await assertFails(setDoc(doc(mech, 'bookings/b1/messages/m3'), { text: 'nope' }));
   });
 });

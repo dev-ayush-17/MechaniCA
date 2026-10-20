@@ -51,5 +51,17 @@ class IdempotencyKeyRequired(InvalidInput):
     code = "idempotency_key_required"
 
 
+class OfferGone(Conflict):
+    code = "offer_gone"
+
+
 class Unavailable(DomainError):
     code = "unavailable"
+
+
+class RateLimited(DomainError):
+    code = "rate_limited"
+
+    def __init__(self, message: str, *, retry_after_seconds: int = 60) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds

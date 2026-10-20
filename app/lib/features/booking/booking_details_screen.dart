@@ -10,6 +10,7 @@ import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 import 'presentation/cancel_booking_sheet.dart';
+import 'presentation/dispatch_status_copy.dart';
 
 class BookingDetailsScreen extends ConsumerWidget {
   final String bookingId;
@@ -59,6 +60,10 @@ class BookingDetailsScreen extends ConsumerWidget {
                         Text(booking.bikeName, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                         const SizedBox(height: 8),
                         StatusBadge(label: _statusLabel(booking.status), color: _statusColor(booking.status)),
+                        if (booking.status == BookingStatus.confirmed || booking.status == BookingStatus.failed) ...[
+                          const SizedBox(height: 8),
+                          DispatchStatusCopy(status: booking.status),
+                        ],
                       ],
                     ),
                   ),
@@ -100,6 +105,15 @@ class BookingDetailsScreen extends ConsumerWidget {
             ],
 
             const SizedBox(height: 20),
+            if (booking.mechanicName != null) ...[
+              AppButton(
+                label: 'Chat',
+                icon: Icons.chat_bubble_outline_rounded,
+                isOutlined: true,
+                onPressed: () => context.push(RouteNames.jobChat, extra: booking.id),
+              ),
+              const SizedBox(height: 10),
+            ],
             if (booking.isActive) ...[
               AppButton(
                 label: 'Track Live',

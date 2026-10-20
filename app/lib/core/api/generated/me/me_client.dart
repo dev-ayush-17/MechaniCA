@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../models/bootstrap_request.dart';
+import '../models/device_out.dart';
+import '../models/register_device_request.dart';
 import '../models/user_out.dart';
 
 part 'me_client.g.dart';
@@ -26,6 +28,13 @@ abstract class MeClient {
   @POST('/v1/me/bootstrap')
   Future<UserOut> bootstrapV1MeBootstrapPost({
     @Body() required BootstrapRequest body,
+    @Header('authorization') String? authorization,
+  });
+
+  /// Register Device
+  @POST('/v1/me/devices')
+  Future<DeviceOut> registerDeviceV1MeDevicesPost({
+    @Body() required RegisterDeviceRequest body,
     @Header('authorization') String? authorization,
   });
 }

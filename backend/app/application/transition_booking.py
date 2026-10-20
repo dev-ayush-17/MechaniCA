@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+from app.application.notify import Notify
 from app.domain.booking import Booking, LineStatus
 from app.domain.booking_state import BookingStatus, actor_for, assert_transition
 from app.domain.errors import InvalidTransition, NotFound, PermissionDenied
+from app.domain.notification_templates import Recipient
 from app.domain.parts_proof import REQUIRED_PROOF_KINDS
 from app.domain.user import Principal, Role
 from app.ports.booking_repository import BookingRepository
@@ -17,6 +19,7 @@ class TransitionBooking:
     bookings: BookingRepository
     clock: Clock
     proofs: PartsProofRepository | None = None
+    notify: Notify | None = None
 
     async def execute(
         self,
@@ -34,6 +37,10 @@ class TransitionBooking:
             raise InvalidTransition("This booking changed. Refresh and try again.")
         assert_transition(booking.status, target, actor_for(principal.role))
         if target is BookingStatus.COMPLETED:
+            if any(line.status is LineStatus.PENDING_APPROVAL for line in booking.lines):
+                raise InvalidTransition(
+                    "Pending extra work must be approved or rejected first."
+                )
             await self._assert_parts_photos(booking)
         mechanic_id = booking.mechanic_id
         if principal.role == Role.MECHANIC:
@@ -41,7 +48,33 @@ class TransitionBooking:
         if target is BookingStatus.CONFIRMED:
             mechanic_id = None
         updated = booking.with_status(target, now=self.clock.now(), mechanic_id=mechanic_id)
-        return await self.bookings.save(updated)
+        saved = await self.bookings.save(updated)
+        await self._emit(saved, target)
+        return saved
+
+    async def _emit(self, booking: Booking, target: BookingStatus) -> None:
+        if self.notify is None:
+            return
+        data = {
+            "bookingId": booking.id,
+            "serviceName": booking.service_name,
+            "mechanicName": booking.mechanic_id or "Your mechanic",
+            "displayNumber": booking.display_number,
+        }
+        if target is BookingStatus.MECHANIC_ASSIGNED:
+            await self.notify.emit(
+                "mechanicAssigned",
+                booking.customer_id,
+                data,
+                recipient=Recipient.CUSTOMER,
+            )
+        elif target is BookingStatus.ARRIVED:
+            await self.notify.emit(
+                "mechanicArrived",
+                booking.customer_id,
+                data,
+                recipient=Recipient.CUSTOMER,
+            )
 
     async def _assert_parts_photos(self, booking: Booking) -> None:
         required = [

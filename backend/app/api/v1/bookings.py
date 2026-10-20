@@ -32,9 +32,7 @@ router = APIRouter(
 
 
 class _Camel(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel, populate_by_name=True, extra="forbid"
-    )
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 
 
 class EstimateOut(_Camel):
@@ -86,6 +84,8 @@ class BookingOut(BookingCreateOut):
     mechanic_id: str | None
     scheduled_start: datetime | None
     cancel_reason: str | None
+    failure_reason: str | None = None
+    dispatch_attempt: int = 0
     lines: list[BookingLineOut]
 
 
@@ -158,6 +158,8 @@ def _out(booking: Booking) -> BookingOut:
         mechanic_id=booking.mechanic_id,
         scheduled_start=booking.scheduled_start,
         cancel_reason=booking.cancel_reason,
+        failure_reason=booking.failure_reason,
+        dispatch_attempt=booking.dispatch_attempt,
         lines=[BookingLineOut.of(line) for line in booking.lines],
     )
 

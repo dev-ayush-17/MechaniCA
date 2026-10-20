@@ -72,6 +72,7 @@ class BookingLine:
     gst_paise: int
     status: LineStatus
     part_replacement: bool = False
+    created_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,8 @@ class Booking:
     created_at: datetime
     updated_at: datetime
     version: int
+    failure_reason: str | None = None
+    dispatch_attempt: int = 0
 
     def with_status(
         self,
@@ -111,15 +114,26 @@ class Booking:
         mechanic_id: str | None = None,
         cancel_fee_paise: int | None = None,
         cancel_reason: str | None = None,
+        failure_reason: str | None = None,
+        dispatch_attempt: int | None = None,
+        clear_mechanic: bool = False,
     ) -> "Booking":
+        if clear_mechanic or status in {BookingStatus.CONFIRMED, BookingStatus.FAILED}:
+            assigned = None if mechanic_id is None else mechanic_id
+        else:
+            assigned = self.mechanic_id if mechanic_id is None else mechanic_id
         return replace(
             self,
             status=status,
-            mechanic_id=self.mechanic_id if mechanic_id is None else mechanic_id,
+            mechanic_id=assigned,
             cancel_fee_paise=self.cancel_fee_paise
             if cancel_fee_paise is None
             else cancel_fee_paise,
             cancel_reason=self.cancel_reason if cancel_reason is None else cancel_reason,
+            failure_reason=self.failure_reason if failure_reason is None else failure_reason,
+            dispatch_attempt=self.dispatch_attempt
+            if dispatch_attempt is None
+            else dispatch_attempt,
             updated_at=now,
             version=self.version + 1,
         )

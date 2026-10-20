@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/notifications/presentation/push_denied_banner.dart';
 import '../../navigation/route_names.dart';
-import '../../providers/app_providers.dart';
 import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_states.dart';
 
@@ -30,13 +31,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _load();
+      final pending = ref.read(pendingDeepLinkProvider).consume(DateTime.now());
+      if (pending != null && mounted) context.go(pending);
     });
   }
 
   void _load() {
     final userId = mockUser.id;
     ref.read(bookingProvider.notifier).loadBookings(userId);
-    ref.read(notificationProvider.notifier).load(userId);
+    ref.read(notificationsControllerProvider.notifier).load();
   }
 
   Future<void> _refresh() async {
@@ -47,7 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(bookingProvider);
-    final unread = ref.watch(notificationProvider).whenOrNull(
+    final unread = ref.watch(notificationsControllerProvider).whenOrNull(
               data: (list) => list.where((n) => !n.isRead).length,
             ) ??
         0;
@@ -126,6 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  const HomePushDeniedBanner(),
                   // Banner Slider
                   _BannerSlider(
                     banners: _banners,

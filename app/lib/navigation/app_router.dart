@@ -12,6 +12,7 @@ import '../features/bikes/my_bikes_screen.dart';
 import '../features/booking/booking_flow_screen.dart';
 import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
+import '../features/job_chat/presentation/job_chat_screen.dart';
 import '../features/tracking/live_tracking_screen.dart';
 import '../features/inspection/digital_inspection_screen.dart';
 import '../features/parts_proof/presentation/customer_proofs_screen.dart';
@@ -117,6 +118,13 @@ final appRouter = GoRouter(
       builder: (_, state) {
         final bookingId = state.extra as String? ?? '';
         return RescheduleScreen(bookingId: bookingId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.jobChat,
+      builder: (_, state) {
+        final bookingId = state.extra as String? ?? '';
+        return JobChatScreen(bookingId: bookingId);
       },
     ),
 

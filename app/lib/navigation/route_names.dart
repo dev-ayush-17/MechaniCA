@@ -25,6 +25,7 @@ class RouteNames {
   static const String bookingSuccess = '/booking/success';
   static const String bookingDetails = '/booking/details';
   static const String reschedule = '/booking/reschedule';
+  static const String jobChat = '/job-chat';
 
   // Tracking
   static const String liveTracking = '/tracking';

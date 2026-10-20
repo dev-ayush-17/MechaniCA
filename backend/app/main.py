@@ -8,10 +8,14 @@ from app.api.v1 import (
     catalog,
     me,
     mechanic,
+    messages,
+    notifications,
+    offers,
     quotes,
     reviews,
     vehicles,
 )
+from app.api.v1.internal import jobs as internal_jobs
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 
@@ -27,6 +31,10 @@ def create_app() -> FastAPI:
     app.include_router(catalog.router)
     app.include_router(quotes.router)
     app.include_router(bookings.router)
+    app.include_router(offers.router)
+    app.include_router(internal_jobs.router)
+    app.include_router(notifications.router)
+    app.include_router(messages.router)
     app.include_router(mechanic.router)
     app.include_router(mechanic.upload_router)
     app.include_router(admin_verification.router)
