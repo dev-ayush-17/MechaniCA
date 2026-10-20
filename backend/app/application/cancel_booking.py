@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.application.location_gate import sync_location_gate
 from app.application.notify import Notify
 from app.domain.booking import Booking, BookingPolicy
 from app.domain.booking_state import BookingStatus, cancel_fee_paise
@@ -9,6 +10,7 @@ from app.domain.user import Principal, Role
 from app.domain.wallet import LedgerDirection, LedgerEntry, LedgerReason
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
+from app.ports.location_tracking import LocationTrackingService
 from app.ports.wallet_service import WalletService
 
 
@@ -21,6 +23,7 @@ class CancelBooking:
     policy: BookingPolicy
     wallet: WalletService | None = None
     notify: Notify | None = None
+    locations: LocationTrackingService | None = None
 
     async def execute(self, principal: Principal, booking_id: str, *, reason: str) -> Booking:
         booking = await self.bookings.get(booking_id)
@@ -41,6 +44,8 @@ class CancelBooking:
             cancel_reason=reason.strip() or "Cancelled",
         )
         saved = await self.bookings.save(updated)
+        if self.locations is not None:
+            await sync_location_gate(self.locations, saved)
         if fee > 0 and self.wallet is not None:
             await self.wallet.record_debt(
                 booking.customer_id,

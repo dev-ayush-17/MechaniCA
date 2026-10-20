@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from app.domain.geo import haversine_km
-from app.domain.location import accept_point, is_stale, last_seen_label, LocationPoint
+from app.domain.location import LocationPoint, accept_point, is_stale, last_seen_label
 
 NOW = datetime(2026, 6, 1, 10, 0, tzinfo=UTC)
 PATNA = (25.5941, 85.1376)

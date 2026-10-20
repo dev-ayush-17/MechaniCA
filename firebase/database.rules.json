@@ -1,6 +1,21 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false
+    "liveLocations": {
+      "$bookingId": {
+        ".read": "auth != null && (root.child('bookingGates').child($bookingId).child('customerId').val() == auth.uid || root.child('bookingGates').child($bookingId).child('mechanicId').val() == auth.uid)",
+        "mechanic": {
+          ".write": "auth != null && root.child('bookingGates').child($bookingId).child('mechanicId').val() == auth.uid && root.child('bookingGates').child($bookingId).child('locationOpen').val() == true"
+        },
+        "customer": {
+          ".write": "auth != null && root.child('bookingGates').child($bookingId).child('customerId').val() == auth.uid && root.child('bookingGates').child($bookingId).child('locationOpen').val() == true"
+        }
+      }
+    },
+    "bookingGates": {
+      "$bookingId": {
+        ".read": "auth != null && (data.child('customerId').val() == auth.uid || data.child('mechanicId').val() == auth.uid)",
+        ".write": false
+      }
+    }
   }
 }

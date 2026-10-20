@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 
+from app.application.location_gate import sync_location_gate
 from app.domain.booking import Booking, BookingMode, Urgency
 from app.domain.booking_state import BookingStatus, assert_transition
 from app.domain.dispatch import (
@@ -26,6 +27,7 @@ from app.domain.notification_templates import Channel
 from app.ports.booking_repository import BookingRepository
 from app.ports.clock import Clock
 from app.ports.job_scheduler import JobScheduler, ScheduledJob
+from app.ports.location_tracking import LocationTrackingService
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_sender import NotificationSender, OutboundNotification
 from app.ports.offer_repository import OfferRepository
@@ -51,6 +53,7 @@ class SequentialDispatch:
     clock: Clock
     config: DispatchConfig = DispatchConfig()
     scheduler: JobScheduler | None = None
+    locations: LocationTrackingService | None = None
 
     async def offer(self, booking_id: str) -> Offer | None:
         booking = await self._load_booking(booking_id)
@@ -124,6 +127,7 @@ class SequentialDispatch:
             BookingStatus.MECHANIC_ASSIGNED, now=now, mechanic_id=mechanic_id
         )
         saved = await self.bookings.save(assigned)
+        await self._sync_gate(saved)
         await self._notify(
             OutboundNotification(
                 user_id=booking.customer_id,
@@ -173,6 +177,7 @@ class SequentialDispatch:
         if booking.status is BookingStatus.MECHANIC_ASSIGNED:
             booking = booking.with_status(BookingStatus.CONFIRMED, now=self.clock.now())
             await self.bookings.save(booking)
+            await self._sync_gate(booking)
         elif booking.status is not BookingStatus.CONFIRMED:
             return
         await self.offer(booking.id)
@@ -183,6 +188,7 @@ class SequentialDispatch:
         now = self.clock.now()
         failed = booking.with_status(BookingStatus.FAILED, now=now, failure_reason="no_mechanic")
         await self.bookings.save(failed)
+        await self._sync_gate(failed)
         await self._notify(
             OutboundNotification(
                 user_id=booking.customer_id,
@@ -317,6 +323,11 @@ class SequentialDispatch:
                 "schedule_failed",
                 extra={"fields": {"offerId": offer_id, "error": type(exc).__name__}},
             )
+
+    async def _sync_gate(self, booking: Booking) -> None:
+        if self.locations is None:
+            return
+        await sync_location_gate(self.locations, booking)
 
     async def _notify(self, message: OutboundNotification) -> None:
         try:

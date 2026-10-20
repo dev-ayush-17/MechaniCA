@@ -16,6 +16,8 @@ from app.adapters.fake.device_token_repository import FakeDeviceTokenRepository
 from app.adapters.fake.file_storage import FakeFileStorage
 from app.adapters.fake.idempotency_store import FakeIdempotencyStore
 from app.adapters.fake.job_scheduler import FakeJobScheduler
+from app.adapters.fake.location_tracking import FakeLocationTrackingService
+from app.adapters.fake.maps_service import FakeMapsService
 from app.adapters.fake.mechanic_repository import FakeMechanicRepository
 from app.adapters.fake.notification_repository import FakeNotificationRepository
 from app.adapters.fake.notification_sender import RecordingNotificationSender
@@ -26,6 +28,7 @@ from app.adapters.fake.payment_repository import FakePaymentRepository
 from app.adapters.fake.readiness import FakeReadiness
 from app.adapters.fake.review_repository import FakeReviewRepository
 from app.adapters.fake.telephony import FakeTelephony
+from app.adapters.fake.tracking_link_store import FakeTrackingLinkStore
 from app.adapters.fake.user_repository import FakeUserRepository
 from app.adapters.fake.wallet_service import FakeWalletService
 from app.adapters.system_clock import SystemClock
@@ -37,11 +40,13 @@ from app.application.create_booking import CreateBooking
 from app.application.create_mechanic_draft import CreateMechanicDraft
 from app.application.create_payment import CreatePayment
 from app.application.create_quote import CreateQuote
+from app.application.create_tracking_link import CreateTrackingLink
 from app.application.dispatch import SequentialDispatch
 from app.application.expire_extra_line import ExpireExtraLine
 from app.application.expire_offer import ExpireOffer
 from app.application.extra_line import AddExtraLine, DecideExtraLine
 from app.application.get_booking import GetBooking
+from app.application.get_public_tracking import GetPublicTracking
 from app.application.list_earnings import ListEarnings
 from app.application.manage_notifications import ManageNotifications
 from app.application.manage_vehicles import ManageVehicles
@@ -80,6 +85,8 @@ from app.ports.device_token_repository import DeviceTokenRepository
 from app.ports.file_storage import FileStorage
 from app.ports.idempotency_store import IdempotencyStore
 from app.ports.job_scheduler import JobScheduler
+from app.ports.location_tracking import LocationTrackingService
+from app.ports.maps_service import MapsService
 from app.ports.mechanic_repository import MechanicRepository
 from app.ports.notification_repository import NotificationRepository
 from app.ports.notification_sender import NotificationSender
@@ -91,6 +98,7 @@ from app.ports.readiness import ReadinessCheck
 from app.ports.review_repository import ReviewRepository
 from app.ports.role_claims import RoleClaims
 from app.ports.telephony import TelephonyPort
+from app.ports.tracking_link_store import TrackingLinkStore
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
 from app.ports.wallet_service import WalletService
@@ -487,6 +495,47 @@ def job_scheduler_dep() -> JobScheduler:
     return _scheduler()
 
 
+@lru_cache
+def _locations() -> LocationTrackingService:
+    settings = get_settings()
+    if settings.provider_location == "rtdb":
+        from app.adapters.firebase.rtdb_location import RtdbLocationTrackingService
+
+        assert settings.firebase_project_id is not None  # noqa: S101
+        assert settings.firebase_database_url is not None  # noqa: S101
+        return RtdbLocationTrackingService(
+            settings.firebase_project_id, settings.firebase_database_url
+        )
+    return FakeLocationTrackingService()
+
+
+def location_tracking_dep() -> LocationTrackingService:
+    return _locations()
+
+
+@lru_cache
+def _maps() -> MapsService:
+    settings = get_settings()
+    if settings.provider_maps == "google" and settings.maps_api_key:
+        from app.adapters.google_maps.maps_service import GoogleMapsService
+
+        return GoogleMapsService(settings.maps_api_key)
+    return FakeMapsService()
+
+
+def maps_service_dep() -> MapsService:
+    return _maps()
+
+
+@lru_cache
+def _tracking_links() -> TrackingLinkStore:
+    return FakeTrackingLinkStore()
+
+
+def tracking_link_store_dep() -> TrackingLinkStore:
+    return _tracking_links()
+
+
 async def require_internal_job_dep(
     x_internal_job_token: Annotated[str | None, Header()] = None,
 ) -> None:
@@ -502,6 +551,7 @@ def dispatch_service_dep(
     notifications: Annotated[NotificationSender, Depends(notification_sender_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
     scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
+    locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
 ) -> SequentialDispatch:
     return SequentialDispatch(
         bookings=bookings,
@@ -510,6 +560,7 @@ def dispatch_service_dep(
         notifications=notifications,
         clock=clock,
         scheduler=scheduler,
+        locations=locations,
     )
 
 
@@ -679,6 +730,7 @@ def apply_gateway_event_dep(
     audit: Annotated[AuditLog, Depends(audit_log_dep)],
     notifier: Annotated[NotificationSender, Depends(notification_sender_dep)],
     clock: Annotated[Clock, Depends(clock_dep)],
+    locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
 ) -> ApplyGatewayEvent:
     return ApplyGatewayEvent(
         payments=payments,
@@ -687,6 +739,7 @@ def apply_gateway_event_dep(
         audit=audit,
         notifier=notifier,
         clock=clock,
+        locations=locations,
     )
 
 
@@ -881,9 +934,15 @@ def cancel_booking_dep(
     policy: Annotated[BookingPolicy, Depends(booking_policy_dep)],
     wallet: Annotated[WalletService, Depends(wallet_service_dep)],
     notify: Annotated[Notify, Depends(notify_dep)],
+    locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
 ) -> CancelBooking:
     return CancelBooking(
-        bookings=bookings, clock=clock, policy=policy, wallet=wallet, notify=notify
+        bookings=bookings,
+        clock=clock,
+        policy=policy,
+        wallet=wallet,
+        notify=notify,
+        locations=locations,
     )
 
 
@@ -892,8 +951,39 @@ def transition_booking_dep(
     clock: Annotated[Clock, Depends(clock_dep)],
     proofs: Annotated[PartsProofRepository, Depends(parts_proof_repository_dep)],
     notify: Annotated[Notify, Depends(notify_dep)],
+    locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
 ) -> TransitionBooking:
-    return TransitionBooking(bookings=bookings, clock=clock, proofs=proofs, notify=notify)
+    return TransitionBooking(
+        bookings=bookings, clock=clock, proofs=proofs, notify=notify, locations=locations
+    )
+
+
+def create_tracking_link_dep(
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    links: Annotated[TrackingLinkStore, Depends(tracking_link_store_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> CreateTrackingLink:
+    return CreateTrackingLink(bookings=bookings, links=links, clock=clock)
+
+
+def get_public_tracking_dep(
+    links: Annotated[TrackingLinkStore, Depends(tracking_link_store_dep)],
+    bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
+    locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
+    maps: Annotated[MapsService, Depends(maps_service_dep)],
+    mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
+    vehicles: Annotated[VehicleRepository, Depends(vehicle_repository_dep)],
+    clock: Annotated[Clock, Depends(clock_dep)],
+) -> GetPublicTracking:
+    return GetPublicTracking(
+        links=links,
+        bookings=bookings,
+        locations=locations,
+        maps=maps,
+        mechanics=mechanics,
+        vehicles=vehicles,
+        clock=clock,
+    )
 
 
 def register_device_dep(
