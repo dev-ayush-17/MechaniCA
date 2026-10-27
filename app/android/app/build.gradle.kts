@@ -25,6 +25,20 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "role"
+    productFlavors {
+        create("customer") {
+            dimension = "role"
+            applicationId = "com.mechupp.app"
+            manifestPlaceholders["appLabel"] = "MechUpp"
+        }
+        create("mechanic") {
+            dimension = "role"
+            applicationId = "com.mechupp.mechanic"
+            manifestPlaceholders["appLabel"] = "MechUpp Mechanic"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

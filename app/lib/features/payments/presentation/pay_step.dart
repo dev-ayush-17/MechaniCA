@@ -37,6 +37,7 @@ class _PayStepState extends ConsumerState<PayStep> {
   String? _status;
   String? _error;
   Timer? _poll;
+  bool _pollInFlight = false;
 
   @override
   void dispose() {
@@ -69,7 +70,13 @@ class _PayStepState extends ConsumerState<PayStep> {
   }
 
   Future<void> _afterCreate(Payment payment) async {
-    final checkout = widget.checkout ?? () async => 'success';
+    final checkout = widget.checkout ??
+        () async {
+          await ref.read(paymentCheckoutProvider).open(
+                sessionId: payment.sessionId ?? '',
+              );
+          return 'success';
+        };
     await checkout();
     if (!mounted) return;
     setState(() => _status = l10nOf(context).waitingForConfirmation);
@@ -79,7 +86,10 @@ class _PayStepState extends ConsumerState<PayStep> {
         timer.cancel();
         return;
       }
+      if (_pollInFlight) return;
+      _pollInFlight = true;
       final latest = await ref.read(paymentApiProvider).get(payment.id);
+      _pollInFlight = false;
       final paid = latest.when(onOk: (row) => row.isPaid, onErr: (_) => false);
       if (paid) {
         timer.cancel();

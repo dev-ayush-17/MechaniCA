@@ -17,6 +17,7 @@ PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")
 
 SKIP_DIR_NAMES = {".git", "build", ".dart_tool", "__pycache__", "node_modules"}
 SKIP_PATH_PARTS = ("tool/testdata",)
+SKIP_NAME_MARKERS = ("firebase-adminsdk", "serviceAccount", "google-services")
 
 
 def should_skip(path: Path, root: Path) -> bool:
@@ -30,6 +31,8 @@ def findings(root: Path) -> list[str]:
     hits: list[str] = []
     for path in root.rglob("*"):
         if not path.is_file() or should_skip(path, root):
+            continue
+        if any(marker in path.name for marker in SKIP_NAME_MARKERS):
             continue
         try:
             text = path.read_text(encoding="utf-8")

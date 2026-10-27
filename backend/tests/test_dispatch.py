@@ -161,6 +161,77 @@ async def test_sos_timeout_is_20_seconds(env: _Env) -> None:
 
 
 @pytest.mark.asyncio
+async def test_no_assigned_mechanic_until_accept(env: _Env) -> None:
+    env.seed_near("mech_a")
+    await env.confirmed()
+    offer = await env.dispatch.offer("book_1")
+    assert offer is not None
+    stored = await env.bookings.get("book_1")
+    assert stored is not None
+    assert stored.status is BookingStatus.CONFIRMED
+    assert stored.mechanic_id is None
+    assigned = await env.dispatch.accept(offer.id, "mech_a")
+    assert assigned.status is BookingStatus.MECHANIC_ASSIGNED
+    assert assigned.mechanic_id == "mech_a"
+
+
+@pytest.mark.asyncio
+async def test_nobody_online_fails_immediately_by_default(env: _Env) -> None:
+    await env.confirmed()
+    offer = await env.dispatch.offer("book_1")
+    assert offer is None
+    stored = await env.bookings.get("book_1")
+    assert stored is not None
+    assert stored.status is BookingStatus.FAILED
+    assert stored.mechanic_id is None
+    assert stored.failure_reason == "no_mechanic"
+
+
+@pytest.mark.asyncio
+async def test_waiting_job_is_offered_when_mechanic_comes_online(env: _Env) -> None:
+    waiting = SequentialDispatch(
+        bookings=env.bookings,
+        offers=env.offers,
+        mechanics=env.mechanics,
+        notifications=env.notifications,
+        clock=env.clock,
+        config=DispatchConfig(wait_for_mechanic_seconds=120),
+    )
+    await env.confirmed()
+    assert await waiting.offer("book_1") is None
+    stored = await env.bookings.get("book_1")
+    assert stored is not None
+    assert stored.status is BookingStatus.CONFIRMED
+    env.seed_near("mech_a")
+    offer = await waiting.offer("book_1")
+    assert offer is not None
+    assert offer.mechanic_id == "mech_a"
+
+
+@pytest.mark.asyncio
+async def test_nobody_online_waits_then_fails(env: _Env) -> None:
+    waiting = SequentialDispatch(
+        bookings=env.bookings,
+        offers=env.offers,
+        mechanics=env.mechanics,
+        notifications=env.notifications,
+        clock=env.clock,
+        config=DispatchConfig(wait_for_mechanic_seconds=120),
+    )
+    await env.confirmed()
+    assert await waiting.offer("book_1") is None
+    stored = await env.bookings.get("book_1")
+    assert stored is not None
+    assert stored.status is BookingStatus.CONFIRMED
+    assert stored.mechanic_id is None
+    env.clock.advance(timedelta(seconds=121))
+    assert await waiting.offer("book_1") is None
+    failed = await env.bookings.get("book_1")
+    assert failed is not None
+    assert failed.status is BookingStatus.FAILED
+
+
+@pytest.mark.asyncio
 async def test_dispatch_second_accept_loses(env: _Env) -> None:
     env.seed_near("mech_a")
     await env.confirmed()

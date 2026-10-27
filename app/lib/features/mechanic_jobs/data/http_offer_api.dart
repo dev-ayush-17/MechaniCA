@@ -30,6 +30,9 @@ class HttpOfferApi implements OfferApi {
       );
       return Ok(_map(body));
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return const Err(NotFound('No open offer.'));
+      }
       return Err(failureFromDio(e));
     }
   }

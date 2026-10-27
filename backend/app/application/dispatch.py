@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.application.location_gate import sync_location_gate
 from app.domain.booking import Booking, BookingMode, Urgency
@@ -34,6 +34,12 @@ from app.ports.notification_sender import NotificationSender, OutboundNotificati
 from app.ports.offer_repository import OfferRepository
 
 _LOG = logging.getLogger("mechupp.dispatch")
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
 
 _BUSY = frozenset(
     {
@@ -75,6 +81,11 @@ class SequentialDispatch:
             return None
         candidate = await self._pick(booking, existing)
         if candidate is None:
+            # Attempts count offers. An empty candidate list is not an attempt.
+            # The default wait is 0, so this still fails immediately.
+            waited = (self.clock.now() - _as_utc(booking.created_at)).total_seconds()
+            if not existing and waited < self.config.wait_for_mechanic_seconds:
+                return None
             await self._fail(booking)
             return None
         now = self.clock.now()
@@ -289,7 +300,7 @@ class SequentialDispatch:
         beat = mechanic.last_heartbeat_at
         if beat is None:
             return False
-        return (now - beat).total_seconds() <= self.config.heartbeat_fresh_seconds
+        return (_as_utc(now) - _as_utc(beat)).total_seconds() <= self.config.heartbeat_fresh_seconds
 
     def _covers_job(self, mechanic: Mechanic, booking: Booking) -> bool:
         area = mechanic.service_area
@@ -337,7 +348,13 @@ class SequentialDispatch:
     async def _sync_gate(self, booking: Booking) -> None:
         if self.locations is None:
             return
-        await sync_location_gate(self.locations, booking)
+        try:
+            await sync_location_gate(self.locations, booking)
+        except Exception as exc:
+            _LOG.warning(
+                "location_gate_failed",
+                extra={"fields": {"bookingId": booking.id, "error": type(exc).__name__}},
+            )
 
     async def _track(self, name: str, properties: dict[str, object]) -> None:
         if self.analytics is None:

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'composition/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/domain/account_api.dart';
-import 'features/auth/presentation/auth_controller.dart';
+import 'features/mechanic_onboarding/presentation/mechanic_session_ticker.dart';
 import 'l10n/app_localizations.dart';
 import 'navigation/mechanic_route_names.dart';
 import 'navigation/mechanic_router.dart';
@@ -23,18 +23,20 @@ void main() {
     ProviderScope(
       overrides: [
         accountIntentProvider.overrideWithValue(AccountIntent.mechanic),
-        postOtpRouteProvider.overrideWithValue(MechanicRouteNames.home),
+        postOtpRouteProvider.overrideWithValue(MechanicRouteNames.splash),
+        trackingRoleProvider.overrideWithValue('mechanic'),
       ],
       child: const MechUppMechanicApp(),
     ),
   );
 }
 
-class MechUppMechanicApp extends StatelessWidget {
+class MechUppMechanicApp extends ConsumerWidget {
   const MechUppMechanicApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(mechanicSessionTickerProvider);
     return MaterialApp.router(
       title: 'MechUpp Mechanic',
       debugShowCheckedModeBanner: false,

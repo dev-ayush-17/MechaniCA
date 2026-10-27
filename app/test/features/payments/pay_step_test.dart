@@ -25,7 +25,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Pay'));
+    await tester.tap(find.text('Pay (demo)'));
     await tester.pump();
     await tester.pump();
 

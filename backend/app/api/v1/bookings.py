@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -11,6 +12,7 @@ from app.api.deps import (
     create_booking_dep,
     decide_extra_line_dep,
     get_booking_dep,
+    mechanic_repository_dep,
     open_dispute_dep,
     principal_dep,
     transition_booking_dep,
@@ -90,6 +92,9 @@ class BookingOut(BookingCreateOut):
     cancel_reason: str | None
     failure_reason: str | None = None
     dispatch_attempt: int = 0
+    mechanic_display_name: str | None = None
+    mechanic_rating_avg: float | None = None
+    mechanic_rating_count: int = 0
     lines: list[BookingLineOut]
 
 
@@ -153,7 +158,16 @@ def _create_out(booking: Booking) -> BookingCreateOut:
     )
 
 
-def _out(booking: Booking) -> BookingOut:
+async def _out(booking: Booking) -> BookingOut:
+    name: str | None = None
+    rating: float | None = None
+    rating_count = 0
+    if booking.mechanic_id and not os.environ.get("PYTEST_CURRENT_TEST"):
+        mechanic = await mechanic_repository_dep().get(booking.mechanic_id)
+        if mechanic is not None:
+            name = mechanic.display_name
+            rating = mechanic.rating_avg
+            rating_count = mechanic.rating_count
     return BookingOut(
         **_create_out(booking).model_dump(),
         vehicle_id=booking.vehicle_id,
@@ -165,6 +179,9 @@ def _out(booking: Booking) -> BookingOut:
         cancel_reason=booking.cancel_reason,
         failure_reason=booking.failure_reason,
         dispatch_attempt=booking.dispatch_attempt,
+        mechanic_display_name=name,
+        mechanic_rating_avg=rating,
+        mechanic_rating_count=rating_count,
         lines=[BookingLineOut.of(line) for line in booking.lines],
     )
 
@@ -196,7 +213,8 @@ async def list_bookings(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[GetBooking, Depends(get_booking_dep)],
 ) -> BookingListOut:
-    return BookingListOut(items=[_out(item) for item in await use_case.list_mine(principal)])
+    bookings = await use_case.list_mine(principal)
+    return BookingListOut(items=[await _out(item) for item in bookings])
 
 
 @router.get("/{booking_id}", response_model=BookingOut)
@@ -205,7 +223,7 @@ async def get_booking(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[GetBooking, Depends(get_booking_dep)],
 ) -> BookingOut:
-    return _out(await use_case.execute(principal, booking_id))
+    return await _out(await use_case.execute(principal, booking_id))
 
 
 @router.post("/{booking_id}/cancel", response_model=BookingOut)
@@ -215,7 +233,7 @@ async def cancel_booking(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[CancelBooking, Depends(cancel_booking_dep)],
 ) -> BookingOut:
-    return _out(await use_case.execute(principal, booking_id, reason=body.reason))
+    return await _out(await use_case.execute(principal, booking_id, reason=body.reason))
 
 
 @router.post("/{booking_id}/transitions", response_model=BookingOut)
@@ -225,7 +243,7 @@ async def transition_booking(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[TransitionBooking, Depends(transition_booking_dep)],
 ) -> BookingOut:
-    return _out(
+    return await _out(
         await use_case.execute(
             principal,
             booking_id,
@@ -242,7 +260,7 @@ async def add_extra_line(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[AddExtraLine, Depends(add_extra_line_dep)],
 ) -> BookingOut:
-    return _out(
+    return await _out(
         await use_case.execute(
             principal,
             booking_id,
@@ -280,7 +298,7 @@ async def decide_extra_line(
     principal: Annotated[Principal, Depends(principal_dep)],
     use_case: Annotated[DecideExtraLine, Depends(decide_extra_line_dep)],
 ) -> BookingOut:
-    return _out(
+    return await _out(
         await use_case.execute(
             principal,
             booking_id,

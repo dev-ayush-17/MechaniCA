@@ -26,6 +26,19 @@ class LiveTrackingScreen extends ConsumerWidget {
     this.role = 'customer',
   });
 
+  factory LiveTrackingScreen.fromArgs(TrackingArgs args) {
+    return LiveTrackingScreen(
+      bookingId: args.bookingId,
+      status: args.status,
+      urgency: args.urgency,
+      destLat: args.destLat,
+      destLng: args.destLng,
+      mechanicName: args.mechanicName,
+      vehicleLabel: args.vehicleLabel,
+      role: args.role,
+    );
+  }
+
   final String bookingId;
   final String status;
   final String urgency;

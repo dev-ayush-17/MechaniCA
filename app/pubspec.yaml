@@ -34,6 +34,8 @@ dependencies:
 
   # Platform
   url_launcher: 6.3.2
+  geolocator: 13.0.4 # device GPS for the service address and location permission
+  permission_handler: 11.4.0 # OS notification permission prompt
   image_picker: 1.2.3 # capture parts photos.
   share_plus: 11.0.0 # share the invoice file
   path_provider: 2.1.6

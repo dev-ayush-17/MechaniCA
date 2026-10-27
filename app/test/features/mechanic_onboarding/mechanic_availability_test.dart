@@ -42,7 +42,8 @@ void main() {
         child: const MaterialApp(home: MechanicHomeScreen()),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
 
     final toggle = find.byType(SwitchListTile);
     expect(toggle, findsOneWidget);

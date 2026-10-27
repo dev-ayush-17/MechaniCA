@@ -35,6 +35,7 @@ class _JobChatScreenState extends ConsumerState<JobChatScreen> {
   Timer? _poll;
   List<ChatMessage> _messages = [];
   String? _error;
+  bool _inFlight = false;
 
   ChatService get _chat => ref.read(chatServiceProvider);
 
@@ -53,19 +54,33 @@ class _JobChatScreenState extends ConsumerState<JobChatScreen> {
   }
 
   Future<void> _refresh() async {
+    if (_inFlight) return;
+    _inFlight = true;
     final chat = _chat;
     if (chat is OfflineChatService) {
       await chat.flush();
     }
     final result = await chat.list(widget.bookingId);
+    _inFlight = false;
     if (!mounted) return;
     result.when(
-      onOk: (items) => setState(() {
-        _messages = items;
-        _error = null;
-      }),
+      onOk: (items) {
+        if (_sameThread(_messages, items) && _error == null) return;
+        setState(() {
+          _messages = items;
+          _error = null;
+        });
+      },
       onErr: (failure) => setState(() => _error = failure.message),
     );
+  }
+
+  bool _sameThread(List<ChatMessage> a, List<ChatMessage> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   Future<void> _send() async {

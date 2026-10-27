@@ -37,10 +37,23 @@ class TrackingArgs {
       other.bookingId == bookingId &&
       other.status == status &&
       other.urgency == urgency &&
-      other.role == role;
+      other.role == role &&
+      other.destLat == destLat &&
+      other.destLng == destLng &&
+      other.mechanicName == mechanicName &&
+      other.vehicleLabel == vehicleLabel;
 
   @override
-  int get hashCode => Object.hash(bookingId, status, urgency, role);
+  int get hashCode => Object.hash(
+        bookingId,
+        status,
+        urgency,
+        role,
+        destLat,
+        destLng,
+        mechanicName,
+        vehicleLabel,
+      );
 }
 
 class TrackingUiState {
@@ -124,6 +137,8 @@ class TrackingController extends StateNotifier<TrackingUiState> {
   StreamSubscription<LocationSnapshot>? _sub;
   RouteSummary? _lastRoute;
   DateTime? _lastRouteAt;
+  int _routeGen = 0;
+  DateTime? _lastRefreshAttempt;
 
   Future<void> _onSnapshot(LocationSnapshot snapshot) async {
     final point = snapshot.mechanic;
@@ -151,12 +166,20 @@ class TrackingController extends StateNotifier<TrackingUiState> {
   }
 
   Future<void> _refreshRoute(LocationPoint point, DateTime now) async {
+    final lastAttempt = _lastRefreshAttempt;
+    if (lastAttempt != null &&
+        now.difference(lastAttempt) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastRefreshAttempt = now;
+    final gen = ++_routeGen;
     final result = await _maps.route(
       originLat: point.lat,
       originLng: point.lng,
       destLat: destLat,
       destLng: destLng,
     );
+    if (gen != _routeGen) return;
     result.when(
       onOk: (summary) {
         _lastRoute = summary;
