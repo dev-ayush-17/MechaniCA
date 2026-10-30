@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any
 
+import firebase_admin
 from firebase_admin import auth as fb_auth
 
 from app.domain.errors import Unauthenticated, Unavailable
@@ -16,9 +17,7 @@ class FirebaseAuth:
     """
 
     def __init__(self, project_id: str) -> None:
-        from app.adapters.firebase.admin_app import ensure_firebase
-
-        self._app = ensure_firebase(project_id)
+        self._app = firebase_admin.initialize_app(options={"projectId": project_id})
 
     async def verify(self, id_token: str, *, check_revoked: bool = False) -> Principal:
         try:

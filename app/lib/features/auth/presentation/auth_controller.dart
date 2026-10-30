@@ -91,8 +91,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Called once at launch. Returns true when a valid session was restored.
   ///
   /// The account is re-read from the API. A missing account is bootstrapped
-  /// again (idempotent). An offline or transient API error keeps the local
-  /// session so the app still opens. Only [Unauthenticated] signs out.
+  /// again (idempotent). An offline launch keeps the local session so the app
+  /// still opens; any other failure signs out locally.
   Future<bool> restore() async {
     final session = await _service.currentSession();
     if (session == null) return false;
@@ -100,23 +100,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final me = await _accounts.me(session);
     final failure = me.when(onOk: (_) => null, onErr: (f) => f);
     if (failure == null) {
-      final account = me.when(onOk: (a) => a, onErr: (_) => null);
       state = AuthState(
-        session: account == null ? session : _sessionWithRole(session, account.role),
-        account: account,
+        session: session,
+        account: me.when(onOk: (a) => a, onErr: (_) => null),
       );
+      return true;
+    }
+    if (failure is Unavailable) {
+      state = AuthState(session: session);
       return true;
     }
     if (failure is NotFound) {
       return _completeSignIn(session);
     }
-    if (failure is Unauthenticated) {
-      await _service.signOut();
-      state = const AuthState();
-      return false;
-    }
-    state = AuthState(session: session, error: failure.message);
-    return true;
+    await _service.signOut();
+    state = const AuthState();
+    return false;
   }
 
   Future<bool> _completeSignIn(Session session) async {
@@ -125,11 +124,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       onOk: (account) async {
         // The bootstrap sets the role claim; fetch a token that carries it.
         final fresh = await _service.currentSession(forceRefresh: true);
-        final base = fresh ?? session;
-        state = AuthState(
-          session: _sessionWithRole(base, account.role),
-          account: account,
-        );
+        state = AuthState(session: fresh ?? session, account: account);
         return true;
       },
       onErr: (failure) async {
@@ -139,13 +134,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       },
     );
   }
-
-  Session _sessionWithRole(Session session, String role) => Session(
-        userId: session.userId,
-        idToken: session.idToken,
-        expiresAt: session.expiresAt,
-        role: role,
-      );
 
   void hydrate(Session session, Account account) {
     state = AuthState(session: session, account: account);

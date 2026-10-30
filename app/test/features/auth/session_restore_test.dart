@@ -123,20 +123,6 @@ void main() {
       expect(notifier.state.account, isNull);
     });
 
-    test('api_error_keeps_the_local_session', () async {
-      final store = MemoryFakeSessionStore();
-      await store.writePhone(_phone);
-      final service = _service(store);
-      final notifier = AuthNotifier(
-        service,
-        _StubAccounts(const Err(Conflict('Try again.', code: 'busy'))),
-      );
-
-      expect(await notifier.restore(), isTrue);
-      expect(await service.currentSession(), isNotNull);
-      expect(notifier.state.error, 'Try again.');
-    });
-
     test('rejected_session_signs_out_locally', () async {
       final store = MemoryFakeSessionStore();
       await store.writePhone(_phone);

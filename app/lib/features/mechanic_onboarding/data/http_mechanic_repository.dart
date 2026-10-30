@@ -67,16 +67,6 @@ class HttpMechanicRepository implements MechanicRepository {
   }
 
   @override
-  Future<Result<MechanicProfile>> heartbeat(String idToken) {
-    return _call(idToken, (token) async {
-      final out = await _client.mechanic.heartbeatV1MechanicHeartbeatPost(
-        authorization: 'Bearer $token',
-      );
-      return _toProfile(out);
-    });
-  }
-
-  @override
   Future<Result<SignedUpload>> signUpload(
     String idToken, {
     required String path,

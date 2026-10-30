@@ -1,112 +1,31 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:intl/intl.dart';
 import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/l10n.dart';
-import '../../models/booking_model.dart';
 import '../../navigation/route_names.dart';
+import '../../models/booking_model.dart';
+import '../../mock/mock_data.dart';
 import '../../widgets/shared/app_widgets.dart';
-import '../tracking/presentation/tracking_controller.dart';
-import 'domain/booking.dart';
-import 'domain/pricing.dart';
+import '../../widgets/shared/app_states.dart';
+import 'domain/payment_method.dart';
 import 'presentation/cancel_booking_sheet.dart';
 import 'presentation/dispatch_status_copy.dart';
 
-/// Live booking from the API. Status stays "Finding a mechanic" until Accept.
-class BookingDetailsScreen extends ConsumerStatefulWidget {
+class BookingDetailsScreen extends ConsumerWidget {
+  final String bookingId;
   const BookingDetailsScreen({super.key, required this.bookingId});
 
-  final String bookingId;
-
   @override
-  ConsumerState<BookingDetailsScreen> createState() => _BookingDetailsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookings = ref.watch(bookingProvider);
+    final booking = bookings.whenOrNull(data: (list) {
+      try { return list.firstWhere((b) => b.id == bookingId); }
+      catch (_) { return mockBookings.first; }
+    }) ?? mockBookings.first;
 
-class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
-  Booking? _booking;
-  String? _error;
-  Timer? _poll;
-  bool _inFlight = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _poll?.cancel();
-    super.dispose();
-  }
-
-  Duration _intervalFor(Booking? booking) {
-    final status = booking?.status;
-    if (status == BookingStatus.confirmed ||
-        status == BookingStatus.failed ||
-        status == BookingStatus.requested ||
-        status == null) {
-      return const Duration(seconds: 3);
-    }
-    return const Duration(seconds: 12);
-  }
-
-  bool _shouldKeepPolling(Booking booking) {
-    return switch (booking.status) {
-      BookingStatus.paid ||
-      BookingStatus.cancelled ||
-      BookingStatus.disputed =>
-        false,
-      _ => true,
-    };
-  }
-
-  void _schedule(Duration delay) {
-    _poll?.cancel();
-    _poll = Timer(delay, _load);
-  }
-
-  Future<void> _load() async {
-    if (_inFlight) {
-      _schedule(_intervalFor(_booking));
-      return;
-    }
-    _inFlight = true;
-    final result = await ref.read(bookingApiProvider).get(widget.bookingId);
-    _inFlight = false;
-    if (!mounted) return;
-    result.when(
-      onOk: (found) {
-        final previous = _booking;
-        final unchanged = previous != null &&
-            previous.status == found.status &&
-            previous.version == found.version;
-        if (!unchanged) {
-          setState(() {
-            _booking = found;
-            _error = null;
-          });
-        }
-        if (_shouldKeepPolling(found)) {
-          _schedule(_intervalFor(found));
-        } else {
-          _poll?.cancel();
-        }
-      },
-      onErr: (failure) {
-        setState(() => _error = failure.message);
-        _schedule(_intervalFor(_booking));
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final booking = _booking;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -117,179 +36,210 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          if (booking != null && booking.status.canCancel)
+          if (booking.isActive)
             TextButton(
-              onPressed: () => _cancel(booking),
+              onPressed: () => _showCancelSheet(context, ref, booking),
               child: const Text('Cancel', style: TextStyle(color: AppColors.error)),
             ),
         ],
       ),
-      body: booking == null
-          ? Center(
-              child: Text(
-                _error ?? 'Loading booking…',
-                style: const TextStyle(color: Colors.white),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppColors.bikeCardGradient,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3)),
               ),
-            )
-          : _body(booking),
-    );
-  }
-
-  Widget _body(Booking booking) {
-    final assigned = booking.status == BookingStatus.mechanicAssigned ||
-        booking.status == BookingStatus.enRoute ||
-        booking.status == BookingStatus.arrived ||
-        booking.status == BookingStatus.inService ||
-        booking.status == BookingStatus.completed ||
-        booking.status == BookingStatus.paid;
-    final rating = booking.mechanicRatingCount >= 5
-        ? (booking.mechanicRatingAvg?.toStringAsFixed(1) ?? '')
-        : 'New';
-    final paid = booking.status == BookingStatus.paid;
-    final l10n = l10nOf(context);
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          booking.serviceName.isEmpty ? booking.serviceCode : booking.serviceName,
-          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Text(booking.status.label, style: const TextStyle(color: Colors.white, fontSize: 16)),
-        if (booking.status == BookingStatus.confirmed || booking.status == BookingStatus.failed) ...[
-          const SizedBox(height: 8),
-          DispatchStatusCopy(
-            status: booking.status,
-            attempt: booking.dispatchAttempt,
-            sos: booking.urgency == 'sos',
-          ),
-        ],
-        const SizedBox(height: 16),
-        _card('Receipt', [
-          _row('Booking', booking.displayNumber),
-          _row('Total', formatPaise(booking.totalPaise)),
-          _row(
-            'Payment',
-            paid ? l10n.paid : l10n.payAfterTheVisit,
-          ),
-          if (booking.cancelFeePaise > 0) _row('Cancel fee', formatPaise(booking.cancelFeePaise)),
-        ]),
-        if (assigned) ...[
-          const SizedBox(height: 12),
-          _card('Mechanic', [
-            _row('Name', booking.mechanicName?.isNotEmpty == true ? booking.mechanicName! : 'Assigned'),
-            _row('Rating', rating),
-          ]),
-          const SizedBox(height: 12),
-          AppButton(
-            label: 'Chat',
-            isOutlined: true,
-            icon: Icons.chat_bubble_outline_rounded,
-            onPressed: () => context.push(RouteNames.jobChat, extra: booking.id),
-          ),
-        ],
-        if (booking.status == BookingStatus.mechanicAssigned ||
-            booking.status == BookingStatus.enRoute ||
-            booking.status == BookingStatus.arrived) ...[
-          const SizedBox(height: 12),
-          AppButton(
-            label: l10n.trackLive,
-            icon: Icons.location_on_rounded,
-            onPressed: () => context.push(
-              RouteNames.liveTracking,
-              extra: _trackingArgs(booking),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(booking.serviceName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text(booking.bikeName, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        StatusBadge(label: _statusLabel(booking.status), color: _statusColor(booking.status)),
+                        if (booking.status == BookingStatus.confirmed || booking.status == BookingStatus.failed) ...[
+                          const SizedBox(height: 8),
+                          DispatchStatusCopy(status: booking.status),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(color: AppColors.primaryRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(Icons.build_rounded, color: AppColors.primaryRed, size: 28),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-        if (booking.status == BookingStatus.completed) ...[
-          const SizedBox(height: 12),
-          const _PayComingSoonBanner(),
-        ],
-        if (paid) ...[
-          const SizedBox(height: 12),
-          AppButton(
-            label: 'View Invoice',
-            icon: Icons.receipt_long_rounded,
-            onPressed: () => context.push(RouteNames.invoice, extra: booking.id),
-          ),
-        ],
-        if (booking.status.canReportProblem) ...[
-          const SizedBox(height: 12),
-          ReportProblemButton(
-            onPressed: () => context.push(RouteNames.support),
-          ),
-        ],
-      ],
+            const SizedBox(height: 16),
+            // Details
+            _infoCard('Booking Info', [
+              _detailRow('Booking ID', booking.bookingNumber),
+              _detailRow('Date', DateFormat('dd MMM yyyy').format(booking.scheduledDate)),
+              _detailRow('Time', booking.scheduledTime),
+              _detailRow('Type', booking.serviceType == ServiceType.pickupDrop ? 'Pickup & Drop' : 'Visit Workshop'),
+              if (booking.pickupAddress != null) _detailRow('Address', booking.pickupAddress!),
+            ]),
+            const SizedBox(height: 12),
+            _infoCard('Payment Info', [
+              _detailRow('Service', '₹${booking.servicePrice.toInt()}'),
+              if (booking.pickupCharges > 0) _detailRow('Pickup Charges', '₹${booking.pickupCharges.toInt()}'),
+              if (booking.discount > 0) _detailRow('Discount', '-₹${booking.discount.toStringAsFixed(0)}', color: AppColors.success),
+              _detailRow('GST', '₹${booking.gst.toStringAsFixed(0)}'),
+              _detailRow('Total', '₹${booking.totalAmount.toStringAsFixed(0)}', bold: true),
+              _detailRow('Payment', booking.paymentMethod),
+            ]),
+
+            if (booking.mechanicName != null) ...[
+              const SizedBox(height: 12),
+              _infoCard('Mechanic Details', [
+                _detailRow('Name', booking.mechanicName!),
+                _detailRow('Rating', '⭐ ${booking.mechanicRating}'),
+                _detailRow('Phone', booking.mechanicPhone ?? 'N/A'),
+              ]),
+            ],
+
+            const SizedBox(height: 20),
+            if (booking.mechanicName != null) ...[
+              AppButton(
+                label: 'Chat',
+                icon: Icons.chat_bubble_outline_rounded,
+                isOutlined: true,
+                onPressed: () => context.push(RouteNames.jobChat, extra: booking.id),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (booking.isActive) ...[
+              AppButton(
+                label: l10nOf(context).trackLive,
+                icon: Icons.location_on_rounded,
+                onPressed: () => context.push(RouteNames.liveTracking, extra: booking.id),
+              ),
+              const SizedBox(height: 10),
+              AppButton(
+                label: 'Reschedule',
+                isOutlined: true,
+                icon: Icons.schedule_rounded,
+                onPressed: () => context.push(RouteNames.reschedule, extra: booking.id),
+              ),
+            ],
+            if (booking.status.canReportProblem) ...[
+              ReportProblemButton(
+                onPressed: () => _reportProblem(context, ref, booking),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (booking.status == BookingStatus.completed) ...[
+              AppButton(
+                key: const ValueKey('pay-now'),
+                label: l10nOf(context).payNow,
+                onPressed: () => context.push(RouteNames.pay, extra: {
+                  'bookingId': booking.id,
+                  'method': paymentMethodCode(booking.paymentMethod),
+                }),
+              ),
+              const SizedBox(height: 10),
+              AppButton(
+                label: 'View Invoice',
+                icon: Icons.receipt_long_rounded,
+                onPressed: () => context.push(RouteNames.invoice, extra: booking.id),
+              ),
+              const SizedBox(height: 10),
+              AppButton(
+                label: 'View Inspection',
+                isOutlined: true,
+                onPressed: () => context.push(RouteNames.inspection, extra: booking.id),
+              ),
+            ],
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 
-  TrackingArgs _trackingArgs(Booking booking) {
-    var destLat = 25.5941;
-    var destLng = 85.1376;
-    for (final address in ref.read(addressesControllerProvider).items) {
-      if (address.id == booking.addressId) {
-        destLat = address.lat;
-        destLng = address.lng;
-        break;
-      }
-    }
-    return TrackingArgs(
-      bookingId: booking.id,
-      status: booking.status.name,
-      destLat: destLat,
-      destLng: destLng,
-      mechanicName: booking.mechanicName?.isNotEmpty == true
-          ? booking.mechanicName!
-          : 'Assigned',
-      vehicleLabel: booking.serviceName.isEmpty ? booking.serviceCode : booking.serviceName,
+  Future<void> _reportProblem(
+    BuildContext context,
+    WidgetRef ref,
+    BookingModel booking,
+  ) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Report a problem'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'What went wrong?'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+    if (reason == null || reason.isEmpty) return;
+    final result = await ref.read(bookingApiProvider).openDispute(booking.id, reason: reason);
+    if (!context.mounted) return;
+    result.when(
+      onOk: (_) => showAppSnackbar(context, 'We opened a dispute.'),
+      onErr: (failure) => showAppSnackbar(context, failure.message, isError: true),
     );
   }
 
-  Future<void> _cancel(Booking booking) async {
-    await showCancelBookingSheet(
+  void _showCancelSheet(BuildContext context, WidgetRef ref, BookingModel booking) {
+    showCancelBookingSheet(
       context: context,
       status: booking.status,
       onCancel: (reason) async {
-        final result = await ref.read(bookingApiProvider).cancel(booking.id, reason: reason);
-        if (!mounted) return;
+        final result = await ref.read(bookingApiProvider).cancel(
+              booking.id,
+              reason: reason,
+            );
         result.when(
-          onOk: (_) => _load(),
-          onErr: (failure) => showAppSnackbar(context, failure.message),
+          onOk: (_) {
+            ref.read(bookingProvider.notifier).cancelBooking(booking.id, reason);
+            if (context.mounted) {
+              context.pop();
+              showAppSnackbar(context, 'Booking cancelled successfully');
+            }
+          },
+          onErr: (failure) {
+            if (context.mounted) {
+              showAppSnackbar(context, failure.message, isError: true);
+            }
+          },
         );
       },
     );
   }
 
-  Widget _card(String title, List<Widget> rows) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          ...rows,
-        ],
-      ),
-    );
-  }
+  String _statusLabel(BookingStatus s) => s.label;
 
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: const TextStyle(color: AppColors.textSecondary))),
-          Text(value, style: const TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
+  Color _statusColor(BookingStatus s) {
+    if (s == BookingStatus.completed || s == BookingStatus.paid) {
+      return AppColors.success;
+    }
+    if (s == BookingStatus.cancelled || s == BookingStatus.failed) {
+      return AppColors.error;
+    }
+    return AppColors.primaryRed;
   }
 }
 
@@ -309,43 +259,119 @@ class ReportProblemButton extends StatelessWidget {
   }
 }
 
-class _PayComingSoonBanner extends StatelessWidget {
-  const _PayComingSoonBanner();
+Widget _infoCard(String title, List<Widget> rows) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        ...rows,
+      ],
+    ),
+  );
+}
+
+Widget _detailRow(String label, String value, {Color? color, bool bold = false}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        Text(value, style: TextStyle(color: color ?? Colors.white, fontSize: 13, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
+      ],
+    ),
+  );
+}
+
+// ─── RESCHEDULE SCREEN ────────────────────────────────────────────────────────
+
+class RescheduleScreen extends ConsumerStatefulWidget {
+  final String bookingId;
+  const RescheduleScreen({super.key, required this.bookingId});
+  @override
+  ConsumerState<RescheduleScreen> createState() => _RescheduleScreenState();
+}
+
+class _RescheduleScreenState extends ConsumerState<RescheduleScreen> {
+  DateTime _date = DateTime.now().add(const Duration(days: 2));
+  String? _time;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3)),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.lock_clock_outlined, color: AppColors.primaryRed, size: 24),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Online Payments \u2014 Coming Soon',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Reschedule Booking')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('New Date', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: _date,
+                  firstDate: DateTime.now().add(const Duration(days: 1)),
+                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                  builder: (_, child) => Theme(data: ThemeData.dark(), child: child!),
+                );
+                if (d != null) setState(() => _date = d);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(14)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, color: AppColors.primaryRed, size: 20),
+                    const SizedBox(width: 12),
+                    Text('${_date.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][_date.month-1]} ${_date.year}',
+                        style: const TextStyle(color: Colors.white, fontSize: 15)),
+                  ],
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Pay cash directly to your mechanic after the service. Digital payments will be enabled shortly.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            const Text('New Time', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Wrap(spacing: 10, runSpacing: 10, children: ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '4:00 PM'].map((t) {
+              final sel = _time == t;
+              return GestureDetector(
+                onTap: () => setState(() => _time = t),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: sel ? AppColors.primaryRed : AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: sel ? AppColors.primaryRed : AppColors.divider),
+                  ),
+                  child: Text(t, style: TextStyle(color: sel ? Colors.white : AppColors.textSecondary, fontSize: 13)),
+                ),
+              );
+            }).toList()),
+            const Spacer(),
+            AppButton(
+              label: 'Confirm Reschedule',
+              isLoading: _isLoading,
+              onPressed: _time == null ? null : () async {
+                setState(() => _isLoading = true);
+                await ref.read(bookingRepositoryProvider).rescheduleBooking(widget.bookingId, _date, _time!);
+                if (context.mounted) {
+                  setState(() => _isLoading = false);
+                  showAppSnackbar(context, 'Booking rescheduled successfully!');
+                  context.pop();
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

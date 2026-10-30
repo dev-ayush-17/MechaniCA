@@ -1,15 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../composition/providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/booking/domain/pricing.dart';
+import '../../navigation/route_names.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 import 'domain/wallet_snapshot.dart';
 
-// â”€â”€â”€ WALLET SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── WALLET SCREEN ────────────────────────────────────────────────────────────
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -75,9 +76,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               children: [
                                 Expanded(
                                   child: AppButton(
-                                    label: 'Add Money',
+                                    label: '+ Add Money',
                                     height: 44,
-                                    onPressed: () => showAppSnackbar(context, 'Online payments coming soon - pay cash after service for now.'),
+                                    onPressed: () => context.push(RouteNames.addMoney),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -102,7 +103,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           children: [
                             Expanded(child: _StatCard2('1,250', 'Loyalty Points', Icons.star_rounded, AppColors.gold)),
                             SizedBox(width: 12),
-                            Expanded(child: _StatCard2('â‚¹350', 'Total Cashback', Icons.percent_rounded, AppColors.success)),
+                            Expanded(child: _StatCard2('₹350', 'Total Cashback', Icons.percent_rounded, AppColors.success)),
                           ],
                         ),
                       ),
@@ -228,7 +229,7 @@ class _StatCard2 extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ ADD MONEY SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ADD MONEY SCREEN ─────────────────────────────────────────────────────────
 
 class AddMoneyScreen extends ConsumerStatefulWidget {
   const AddMoneyScreen({super.key});
@@ -238,6 +239,7 @@ class AddMoneyScreen extends ConsumerStatefulWidget {
 
 class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
   double _amount = 500;
+  bool _isLoading = false;
   final _ctrl = TextEditingController(text: '500');
 
   final _presets = [200, 500, 1000, 2000];
@@ -267,7 +269,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
               hint: 'Enter amount',
               controller: _ctrl,
               keyboardType: TextInputType.number,
-              prefix: const Padding(padding: EdgeInsets.all(14), child: Text('â‚¹', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
+              prefix: const Padding(padding: EdgeInsets.all(14), child: Text('₹', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
               onChanged: (v) => setState(() => _amount = double.tryParse(v) ?? 0),
             ),
             const SizedBox(height: 16),
@@ -285,7 +287,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: _amount == p ? AppColors.primaryRed : AppColors.divider),
                   ),
-                  child: Text('â‚¹$p', style: TextStyle(color: _amount == p ? AppColors.primaryRed : AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                  child: Text('₹$p', style: TextStyle(color: _amount == p ? AppColors.primaryRed : AppColors.textSecondary, fontWeight: FontWeight.w600)),
                 ),
               )).toList(),
             ),
@@ -308,12 +310,18 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
             ),
             const Spacer(),
             AppButton(
-              label: 'Add â‚¹${_amount.toInt()} to Wallet',
-              isLoading: false,
-              onPressed: () => showAppSnackbar(
-                context,
-                'Online payments coming soon â€” pay cash after service for now.',
-              ),
+              label: 'Add ₹${_amount.toInt()} to Wallet',
+              isLoading: _isLoading,
+              onPressed: () async {
+                setState(() => _isLoading = true);
+                final paise = (_amount * 100).round();
+                await ref.read(walletLedgerProvider.notifier).addMoney(paise);
+                if (context.mounted) {
+                  setState(() => _isLoading = false);
+                  showAppSnackbar(context, 'Waiting for confirmation');
+                  context.pop();
+                }
+              },
             ),
           ],
         ),
@@ -321,5 +329,3 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
     );
   }
 }
-
-

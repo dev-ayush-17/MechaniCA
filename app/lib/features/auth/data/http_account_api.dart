@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../core/api/generated/export.dart' as api;
 import '../../../core/error/result.dart';
@@ -68,9 +67,6 @@ class HttpAccountApi implements AccountApi {
     try {
       return Ok(await request(session.idToken));
     } on DioException catch (e) {
-      debugPrint('HttpAccountApi DioException: $e');
-      debugPrint('DioException type: ${e.type}, message: ${e.message}, error: ${e.error}');
-      debugPrint('DioException request: ${e.requestOptions.uri}, data: ${e.requestOptions.data}');
       final failure = failureFromDio(e);
       if (failure is! Unauthenticated) return Err(failure);
       final refreshed = await _auth.currentSession(forceRefresh: true);
@@ -78,7 +74,6 @@ class HttpAccountApi implements AccountApi {
       try {
         return Ok(await request(refreshed.idToken));
       } on DioException catch (retry) {
-        debugPrint('HttpAccountApi retry DioException: $retry');
         return Err(failureFromDio(retry));
       }
     }

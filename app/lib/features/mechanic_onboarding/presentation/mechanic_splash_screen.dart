@@ -25,17 +25,9 @@ class _MechanicSplashScreenState extends ConsumerState<MechanicSplashScreen> {
   }
 
   Future<void> _route() async {
-    bool signedIn = false;
-    try {
-      final restoring = ref.read(authProvider.notifier).restore();
-      await Future<void>.delayed(const Duration(seconds: 2));
-      signedIn = await restoring.timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => false,
-      );
-    } catch (_) {
-      signedIn = false;
-    }
+    final restoring = ref.read(authProvider.notifier).restore();
+    await Future<void>.delayed(const Duration(seconds: 2));
+    final signedIn = await restoring;
     if (!mounted) return;
     if (!signedIn) {
       context.go(MechanicRouteNames.login);

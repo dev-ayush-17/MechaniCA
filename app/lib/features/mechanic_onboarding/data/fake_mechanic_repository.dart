@@ -70,15 +70,6 @@ class FakeMechanicRepository implements MechanicRepository {
     return Ok(_profile!);
   }
 
-  @override
-  Future<Result<MechanicProfile>> heartbeat(String idToken) async {
-    final current = _profile;
-    if (current == null) {
-      return const Err(NotFound('Finish mechanic setup first.'));
-    }
-    return Ok(current);
-  }
-
   /// Test helper: mark the fake mechanic verified.
   void approveForDemo() {
     final current = _profile;

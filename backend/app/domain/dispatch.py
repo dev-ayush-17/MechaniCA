@@ -36,11 +36,6 @@ class DispatchConfig:
     sos_radii_km: tuple[float, ...] = (8.0, 15.0, 25.0)
     assigned_stale_seconds: int = 600
     extra_work_timeout_seconds: int = 600
-    # 0 keeps the spec: nobody in range fails the booking immediately.
-    # A local demo may wait so a mechanic can come online after submit.
-    wait_for_mechanic_seconds: int = 0
-    auto_accept: bool = False
-    auto_accept_fallback_mechanic_id: str | None = None
 
 
 @dataclass(frozen=True)

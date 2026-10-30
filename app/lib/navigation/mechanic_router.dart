@@ -4,12 +4,9 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/otp_screen.dart';
 import '../features/job_chat/presentation/job_chat_screen.dart';
 import '../features/mechanic_jobs/presentation/job_actions_screen.dart';
-import '../features/mechanic_jobs/presentation/mechanic_jobs_screen.dart';
 import '../features/mechanic_jobs/presentation/offer_route_screen.dart';
 import '../features/mechanic_onboarding/presentation/mechanic_home_screen.dart';
 import '../features/mechanic_onboarding/presentation/mechanic_onboarding_screen.dart';
-import '../features/mechanic_onboarding/presentation/mechanic_profile_screen.dart';
-import '../features/mechanic_onboarding/presentation/mechanic_shell.dart';
 import '../features/mechanic_onboarding/presentation/mechanic_splash_screen.dart';
 import '../features/parts_proof/presentation/parts_proof_capture_screen.dart';
 import '../features/payments/presentation/earnings_screen.dart';
@@ -37,22 +34,9 @@ final mechanicRouter = GoRouter(
         return OTPScreen(phone: phone);
       },
     ),
-    ShellRoute(
-      builder: (_, __, child) => MechanicShell(child: child),
-      routes: [
-        GoRoute(
-          path: MechanicRouteNames.home,
-          builder: (_, __) => const MechanicHomeScreen(),
-        ),
-        GoRoute(
-          path: MechanicRouteNames.jobs,
-          builder: (_, __) => const MechanicJobsScreen(),
-        ),
-        GoRoute(
-          path: MechanicRouteNames.profile,
-          builder: (_, __) => const MechanicProfileScreen(),
-        ),
-      ],
+    GoRoute(
+      path: MechanicRouteNames.home,
+      builder: (_, __) => const MechanicHomeScreen(),
     ),
     GoRoute(
       path: MechanicRouteNames.earnings,

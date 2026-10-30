@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from app.application.location_gate import sync_location_gate
 from app.domain.booking import Booking, BookingMode, Urgency
@@ -35,12 +35,6 @@ from app.ports.offer_repository import OfferRepository
 
 _LOG = logging.getLogger("mechupp.dispatch")
 
-
-def _as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value
-
 _BUSY = frozenset(
     {
         BookingStatus.MECHANIC_ASSIGNED,
@@ -69,11 +63,7 @@ class SequentialDispatch:
             return None
         if booking.status is not BookingStatus.CONFIRMED:
             raise InvalidTransition("Dispatch only runs on a confirmed booking.")
-        if (
-            booking.mode is BookingMode.SCHEDULED
-            and not self._scheduled_due(booking)
-            and not self.config.auto_accept
-        ):
+        if booking.mode is BookingMode.SCHEDULED and not self._scheduled_due(booking):
             return None
         existing = await self.offers.list_by_booking(booking.id)
         open_offers = [item for item in existing if item.status is OfferStatus.OPEN]
@@ -84,33 +74,7 @@ class SequentialDispatch:
             await self._fail(booking)
             return None
         candidate = await self._pick(booking, existing)
-        if candidate is None and self.config.auto_accept:
-            if self.config.auto_accept_fallback_mechanic_id:
-                fallback_mechanic = await self.mechanics.get(
-                    self.config.auto_accept_fallback_mechanic_id
-                )
-                if fallback_mechanic is not None:
-                    candidate = RankedCandidate(
-                        mechanic_id=fallback_mechanic.id,
-                        score=100.0,
-                        distance_km=1.0,
-                    )
-            if candidate is None:
-                wider = await self.mechanics.find_online_near(
-                    booking.address.lat, booking.address.lng, 1000.0, 1
-                )
-                if wider:
-                    candidate = RankedCandidate(
-                        mechanic_id=wider[0].id,
-                        score=100.0,
-                        distance_km=1.0,
-                    )
         if candidate is None:
-            # Attempts count offers. An empty candidate list is not an attempt.
-            # The default wait is 0, so this still fails immediately.
-            waited = (self.clock.now() - _as_utc(booking.created_at)).total_seconds()
-            if not existing and waited < self.config.wait_for_mechanic_seconds:
-                return None
             await self._fail(booking)
             return None
         now = self.clock.now()
@@ -148,8 +112,6 @@ class SequentialDispatch:
                 deep_link=f"/mechanic/offers/{saved.id}",
             )
         )
-        if self.config.auto_accept:
-            await self.accept(saved.id, candidate.mechanic_id)
         return saved
 
     async def accept(self, offer_id: str, mechanic_id: str) -> Booking:
@@ -327,7 +289,7 @@ class SequentialDispatch:
         beat = mechanic.last_heartbeat_at
         if beat is None:
             return False
-        return (_as_utc(now) - _as_utc(beat)).total_seconds() <= self.config.heartbeat_fresh_seconds
+        return (now - beat).total_seconds() <= self.config.heartbeat_fresh_seconds
 
     def _covers_job(self, mechanic: Mechanic, booking: Booking) -> bool:
         area = mechanic.service_area
@@ -375,13 +337,7 @@ class SequentialDispatch:
     async def _sync_gate(self, booking: Booking) -> None:
         if self.locations is None:
             return
-        try:
-            await sync_location_gate(self.locations, booking)
-        except Exception as exc:
-            _LOG.warning(
-                "location_gate_failed",
-                extra={"fields": {"bookingId": booking.id, "error": type(exc).__name__}},
-            )
+        await sync_location_gate(self.locations, booking)
 
     async def _track(self, name: str, properties: dict[str, object]) -> None:
         if self.analytics is None:

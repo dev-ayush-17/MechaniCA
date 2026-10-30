@@ -7,8 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../../composition/providers.dart';
 import '../../core/error/result.dart';
 import '../../core/theme/app_colors.dart';
-import '../../l10n/l10n.dart';
 import '../../navigation/route_names.dart';
+import '../../models/booking_model.dart';
 import '../../widgets/shared/app_widgets.dart';
 import '../../widgets/shared/app_states.dart';
 import '../profile/domain/saved_address.dart';
@@ -105,20 +105,6 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     }
   }
 
-  DateTime? _scheduledStart(DateTime? date, String? time) {
-    if (date == null || time == null) return null;
-    final match = RegExp(r'(\d+):(\d+)\s*(AM|PM)').firstMatch(time);
-    if (match == null) return null;
-    var hour = int.parse(match.group(1)!);
-    final minute = int.parse(match.group(2)!);
-    if (minute != 0) return null;
-    final pm = match.group(3) == 'PM';
-    if (pm && hour != 12) hour += 12;
-    if (!pm && hour == 12) hour = 0;
-    final local = DateTime(date.year, date.month, date.day, hour);
-    return local.toUtc();
-  }
-
   Future<String?> _confirmBooking() async {
     if (!ref.read(networkOnlineProvider)) {
       return 'Connect to book.';
@@ -127,75 +113,60 @@ class _BookingFlowScreenState extends ConsumerState<BookingFlowScreen> {
     if (flow.selectedBike == null || flow.selectedService == null) {
       return 'Pick a bike and a service first.';
     }
-    if (flow.addressId.isEmpty) {
-      return 'Save a service address first.';
-    }
-    final scheduled = flow.bookAsap
-        ? null
-        : _scheduledStart(flow.selectedDate, flow.selectedTime);
-    if (!flow.bookAsap && scheduled == null) {
-      return 'Pick an on-the-hour slot, or choose as soon as possible.';
-    }
 
     final result = await ref.read(bookingApiProvider).create(
           vehicleId: flow.selectedBike!.id,
           serviceCode: flow.selectedService!.id,
-          addressId: flow.addressId,
+          addressId: flow.addressId.isEmpty ? 'addr_home' : flow.addressId,
           paymentMethod: paymentMethodCode(flow.paymentMethod),
-          mode: flow.bookAsap ? 'instant' : 'scheduled',
+          mode: 'instant',
           urgency: 'normal',
           idempotencyKey: const Uuid().v4(),
-          scheduledStart: scheduled,
           couponCode: flow.couponCode ?? '',
         );
     switch (result) {
       case Ok(:final value):
-        _openCreated(flow, value);
+        await _persistCreated(flow, value);
         return null;
       case Err(:final failure):
         return failure.message;
     }
   }
 
-  void _openCreated(BookingFlowState flow, Booking created) {
-    final named = created.serviceName.isEmpty
-        ? (flow.selectedService?.name ?? created.serviceCode)
-        : created.serviceName;
-    final booking = Booking(
+  Future<void> _persistCreated(BookingFlowState flow, Booking created) async {
+    final booking = BookingModel(
       id: created.id,
-      displayNumber: created.displayNumber,
+      userId: ref.read(authProvider).session?.userId ?? '',
+      bikeId: flow.selectedBike!.id,
+      bikeName: flow.selectedBike!.name,
+      bikeNumber: flow.selectedBike!.registrationNumber,
+      serviceId: flow.selectedService!.id,
+      serviceName: flow.selectedService!.name,
+      servicePrice: flow.selectedService!.price,
       status: created.status,
-      serviceCode: created.serviceCode,
-      mode: created.mode,
-      urgency: created.urgency,
-      totalPaise: created.totalPaise,
-      cancelFeePaise: created.cancelFeePaise,
-      version: created.version,
-      vehicleId: created.vehicleId.isEmpty ? flow.selectedBike!.id : created.vehicleId,
-      serviceName: named,
-      addressId: created.addressId.isEmpty ? flow.addressId : created.addressId,
-      scheduledStart: created.scheduledStart,
-      paymentMethod: created.paymentMethod.isEmpty
-          ? paymentMethodCode(flow.paymentMethod)
-          : created.paymentMethod,
+      serviceType: flow.isPickupDrop ? ServiceType.pickupDrop : ServiceType.visitWorkshop,
+      scheduledDate: flow.selectedDate ?? DateTime.now().add(const Duration(days: 1)),
+      scheduledTime: flow.selectedTime ?? '10:00 AM',
+      pickupAddress: flow.pickupAddress,
+      couponCode: flow.couponCode,
+      discount: flow.discount,
+      pickupCharges: flow.pickupCharges,
+      gst: flow.gst,
+      totalAmount: created.totalPaise / 100,
+      paymentMethod: flow.paymentMethod,
+      createdAt: DateTime.now(),
+      statusTimeline: [created.status.label],
     );
-    ref.invalidate(homeBookingsProvider);
-    ref.read(bookingFlowProvider.notifier).reset();
+    await ref.read(bookingProvider.notifier).createBooking(booking);
     if (mounted) {
-      context.pushReplacement(RouteNames.bookingSuccess, extra: booking);
+      ref.read(bookingFlowProvider.notifier).reset();
+      context.pushReplacement(RouteNames.bookingSuccess, extra: created.id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final steps = [
-      'Bike',
-      'Service',
-      'Date & Time',
-      'Pickup',
-      'Address',
-      l10nOf(context).bookingReviewStep,
-    ];
+    final steps = ['Bike', 'Service', 'Date & Time', 'Pickup', 'Address', 'Payment'];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -366,11 +337,13 @@ class _Step3DateTime extends ConsumerStatefulWidget {
 class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
   DateTime? _selectedDate;
   String? _selectedTime;
-  bool _asap = true;
 
   @override
   void initState() {
     super.initState();
+    if (!widget.leaveDateEmpty) {
+      _selectedDate = DateTime.now().add(const Duration(days: 1));
+    }
   }
 
   final _times = ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
@@ -390,19 +363,6 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('As soon as possible', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text(
-                    'A mechanic is offered as soon as you submit.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                  trailing: Icon(
-                    _asap ? Icons.check_circle : Icons.circle_outlined,
-                    color: AppColors.primaryRed,
-                  ),
-                  onTap: () => setState(() => _asap = true),
-                ),
                 const Text('Select Date', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -412,15 +372,11 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
                     itemCount: _dates.length,
                     itemBuilder: (_, i) {
                       final d = _dates[i];
-                      final selected = !_asap &&
-                          _selectedDate != null &&
+                      final selected = _selectedDate != null &&
                           d.day == _selectedDate!.day &&
                           d.month == _selectedDate!.month;
                       return GestureDetector(
-                        onTap: () => setState(() {
-                        _asap = false;
-                        _selectedDate = d;
-                      }),
+                        onTap: () => setState(() => _selectedDate = d),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           width: 54,
@@ -451,12 +407,9 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
                   spacing: 10,
                   runSpacing: 10,
                   children: _times.map((t) {
-                    final selected = !_asap && _selectedTime == t;
+                    final selected = _selectedTime == t;
                     return GestureDetector(
-                      onTap: () => setState(() {
-                        _asap = false;
-                        _selectedTime = t;
-                      }),
+                      onTap: () => setState(() => _selectedTime = t),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -478,15 +431,11 @@ class _Step3DateTimeState extends ConsumerState<_Step3DateTime> {
           padding: const EdgeInsets.all(16),
           child: AppButton(
             label: 'Next',
-            onPressed: _asap || (_selectedDate != null && _selectedTime != null)
+            onPressed: _selectedDate != null && _selectedTime != null
                 ? () {
-                    final notifier = ref.read(bookingFlowProvider.notifier);
-                    notifier.setBookAsap(_asap);
-                    if (!_asap && _selectedDate != null && _selectedTime != null) {
-                      notifier
-                        ..selectDate(_selectedDate!)
-                        ..selectTime(_selectedTime!);
-                    }
+                    ref.read(bookingFlowProvider.notifier)
+                      ..selectDate(_selectedDate!)
+                      ..selectTime(_selectedTime!);
                     widget.onNext();
                   }
                 : null,
@@ -616,98 +565,20 @@ class _Step5Address extends ConsumerStatefulWidget {
 
 class _Step5AddressState extends ConsumerState<_Step5Address> {
   late final TextEditingController _addrCtrl;
-  final _pinCtrl = TextEditingController(text: '800001');
-  double? _lat;
-  double? _lng;
-  String? _locationNote;
-  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     final existing = ref.read(bookingFlowProvider).pickupAddress;
-    _addrCtrl = TextEditingController(text: existing ?? '');
+    _addrCtrl = TextEditingController(
+      text: existing ?? 'Rajendra Nagar, Patna, Bihar',
+    );
   }
 
   @override
   void dispose() {
     _addrCtrl.dispose();
-    _pinCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _useDeviceLocation() async {
-    final fix = await ref.read(deviceLocationProvider).current();
-    if (!mounted) return;
-    setState(() {
-      if (!fix.hasPoint) {
-        _locationNote = fix.message ?? 'Location permission was denied.';
-        return;
-      }
-      _lat = fix.lat;
-      _lng = fix.lng;
-      _locationNote =
-          '${fix.lat!.toStringAsFixed(5)}, ${fix.lng!.toStringAsFixed(5)}';
-      if (_addrCtrl.text.trim().isEmpty) {
-        _addrCtrl.text = 'Current location';
-      }
-    });
-  }
-
-  void _usePatna() {
-    setState(() {
-      _lat = 25.5941;
-      _lng = 85.1376;
-      _locationNote = '25.59410, 85.13760';
-      _addrCtrl.text = 'Rajendra Nagar, Patna';
-      _pinCtrl.text = '800001';
-    });
-  }
-
-  Future<void> _saveAddress() async {
-    final lat = _lat;
-    final lng = _lng;
-    final line = _addrCtrl.text.trim();
-    final pin = _pinCtrl.text.trim();
-    if (lat == null || lng == null) {
-      setState(() => _locationNote = 'Use current location or the Patna address first.');
-      return;
-    }
-    if (line.length < 3) {
-      setState(() => _locationNote = 'Enter a street address.');
-      return;
-    }
-    setState(() => _saving = true);
-    final error = await ref.read(addressesControllerProvider.notifier).add(
-          label: 'Service',
-          line1: line,
-          city: 'Patna',
-          pincode: pin,
-          lat: lat,
-          lng: lng,
-        );
-    if (!mounted) return;
-    if (error != null) {
-      setState(() {
-        _saving = false;
-        _locationNote = error;
-      });
-      return;
-    }
-    final items = ref.read(addressesControllerProvider).items;
-    final saved = items.cast<SavedAddress?>().lastWhere(
-          (item) => item != null && item.line1 == line,
-          orElse: () => items.isEmpty ? null : items.last,
-        );
-    if (saved != null) {
-      ref.read(bookingFlowProvider.notifier)
-        ..setAddressId(saved.id)
-        ..setPickupAddress(saved.fullAddress);
-    }
-    setState(() {
-      _saving = false;
-      _locationNote = saved == null ? 'Address saved.' : 'Saved ${saved.fullAddress}';
-    });
   }
 
   @override
@@ -723,42 +594,16 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Service address', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                if (flow.isPickupDrop) ...[
+                  const Text('Pickup Address', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 12),
                   AppTextField(
                     hint: 'Enter your address',
                     controller: _addrCtrl,
                     maxLines: 2,
                     onChanged: (v) => ref.read(bookingFlowProvider.notifier).setPickupAddress(v),
+                    suffix: const Padding(padding: EdgeInsets.all(14), child: Icon(Icons.my_location, color: AppColors.primaryRed, size: 18)),
                   ),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    hint: 'PIN code',
-                    controller: _pinCtrl,
-                    label: 'PIN',
-                  ),
-                  const SizedBox(height: 8),
-                  AppButton(
-                    label: 'Use current location',
-                    icon: Icons.my_location,
-                    isOutlined: true,
-                    onPressed: _useDeviceLocation,
-                  ),
-                  const SizedBox(height: 8),
-                  AppButton(
-                    label: 'Use Patna service area',
-                    isOutlined: true,
-                    onPressed: _usePatna,
-                  ),
-                  const SizedBox(height: 8),
-                  AppButton(
-                    label: _saving ? 'Saving…' : 'Save this address',
-                    onPressed: _saving ? null : _saveAddress,
-                  ),
-                  if (_locationNote != null) ...[
-                    const SizedBox(height: 8),
-                    Text(_locationNote!, style: const TextStyle(color: AppColors.textSecondary)),
-                  ],
                   const SizedBox(height: 8),
                   ...saved.map((a) => GestureDetector(
                     onTap: () {
@@ -795,6 +640,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
                     ),
                   )),
                   const SizedBox(height: 20),
+                ],
                 const CouponApplyField(),
               ],
             ),
@@ -802,10 +648,7 @@ class _Step5AddressState extends ConsumerState<_Step5Address> {
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: AppButton(
-            label: 'Next',
-            onPressed: flow.addressId.isEmpty ? null : widget.onNext,
-          ),
+          child: AppButton(label: 'Next', onPressed: widget.onNext),
         ),
       ],
     );

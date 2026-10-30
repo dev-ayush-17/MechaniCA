@@ -18,7 +18,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
-  String get pay => 'Pay (demo)';
+  String get pay => 'Pay';
 
   @override
   String get payNow => 'Pay now';
@@ -27,24 +27,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String payAmount(String amount) {
     return 'Pay $amount';
   }
-
-  @override
-  String confirmBooking(String amount) {
-    return 'Confirm $amount';
-  }
-
-  @override
-  String get bookingReviewStep => 'Review';
-
-  @override
-  String get payAfterVisitHint => 'How you\'ll pay after the visit';
-
-  @override
-  String get noChargeUntilComplete =>
-      'You are not charged until the mechanic completes the job.';
-
-  @override
-  String get payAfterTheVisit => 'Pay after the visit';
 
   @override
   String get trackLive => 'Track Live';

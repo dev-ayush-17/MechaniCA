@@ -86,8 +86,6 @@ abstract interface class MechanicRepository {
     required bool online,
   });
 
-  Future<Result<MechanicProfile>> heartbeat(String idToken);
-
   Future<Result<SignedUpload>> signUpload(
     String idToken, {
     required String path,

@@ -39,8 +39,6 @@ site/
 .env
 .env.*
 !.env.example
-serviceAccount*.json
-*firebase-adminsdk*.json
 *.pem
 *.key
 *.cert

@@ -5,7 +5,6 @@ import 'package:mechupp_app/features/mechanic_onboarding/data/fake_mechanic_repo
 import 'package:mechupp_app/features/mechanic_onboarding/presentation/mechanic_controller.dart';
 import 'package:mechupp_app/features/mechanic_onboarding/domain/mechanic_repository.dart';
 import 'package:mechupp_app/features/mechanic_onboarding/presentation/mechanic_home_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class _LoadedMechanicNotifier extends MechanicNotifier {
   _LoadedMechanicNotifier(FakeMechanicRepository repo)
@@ -31,7 +30,6 @@ class _LoadedMechanicNotifier extends MechanicNotifier {
 
 void main() {
   testWidgets('unverified_mechanic_cannot_go_online', (tester) async {
-    SharedPreferences.setMockInitialValues({});
     final repo = FakeMechanicRepository();
 
     await tester.pumpWidget(
@@ -44,8 +42,7 @@ void main() {
         child: const MaterialApp(home: MechanicHomeScreen()),
       ),
     );
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final toggle = find.byType(SwitchListTile);
     expect(toggle, findsOneWidget);

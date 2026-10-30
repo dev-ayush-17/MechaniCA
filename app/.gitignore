@@ -85,7 +85,6 @@ lib/generated_plugin_registrant.dart
 .env.*
 !.env.example
 google-services.json
-google-services*.json
 GoogleService-Info.plist
 firebase_options.dart
 *.keystore

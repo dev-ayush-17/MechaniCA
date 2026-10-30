@@ -159,8 +159,6 @@ Do not denormalize wallet balance onto the user. Sum the ledger or keep a server
 | `payments` | `status`, `updatedAt` | Reconciliation sweeper |
 | `disputes` | `status`, `createdAt` | Queue |
 | `auditLog` | `targetType`, `targetId`, `createdAt` | Timeline |
-| `offers` | `mechanicId`, `status` | Open offer poll |
-| `offers` | `bookingId` | One-open-offer check |
 
 Geohash: store precision 6 (~1.2 km cells) plus the raw lat/lng. The query loads the cell and its neighbors, then filters by true distance. This is the Firestore-shaped approach. The port hides it.
 

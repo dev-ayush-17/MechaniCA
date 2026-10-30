@@ -1,6 +1,5 @@
 """Composition root: the only place that decides which adapter implements a port."""
 
-import os
 from functools import lru_cache
 from typing import Annotated
 
@@ -83,7 +82,6 @@ from app.application.wallet_topup import CreateWalletTopup
 from app.core.config import Settings, get_settings
 from app.domain.booking import BookingPolicy
 from app.domain.catalog import PricingConfig
-from app.domain.dispatch import DispatchConfig
 from app.domain.errors import PermissionDenied, Unauthenticated
 from app.domain.pricing import PricingService
 from app.domain.user import Principal, Role
@@ -160,8 +158,6 @@ def _auth() -> _AuthBinding:
         from app.adapters.firebase.auth_verifier import FirebaseAuth
 
         assert settings.firebase_project_id is not None  # noqa: S101 - Settings guarantees it
-        # Credentials must be attached before AuthVerifier calls initialize_app.
-        _bind_firebase()
         firebase = FirebaseAuth(settings.firebase_project_id)
         return _AuthBinding(firebase, firebase)
     fake = FakeAuth(settings.app_env)
@@ -176,28 +172,9 @@ def role_claims_dep() -> RoleClaims:
     return _auth().claims
 
 
-def _bind_firebase() -> None:
-    settings = get_settings()
-    if not settings.firebase_project_id:
-        return
-    from app.adapters.firebase.admin_app import ensure_firebase
-
-    ensure_firebase(
-        settings.firebase_project_id,
-        credentials_path=settings.firebase_credentials,
-        database_url=settings.firebase_database_url,
-    )
-
-
 @lru_cache
 def _users() -> UserRepository:
-    settings = get_settings()
-    if settings.provider_users == "firestore":
-        from app.adapters.firebase.user_repository import FirestoreUserRepository
-
-        assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
-        return FirestoreUserRepository(settings.firebase_project_id)
+    # A Firestore adapter replaces this in a later milestone. Until then users live in memory.
     return FakeUserRepository()
 
 
@@ -213,24 +190,7 @@ async def principal_dep(
     scheme, _, token = (authorization or "").partition(" ")
     if scheme.lower() != "bearer" or not token.strip():
         raise Unauthenticated("Sign in again.")
-    principal = await verifier.verify(token.strip())
-    # Fake tokens do not store the role. After a restart the user document wins.
-    # Pytest builds its own claims, so this lookup stays off under the test runner.
-    if principal.role is Role.CUSTOMER and not os.environ.get("PYTEST_CURRENT_TEST"):
-        user = await user_repository_dep().get(principal.user_id)
-        if user is not None and user.role is Role.MECHANIC:
-            await role_claims_dep().set_role(user.id, Role.MECHANIC)
-            mechanic = await mechanic_repository_dep().get(user.id)
-            verified = mechanic is not None and mechanic.verified
-            if verified:
-                await role_claims_dep().set_mechanic_verified(user.id, True)
-            return Principal(
-                user_id=principal.user_id,
-                role=Role.MECHANIC,
-                phone_e164=principal.phone_e164,
-                mechanic_verified=verified,
-            )
-    return principal
+    return await verifier.verify(token.strip())
 
 
 @lru_cache
@@ -240,7 +200,6 @@ def _vehicles() -> VehicleRepository:
         from app.adapters.firebase.vehicle_repository import FirestoreVehicleRepository
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreVehicleRepository(settings.firebase_project_id)
     from app.adapters.fake.vehicle_repository import FakeVehicleRepository
 
@@ -258,7 +217,6 @@ def _catalog() -> CatalogRepository:
         from app.adapters.firebase.catalog_repository import FirestoreCatalogRepository
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreCatalogRepository(settings.firebase_project_id)
     return FakeCatalogRepository()
 
@@ -346,14 +304,7 @@ def bootstrap_user_dep(
 
 
 @lru_cache
-def _mechanics() -> MechanicRepository:
-    settings = get_settings()
-    if settings.provider_mechanics == "firestore":
-        from app.adapters.firebase.mechanic_repository import FirestoreMechanicRepository
-
-        assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
-        return FirestoreMechanicRepository(settings.firebase_project_id)
+def _mechanics() -> FakeMechanicRepository:
     return FakeMechanicRepository()
 
 
@@ -446,9 +397,8 @@ def submit_mechanic_application_dep(
 
 def set_mechanic_availability_dep(
     mechanics: Annotated[MechanicRepository, Depends(mechanic_repository_dep)],
-    clock: Annotated[Clock, Depends(clock_dep)],
 ) -> SetMechanicAvailability:
-    return SetMechanicAvailability(mechanics=mechanics, clock=clock)
+    return SetMechanicAvailability(mechanics=mechanics)
 
 
 def mechanic_heartbeat_dep(
@@ -490,7 +440,6 @@ def _bookings() -> BookingRepository:
         from app.adapters.firebase.booking_repository import FirestoreBookingRepository
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreBookingRepository(settings.firebase_project_id)
     return FakeBookingRepository()
 
@@ -549,14 +498,7 @@ def create_quote_dep(
 
 
 @lru_cache
-def _offers() -> OfferRepository:
-    settings = get_settings()
-    if settings.provider_offers == "firestore":
-        from app.adapters.firebase.offer_repository import FirestoreOfferRepository
-
-        assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
-        return FirestoreOfferRepository(settings.firebase_project_id)
+def _offers() -> FakeOfferRepository:
     return FakeOfferRepository()
 
 
@@ -571,7 +513,6 @@ def _notifications() -> NotificationRepository:
         from app.adapters.firebase.notification_repository import FirestoreNotificationRepository
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreNotificationRepository(settings.firebase_project_id)
     return FakeNotificationRepository()
 
@@ -587,7 +528,6 @@ def _devices() -> DeviceTokenRepository:
         from app.adapters.firebase.device_token_repository import FirestoreDeviceTokenRepository
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreDeviceTokenRepository(settings.firebase_project_id)
     return FakeDeviceTokenRepository()
 
@@ -646,7 +586,6 @@ def _locations() -> LocationTrackingService:
 
         assert settings.firebase_project_id is not None  # noqa: S101
         assert settings.firebase_database_url is not None  # noqa: S101
-        _bind_firebase()
         return RtdbLocationTrackingService(
             settings.firebase_project_id, settings.firebase_database_url
         )
@@ -688,15 +627,6 @@ async def require_internal_job_dep(
         raise Unauthenticated("Internal job token required.")
 
 
-def dispatch_config_dep(settings: Annotated[Settings, Depends(settings_dep)]) -> DispatchConfig:
-    return DispatchConfig(
-        normal_ttl_seconds=settings.dispatch_normal_ttl_seconds,
-        wait_for_mechanic_seconds=settings.dispatch_wait_seconds,
-        auto_accept=settings.dispatch_auto_accept,
-        auto_accept_fallback_mechanic_id=settings.dispatch_auto_accept_fallback_mechanic_id,
-    )
-
-
 def dispatch_service_dep(
     bookings: Annotated[BookingRepository, Depends(booking_repository_dep)],
     offers: Annotated[OfferRepository, Depends(offer_repository_dep)],
@@ -706,7 +636,6 @@ def dispatch_service_dep(
     scheduler: Annotated[JobScheduler, Depends(job_scheduler_dep)],
     locations: Annotated[LocationTrackingService, Depends(location_tracking_dep)],
     analytics: Annotated[AnalyticsService, Depends(analytics_service_dep)],
-    config: Annotated[DispatchConfig, Depends(dispatch_config_dep)],
 ) -> SequentialDispatch:
     return SequentialDispatch(
         bookings=bookings,
@@ -717,7 +646,6 @@ def dispatch_service_dep(
         scheduler=scheduler,
         locations=locations,
         analytics=analytics,
-        config=config,
     )
 
 
@@ -759,7 +687,6 @@ def _idempotency() -> IdempotencyStore:
         from app.adapters.firebase.idempotency_store import FirestoreIdempotencyStore
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreIdempotencyStore(settings.firebase_project_id)
     return FakeIdempotencyStore()
 
@@ -770,13 +697,6 @@ def idempotency_store_dep() -> IdempotencyStore:
 
 @lru_cache
 def _addresses() -> AddressRepository:
-    settings = get_settings()
-    if settings.provider_addresses == "firestore":
-        from app.adapters.firebase.address_repository import FirestoreAddressRepository
-
-        assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
-        return FirestoreAddressRepository(settings.firebase_project_id)
     return FakeAddressRepository()
 
 
@@ -910,7 +830,6 @@ def create_payment_dep(
         clock=clock,
         gst_bps=settings.gst_bps,
         scheduler=scheduler,
-        demo_wallet_float=settings.demo_wallet_float,
     )
 
 
@@ -1069,7 +988,6 @@ def _chat() -> ChatService:
         from app.adapters.firebase.chat_service import FirestoreChatService
 
         assert settings.firebase_project_id is not None  # noqa: S101
-        _bind_firebase()
         return FirestoreChatService(settings.firebase_project_id)
     return FakeChatService()
 

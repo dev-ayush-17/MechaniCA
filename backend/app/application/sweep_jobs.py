@@ -57,9 +57,4 @@ class SweepExpiredOffers:
                         continue
                     await self.extra_lines.execute(booking.id, line.id)
                     extra += 1
-        confirmed = await self.bookings.list_by_status(BookingStatus.CONFIRMED)
-        for booking in confirmed:
-            # Idempotent: an open offer is returned, a scheduled job not yet due
-            # is skipped, and an empty candidate list fails only after the wait.
-            await self.dispatch.offer(booking.id)
-        return len(expired) + stale + extra + len(confirmed)
+        return len(expired) + stale + extra

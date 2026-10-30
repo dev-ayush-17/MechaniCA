@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mechupp_app/core/theme/app_theme.dart';
@@ -23,19 +22,15 @@ void main() {
 
   testWidgets('permission_screens_keep_their_copy', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-            theme: AppTheme.darkTheme, home: const LocationPermissionScreen()),
-      ),
+      MaterialApp(
+          theme: AppTheme.darkTheme, home: const LocationPermissionScreen()),
     );
     expect(find.text('Enable Location'), findsOneWidget);
 
     await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const NotificationPermissionScreen()),
-      ),
+      MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const NotificationPermissionScreen()),
     );
     expect(find.text('Stay Updated'), findsOneWidget);
   });

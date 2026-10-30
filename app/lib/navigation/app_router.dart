@@ -10,15 +10,12 @@ import '../features/home/home_screen.dart';
 import '../features/home/notifications_screen.dart';
 import '../features/bikes/my_bikes_screen.dart';
 import '../features/booking/booking_flow_screen.dart';
-import '../features/booking/domain/booking.dart';
 import '../features/booking/domain/repeat_prefill.dart';
 import '../features/booking/booking_success_screen.dart';
 import '../features/booking/booking_details_screen.dart';
-import '../features/booking/reschedule_screen.dart';
 import '../features/job_chat/presentation/job_chat_screen.dart';
 import '../features/payments/presentation/pay_step.dart';
 import '../features/tracking/live_tracking_screen.dart';
-import '../features/tracking/presentation/tracking_controller.dart';
 import '../features/inspection/digital_inspection_screen.dart';
 import '../features/parts_proof/presentation/customer_proofs_screen.dart';
 import '../features/reviews/presentation/mechanic_reviews_screen.dart';
@@ -113,11 +110,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.bookingSuccess,
       builder: (_, state) {
-        final extra = state.extra;
-        if (extra is Booking) {
-          return BookingSuccessScreen(bookingId: extra.id, booking: extra);
-        }
-        return BookingSuccessScreen(bookingId: extra as String? ?? '');
+        final bookingId = state.extra as String? ?? '';
+        return BookingSuccessScreen(bookingId: bookingId);
       },
     ),
     GoRoute(
@@ -156,11 +150,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.liveTracking,
       builder: (_, state) {
-        final extra = state.extra;
-        if (extra is TrackingArgs) {
-          return LiveTrackingScreen.fromArgs(extra);
-        }
-        return LiveTrackingScreen(bookingId: extra as String? ?? '');
+        final bookingId = state.extra as String? ?? '';
+        return LiveTrackingScreen(bookingId: bookingId);
       },
     ),
     GoRoute(

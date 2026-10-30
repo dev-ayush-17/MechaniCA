@@ -155,7 +155,6 @@ class BookingFlowState {
   final String? couponCode;
   final double discount;
   final String paymentMethod;
-  final bool bookAsap;
 
   const BookingFlowState({
     this.selectedBike,
@@ -168,7 +167,6 @@ class BookingFlowState {
     this.couponCode,
     this.discount = 0.0,
     this.paymentMethod = 'UPI',
-    this.bookAsap = true,
   });
 
   double get pickupCharges => isPickupDrop ? 100.0 : 0.0;
@@ -187,7 +185,6 @@ class BookingFlowState {
     String? couponCode,
     double? discount,
     String? paymentMethod,
-    bool? bookAsap,
   }) {
     return BookingFlowState(
       selectedBike: selectedBike ?? this.selectedBike,
@@ -200,7 +197,6 @@ class BookingFlowState {
       couponCode: couponCode ?? this.couponCode,
       discount: discount ?? this.discount,
       paymentMethod: paymentMethod ?? this.paymentMethod,
-      bookAsap: bookAsap ?? this.bookAsap,
     );
   }
 }
@@ -211,7 +207,6 @@ class BookingFlowNotifier extends StateNotifier<BookingFlowState> {
   void selectBike(BikeModel bike) => state = state.copyWith(selectedBike: bike);
   void selectService(ServiceModel service) => state = state.copyWith(selectedService: service);
   void selectDate(DateTime date) => state = state.copyWith(selectedDate: date);
-  void setBookAsap(bool value) => state = state.copyWith(bookAsap: value);
   void selectTime(String time) => state = state.copyWith(selectedTime: time);
   void setPickupDrop(bool v) => state = state.copyWith(isPickupDrop: v);
   void setPickupAddress(String addr) => state = state.copyWith(pickupAddress: addr);

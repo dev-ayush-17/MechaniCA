@@ -6,7 +6,7 @@
   "@appTagline": { "description": "Tagline shown under the product name on the splash screen." },
   "back": "Back",
   "@back": { "description": "Semantics and tooltip for back icon buttons." },
-  "pay": "Pay (demo)",
+  "pay": "Pay",
   "@pay": { "description": "Primary payment button when the amount is not shown." },
   "payNow": "Pay now",
   "@payNow": { "description": "Primary pay button on a completed booking." },
@@ -17,21 +17,6 @@
       "amount": { "type": "String", "example": "₹764.64" }
     }
   },
-  "confirmBooking": "Confirm {amount}",
-  "@confirmBooking": {
-    "description": "Confirm the booking on the review step. Does not charge.",
-    "placeholders": {
-      "amount": { "type": "String", "example": "₹764.64" }
-    }
-  },
-  "bookingReviewStep": "Review",
-  "@bookingReviewStep": { "description": "Last wizard step name. Method only; no charge." },
-  "payAfterVisitHint": "How you'll pay after the visit",
-  "@payAfterVisitHint": { "description": "Payment method chips heading on the review step." },
-  "noChargeUntilComplete": "You are not charged until the mechanic completes the job.",
-  "@noChargeUntilComplete": { "description": "Explains that booking confirm is not a payment." },
-  "payAfterTheVisit": "Pay after the visit",
-  "@payAfterTheVisit": { "description": "Receipt row before the job is paid." },
   "trackLive": "Track Live",
   "@trackLive": { "description": "Opens live tracking from booking details." },
   "liveTracking": "Live Tracking",

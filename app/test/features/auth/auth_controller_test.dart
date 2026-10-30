@@ -47,22 +47,6 @@ void main() {
     expect(ok, isTrue);
     expect(notifier.state.isLoggedIn, isTrue);
     expect(notifier.state.account?.role, 'customer');
-    expect(notifier.state.session?.role, 'customer');
-  });
-
-  test('mechanic_intent_sets_session_role', () async {
-    final service = _service();
-    final notifier = AuthNotifier(
-      service,
-      FakeAccountApi(),
-      intent: AccountIntent.mechanic,
-    );
-
-    final ok = await notifier.verifyOtp('9876543210', '123456');
-
-    expect(ok, isTrue);
-    expect(notifier.state.session?.role, 'mechanic');
-    expect(notifier.state.account?.role, 'mechanic');
   });
 
   test('bootstrap_failure_drops_the_session_and_shows_the_message', () async {

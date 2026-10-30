@@ -18,8 +18,5 @@
 | [014](014-server-writes.md) | FastAPI is the only writer for status and money |
 | [015](015-swagger-parser.md) | Generate the Dart client with swagger_parser |
 | [016](016-product-name-mechupp.md) | Product name becomes MechUpp |
-| [017](017-spark-http-with-fake-auth.md) | Spark: fake OTP, HTTP API, Firestore Admin SDK |
-| [018](018-walkthrough-dispatch-and-flavors.md) | Accept gate, Firestore offers, demo wallet float, two APK flavors |
-| [019](019-mechanic-session-ticker.md) | Heartbeat and offer poll live for the mechanic session, not only home |
 
 Each note is the choice a later milestone must follow unless a new ADR replaces it.

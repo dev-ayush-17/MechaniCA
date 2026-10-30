@@ -22,12 +22,8 @@ class Settings(BaseSettings):
     # Which AuthVerifier and RoleClaims adapter deps.py binds.
     provider_auth: Literal["fake", "firebase"] = "fake"
     provider_vehicles: Literal["fake", "firestore"] = "fake"
-    provider_users: Literal["fake", "firestore"] = "fake"
-    provider_addresses: Literal["fake", "firestore"] = "fake"
     provider_catalog: Literal["fake", "firestore"] = "fake"
     provider_bookings: Literal["fake", "firestore"] = "fake"
-    provider_mechanics: Literal["fake", "firestore"] = "fake"
-    provider_offers: Literal["fake", "firestore"] = "fake"
     provider_payments: Literal["fake", "cashfree"] = "fake"
     payments_webhook_secret: str = "mechupp_test_webhook_secret"  # noqa: S105 - fake gateway default
     cashfree_app_id: str | None = None
@@ -44,8 +40,6 @@ class Settings(BaseSettings):
     maps_api_key: str | None = None
     provider_location: Literal["fake", "rtdb"] = "fake"
     firebase_database_url: str | None = None
-    # Path to a Google service-account JSON. Never commit the file.
-    firebase_credentials: str | None = None
     # None means on in dev/test/staging and off in prod (FR-COM-002).
     masked_call_enabled: bool | None = None
     firebase_project_id: str | None = None
@@ -58,15 +52,6 @@ class Settings(BaseSettings):
     four_wheeler_labor_bps: int = 15000
     gst_bps: int = 1800
     booking_auto_confirm: bool = True
-    # Spec TTL is 45s. Local one-phone demo needs longer so you can switch apps.
-    dispatch_normal_ttl_seconds: int = 180
-    # Spec wait is 0 (fail immediately). Local demo waits for Go online.
-    dispatch_wait_seconds: int = 600
-    dispatch_sweep_interval_seconds: int = 8
-    dispatch_auto_accept: bool = False
-    dispatch_auto_accept_fallback_mechanic_id: str | None = None
-    # Dev only: wallet pay credits a float then debits, so Pay (demo) can reach paid.
-    demo_wallet_float: bool = False
     cancel_fee_enroute_paise: int = 9900
     service_area_lat: float = 25.5941
     service_area_lng: float = 85.1376
@@ -90,14 +75,6 @@ class Settings(BaseSettings):
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_VEHICLES=firestore"
             )
-        if self.provider_users == "firestore" and not self.firebase_project_id:
-            raise ValueError(
-                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_USERS=firestore"
-            )
-        if self.provider_addresses == "firestore" and not self.firebase_project_id:
-            raise ValueError(
-                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_ADDRESSES=firestore"
-            )
         if self.provider_catalog == "firestore" and not self.firebase_project_id:
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_CATALOG=firestore"
@@ -106,16 +83,6 @@ class Settings(BaseSettings):
             raise ValueError(
                 "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_BOOKINGS=firestore"
             )
-        if self.provider_mechanics == "firestore" and not self.firebase_project_id:
-            raise ValueError(
-                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_MECHANICS=firestore"
-            )
-        if self.provider_offers == "firestore" and not self.firebase_project_id:
-            raise ValueError(
-                "MECHUPP_FIREBASE_PROJECT_ID is required for PROVIDER_OFFERS=firestore"
-            )
-        if self.demo_wallet_float and self.app_env not in FAKE_AUTH_ENVS:
-            raise ValueError("DEMO_WALLET_FLOAT is only allowed in dev and test")
         if self.provider_payments == "fake" and self.app_env not in FAKE_AUTH_ENVS:
             raise ValueError("PROVIDER_PAYMENTS=fake is not allowed outside dev and test")
         if self.provider_payments == "cashfree" and (

@@ -106,20 +106,12 @@ class _PriceStepState extends ConsumerState<PriceStep> {
                   child: _quoteBody(quote),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  l10nOf(context).payAfterVisitHint,
-                  style: const TextStyle(
+                const Text(
+                  'Payment Method',
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10nOf(context).noChargeUntilComplete,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -187,8 +179,8 @@ class _PriceStepState extends ConsumerState<PriceStep> {
               AppButton(
                 key: const ValueKey('pay-confirm'),
                 label: quote == null
-                    ? l10nOf(context).bookingReviewStep
-                    : l10nOf(context).confirmBooking(formatPaise(quote.totalPaise)),
+                    ? l10nOf(context).pay
+                    : l10nOf(context).payAmount(formatPaise(quote.totalPaise)),
                 isLoading: _isLoading,
                 onPressed: quote == null
                     ? null

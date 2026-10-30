@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../tracking/domain/location_filter.dart';
-import '../../tracking/domain/location_point.dart';
 import 'job_status_buttons.dart';
 
 class JobActionsScreen extends ConsumerStatefulWidget {
@@ -31,50 +27,6 @@ class _JobActionsScreenState extends ConsumerState<JobActionsScreen> {
   late String _status = widget.initialStatus;
   bool _busy = false;
   String? _error;
-  Timer? _publish;
-  bool _publishing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _syncPublishLoop();
-  }
-
-  @override
-  void dispose() {
-    _publish?.cancel();
-    super.dispose();
-  }
-
-  void _syncPublishLoop() {
-    _publish?.cancel();
-    final interval = dutyInterval(_status, null);
-    if (interval == null) return;
-    _publishOnce();
-    _publish = Timer.periodic(interval, (_) => _publishOnce());
-  }
-
-  Future<void> _publishOnce() async {
-    if (_publishing) return;
-    if (!locationOpenStatuses.contains(_status)) return;
-    _publishing = true;
-    try {
-      final fix = await ref.read(deviceLocationProvider).current();
-      if (!fix.hasPoint) return;
-      await ref.read(locationTrackingServiceProvider).publish(
-            bookingId: widget.bookingId,
-            role: ref.read(trackingRoleProvider),
-            point: LocationPoint(
-              lat: fix.lat!,
-              lng: fix.lng!,
-              accuracyM: 50,
-              recordedAt: DateTime.now().toUtc(),
-            ),
-          );
-    } finally {
-      _publishing = false;
-    }
-  }
 
   Future<void> _advance() async {
     final buttons = JobStatusButtons(
@@ -89,14 +41,11 @@ class _JobActionsScreenState extends ConsumerState<JobActionsScreen> {
         .transition(widget.bookingId, buttons.nextStatus);
     if (!mounted) return;
     result.when(
-      onOk: (next) {
-        setState(() {
-          _status = next;
-          _busy = false;
-          _error = null;
-        });
-        _syncPublishLoop();
-      },
+      onOk: (next) => setState(() {
+        _status = next;
+        _busy = false;
+        _error = null;
+      }),
       onErr: (failure) => setState(() {
         _busy = false;
         _error = failure.message;

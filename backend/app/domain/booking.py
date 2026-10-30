@@ -50,9 +50,6 @@ class BookingPolicy:
     scheduled_min_lead_minutes: int = 90
     scheduled_max_days: int = 7
     idempotency_ttl_hours: int = 24
-    # Instant window is IST (assumption in docs/prd/04-assumptions.md). SOS is 24h.
-    instant_open_hour_ist: int = 7
-    instant_close_hour_ist: int = 21
 
 
 @dataclass(frozen=True)

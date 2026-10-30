@@ -3,7 +3,6 @@ import json
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from zoneinfo import ZoneInfo
 
 from app.domain.booking import (
     AddressSnapshot,
@@ -43,8 +42,6 @@ from app.ports.idempotency_store import IdempotencyRecord, IdempotencyStore
 from app.ports.user_repository import UserRepository
 from app.ports.vehicle_repository import VehicleRepository
 from app.ports.wallet_service import WalletService
-
-IST = ZoneInfo("Asia/Kolkata")
 
 
 def parse_idempotency_key(raw: str | None) -> str:
@@ -142,7 +139,7 @@ class CreateBooking:
         if address is None:
             raise NotFound("We could not find that address.")
         self._check_service_area(address)
-        start = self._check_schedule(effective_mode, urgency, scheduled_start, now)
+        start = self._check_schedule(effective_mode, scheduled_start, now)
 
         base = self.pricing.quote(QuoteInput(service=service, vehicle_type=vehicle.vehicle_type))
         discount = 0
@@ -263,36 +260,17 @@ class CreateBooking:
             raise InvalidInput("That address is outside our service area.")
 
     def _check_schedule(
-        self,
-        mode: BookingMode,
-        urgency: Urgency,
-        scheduled_start: datetime | None,
-        now: datetime,
+        self, mode: BookingMode, scheduled_start: datetime | None, now: datetime
     ) -> datetime | None:
         if mode is BookingMode.INSTANT:
-            if urgency is not Urgency.SOS:
-                local = now.astimezone(IST)
-                open_min = self.policy.instant_open_hour_ist * 60
-                close_min = self.policy.instant_close_hour_ist * 60
-                minutes = local.hour * 60 + local.minute
-                if minutes < open_min or minutes >= close_min:
-                    raise InvalidInput(
-                        "Out of booking hours. Instant booking is 7:00–21:00 IST. "
-                        "Schedule a slot or use SOS."
-                    )
             return None
         if scheduled_start is None:
             raise InvalidInput("Pick a start time for a scheduled booking.")
-        start = (
-            scheduled_start.replace(tzinfo=IST)
-            if scheduled_start.tzinfo is None
-            else scheduled_start
-        ).astimezone(UTC)
+        start = scheduled_start if scheduled_start.tzinfo else scheduled_start.replace(tzinfo=UTC)
         earliest = now + timedelta(minutes=self.policy.scheduled_min_lead_minutes)
         latest = now + timedelta(days=self.policy.scheduled_max_days)
         if start < earliest or start > latest:
             raise InvalidInput("Choose a time between 90 minutes and 7 days from now.")
-        local = start.astimezone(IST)
-        if local.minute != 0 or local.second != 0 or local.microsecond != 0:
+        if start.minute != 0 or start.second != 0 or start.microsecond != 0:
             raise InvalidInput("Scheduled times must be on the hour.")
         return start
