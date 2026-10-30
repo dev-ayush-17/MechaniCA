@@ -343,3 +343,58 @@ async def test_failed_push_does_not_roll_back_booking() -> None:
 
 def test_dispatch_config_extra_work_is_ten_minutes() -> None:
     assert DispatchConfig().extra_work_timeout_seconds == 600
+
+
+@pytest.mark.asyncio
+async def test_auto_accept_immediately_assigns_mechanic(env: _Env) -> None:
+    auto_dispatch = SequentialDispatch(
+        bookings=env.bookings,
+        offers=env.offers,
+        mechanics=env.mechanics,
+        notifications=env.notifications,
+        clock=env.clock,
+        config=DispatchConfig(auto_accept=True),
+    )
+    env.seed_near("mech_a")
+    await env.confirmed("book_auto")
+    offer = await auto_dispatch.offer("book_auto")
+    assert offer is not None
+    booking = await env.bookings.get("book_auto")
+    assert booking is not None
+    assert booking.status is BookingStatus.MECHANIC_ASSIGNED
+    assert booking.mechanic_id == "mech_a"
+    stored_offer = await env.offers.get(offer.id)
+    assert stored_offer is not None
+    assert stored_offer.status is OfferStatus.ACCEPTED
+
+
+@pytest.mark.asyncio
+async def test_auto_accept_fallback_mechanic_when_nobody_online(env: _Env) -> None:
+    auto_dispatch = SequentialDispatch(
+        bookings=env.bookings,
+        offers=env.offers,
+        mechanics=env.mechanics,
+        notifications=env.notifications,
+        clock=env.clock,
+        config=DispatchConfig(
+            auto_accept=True,
+            auto_accept_fallback_mechanic_id="mech_fallback",
+        ),
+    )
+    env.mechanics.seed_online(
+        "mech_fallback",
+        now=env.clock.now(),
+        lat=JOB_LAT,
+        lng=JOB_LNG,
+        radius_km=10.0,
+        display_name="Fallback Mechanic",
+    )
+    await env.mechanics.set_availability("mech_fallback", online=False)  # offline!
+    await env.confirmed("book_fallback")
+    offer = await auto_dispatch.offer("book_fallback")
+    assert offer is not None
+    assert offer.mechanic_id == "mech_fallback"
+    booking = await env.bookings.get("book_fallback")
+    assert booking is not None
+    assert booking.status is BookingStatus.MECHANIC_ASSIGNED
+    assert booking.mechanic_id == "mech_fallback"

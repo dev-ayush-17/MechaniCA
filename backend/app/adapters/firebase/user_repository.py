@@ -83,7 +83,10 @@ class FirestoreUserRepository:
 
     async def search(self, query: str) -> list[User]:
         needle = query.strip().lower()
-        users = [user_from_doc(s.id, s.to_dict() or {}) for s in self._db.collection("users").stream()]
+        users = [
+            user_from_doc(s.id, s.to_dict() or {})
+            for s in self._db.collection("users").stream()
+        ]
         if not needle:
             return users
         return [
@@ -93,7 +96,10 @@ class FirestoreUserRepository:
         ]
 
     async def list_contacts(self, owner_id: str) -> list[EmergencyContact]:
-        return [contact_from_doc(s.id, s.to_dict() or {}) for s in self._contacts(owner_id).stream()]
+        return [
+            contact_from_doc(s.id, s.to_dict() or {})
+            for s in self._contacts(owner_id).stream()
+        ]
 
     async def save_contact(self, contact: EmergencyContact) -> EmergencyContact:
         self._contacts(contact.owner_id).document(contact.id).set(contact_to_doc(contact))

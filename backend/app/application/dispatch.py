@@ -69,7 +69,11 @@ class SequentialDispatch:
             return None
         if booking.status is not BookingStatus.CONFIRMED:
             raise InvalidTransition("Dispatch only runs on a confirmed booking.")
-        if booking.mode is BookingMode.SCHEDULED and not self._scheduled_due(booking):
+        if (
+            booking.mode is BookingMode.SCHEDULED
+            and not self._scheduled_due(booking)
+            and not self.config.auto_accept
+        ):
             return None
         existing = await self.offers.list_by_booking(booking.id)
         open_offers = [item for item in existing if item.status is OfferStatus.OPEN]
@@ -80,6 +84,27 @@ class SequentialDispatch:
             await self._fail(booking)
             return None
         candidate = await self._pick(booking, existing)
+        if candidate is None and self.config.auto_accept:
+            if self.config.auto_accept_fallback_mechanic_id:
+                fallback_mechanic = await self.mechanics.get(
+                    self.config.auto_accept_fallback_mechanic_id
+                )
+                if fallback_mechanic is not None:
+                    candidate = RankedCandidate(
+                        mechanic_id=fallback_mechanic.id,
+                        score=100.0,
+                        distance_km=1.0,
+                    )
+            if candidate is None:
+                wider = await self.mechanics.find_online_near(
+                    booking.address.lat, booking.address.lng, 1000.0, 1
+                )
+                if wider:
+                    candidate = RankedCandidate(
+                        mechanic_id=wider[0].id,
+                        score=100.0,
+                        distance_km=1.0,
+                    )
         if candidate is None:
             # Attempts count offers. An empty candidate list is not an attempt.
             # The default wait is 0, so this still fails immediately.
@@ -123,6 +148,8 @@ class SequentialDispatch:
                 deep_link=f"/mechanic/offers/{saved.id}",
             )
         )
+        if self.config.auto_accept:
+            await self.accept(saved.id, candidate.mechanic_id)
         return saved
 
     async def accept(self, offer_id: str, mechanic_id: str) -> Booking:

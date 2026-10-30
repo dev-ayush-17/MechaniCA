@@ -39,6 +39,8 @@ class DispatchConfig:
     # 0 keeps the spec: nobody in range fails the booking immediately.
     # A local demo may wait so a mechanic can come online after submit.
     wait_for_mechanic_seconds: int = 0
+    auto_accept: bool = False
+    auto_accept_fallback_mechanic_id: str | None = None
 
 
 @dataclass(frozen=True)

@@ -13,6 +13,7 @@ Future<void> _pump(
   WidgetTester tester,
   Widget screen, {
   AppEnv env = AppEnv.dev,
+  AuthProviderKind auth = AuthProviderKind.fake,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -22,6 +23,7 @@ Future<void> _pump(
             env: env,
             apiBaseUrl: 'http://localhost:8000',
             useFirebaseEmulator: true,
+            providerAuth: auth,
           ),
         ),
       ],
@@ -66,7 +68,19 @@ void main() {
     await _pump(tester, const OTPScreen(phone: '9876543210'));
     expect(find.text('Use 123456 for demo'), findsOneWidget);
 
-    await _pump(tester, const OTPScreen(phone: '9876543210'), env: AppEnv.prod);
+    await _pump(
+      tester,
+      const OTPScreen(phone: '9876543210'),
+      env: AppEnv.prod,
+      auth: AuthProviderKind.firebase,
+    );
+    expect(find.text('Use 123456 for demo'), findsNothing);
+
+    await _pump(
+      tester,
+      const OTPScreen(phone: '9876543210'),
+      auth: AuthProviderKind.firebase,
+    );
     expect(find.text('Use 123456 for demo'), findsNothing);
   });
 }

@@ -56,7 +56,8 @@ class AppConfig {
     this.useHttpApi = false,
   });
 
-  factory AppConfig.fromEnvironment() => AppConfig(
+  factory AppConfig.fromEnvironment() {
+    final config = AppConfig(
         env: _parseEnv(
             const String.fromEnvironment('APP_ENV', defaultValue: 'dev')),
         apiBaseUrl: const String.fromEnvironment(
@@ -64,7 +65,7 @@ class AppConfig {
           defaultValue: 'http://10.0.2.2:8000',
         ),
         useFirebaseEmulator: const bool.fromEnvironment('USE_FIREBASE_EMULATOR',
-            defaultValue: true),
+            defaultValue: false),
         providerAuth: AuthProviderKind.parse(
           const String.fromEnvironment('PROVIDER_AUTH', defaultValue: 'fake'),
         ),
@@ -90,6 +91,9 @@ class AppConfig {
         ),
         useHttpApi: const bool.fromEnvironment('USE_HTTP_API', defaultValue: false),
       );
+    config.ensureLaunchable();
+    return config;
+  }
 
   final String firebaseEmulatorHost;
   final AuthProviderKind providerAuth;
@@ -111,6 +115,23 @@ class AppConfig {
   /// A release build must not point at a local server (docs/prd/21-devops.md).
   bool get hasLocalApiUrl =>
       apiBaseUrl.contains('localhost') || apiBaseUrl.contains('10.0.2.2');
+
+  /// Fake OTP and fake payments stay on the laptop demo. Staging and prod fail closed.
+  void ensureLaunchable() {
+    if (env != AppEnv.dev && providerAuth == AuthProviderKind.fake) {
+      throw StateError(
+        'PROVIDER_AUTH=fake is not allowed when APP_ENV is ${env.name}',
+      );
+    }
+    if (env != AppEnv.dev && providerPayments == PaymentsProviderKind.fake) {
+      throw StateError(
+        'PROVIDER_PAYMENTS=fake is not allowed when APP_ENV is ${env.name}',
+      );
+    }
+    if (isProd && hasLocalApiUrl) {
+      throw StateError('A production build cannot use a local API URL');
+    }
+  }
 
   static AppEnv _parseEnv(String value) => AppEnv.values.firstWhere(
         (e) => e.name == value,

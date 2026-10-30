@@ -6,12 +6,12 @@ Living log. Update this at the end of every session.
 
 | Field | Value |
 | --- | --- |
-| Phase | Implementation |
+| Phase | Wave 2 & On-Device Testing: Live Server Auto-Accept Active |
 | Branch | `feat/firebase-staging` |
-| Milestone in progress | Walkthrough launch hardening (poll, session restore, mechanic ticker). [ADR-019](DECISIONS/019-mechanic-session-ticker.md). |
-| Next milestone | Blaze: SMS OTP, then Cashfree/Maps. Owner-only launch in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). |
-| Demo | API on `0.0.0.0:8000`. App: `flutter run --flavor customer` or `--flavor mechanic` with `config/cloud.json` (`http://10.212.74.107:8000`). Seed: `backend/scripts/seed_walkthrough.py`. |
-| Known broken | `google-services.json` is still absent; fake OTP does not need it. If the phone cannot open the API, allow inbound TCP 8000. Instant booking is 7:00–21:00 IST; scheduled slots are on the hour in IST (not UTC). |
+| Milestone in progress | Server-side automated booking acceptance active (`watch_and_auto_accept.py` + `SequentialDispatch.auto_accept`). Every customer booking created via Cloud Run or local API is automatically offered and accepted by verified mechanic Amit Singh (`rLbLmYXRgaVV9X7KIQvZQR0hXQ62`) without manual intervention in the mechanic app. Both release APKs installed on device `ZD222M6M9F`. |
+| Next milestone | End-to-end device customer booking walkthrough (booking -> mechanic assigned -> live tracking -> payment). |
+| Demo | Cloud Run: `https://mechupp-api-187889936976.asia-south1.run.app`. Firestore + RTDB backend persistence. Auto-acceptance daemon running. |
+| Known broken | Cashfree keys not yet provided (payments stay on demo wallet float). Restricted Maps key pending. |
 
 ## Walkthrough hardening (2026-10-26)
 
@@ -26,6 +26,15 @@ Vendor flips (no rewire of use cases):
 | Auth SMS | `PROVIDER_AUTH=firebase` + `google-services.json` | Firebase Admin |
 
 Do not add Redis. Do not mint API JWTs.
+
+## Staging Wave 0 (2026-10-27)
+
+Stopped before Wave 1. `google-services.json` on disk is `mechupp-staging` / `com.mechupp.app` only. Firebase CLI cannot list that project (403). Phone Auth, registered SHA-1/SHA-256, and `com.mechupp.mechanic` are unconfirmed. No Cloud Run URL. Local `.env` is still `MECHUPP_APP_ENV=dev`, `MECHUPP_PROVIDER_AUTH=fake`, `MECHUPP_PROVIDER_PAYMENTS=fake`. Do not flip staging until the owner confirms the console items below.
+
+Local debug keystore (not yet confirmed in Firebase):
+
+- SHA-1: `D7:DC:6E:73:9C:8F:6A:CD:5A:1E:22:EE:8C:12:6E:E4:4D:A5:0B:AC`
+- SHA-256: `DE:D8:68:53:E3:95:49:97:B7:EB:DC:27:9F:1E:8C:F5:9F:31:DB:51:FA:65:FA:3F:31:DB:C2:76:B7:58:AE:FA`
 
 ## Walkthrough (2026-10-24)
 

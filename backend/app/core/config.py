@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     # Spec wait is 0 (fail immediately). Local demo waits for Go online.
     dispatch_wait_seconds: int = 600
     dispatch_sweep_interval_seconds: int = 8
+    dispatch_auto_accept: bool = False
+    dispatch_auto_accept_fallback_mechanic_id: str | None = None
     # Dev only: wallet pay credits a float then debits, so Pay (demo) can reach paid.
     demo_wallet_float: bool = False
     cancel_fee_enroute_paise: int = 9900

@@ -160,6 +160,8 @@ def _auth() -> _AuthBinding:
         from app.adapters.firebase.auth_verifier import FirebaseAuth
 
         assert settings.firebase_project_id is not None  # noqa: S101 - Settings guarantees it
+        # Credentials must be attached before AuthVerifier calls initialize_app.
+        _bind_firebase()
         firebase = FirebaseAuth(settings.firebase_project_id)
         return _AuthBinding(firebase, firebase)
     fake = FakeAuth(settings.app_env)
@@ -690,6 +692,8 @@ def dispatch_config_dep(settings: Annotated[Settings, Depends(settings_dep)]) ->
     return DispatchConfig(
         normal_ttl_seconds=settings.dispatch_normal_ttl_seconds,
         wait_for_mechanic_seconds=settings.dispatch_wait_seconds,
+        auto_accept=settings.dispatch_auto_accept,
+        auto_accept_fallback_mechanic_id=settings.dispatch_auto_accept_fallback_mechanic_id,
     )
 
 

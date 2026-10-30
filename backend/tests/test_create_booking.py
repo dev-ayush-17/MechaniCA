@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 
@@ -12,8 +12,8 @@ from app.adapters.fake.vehicle_repository import FakeVehicleRepository
 from app.adapters.fake.wallet_service import FakeWalletService
 from app.application.create_booking import CreateBooking
 from app.domain.booking import BookingMode, BookingPolicy, PaymentMethod, Urgency
-from app.domain.errors import InvalidInput
 from app.domain.catalog import DEFAULT_PRICING_CONFIG
+from app.domain.errors import InvalidInput
 from app.domain.pricing import PricingService
 from app.domain.user import Principal, Role
 from app.domain.vehicle import Vehicle, VehicleType

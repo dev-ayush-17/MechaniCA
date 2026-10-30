@@ -78,7 +78,7 @@ class _JobChatScreenState extends ConsumerState<JobChatScreen> {
   bool _sameThread(List<ChatMessage> a, List<ChatMessage> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
-      if (a[i].id != b[i].id) return false;
+      if (a[i].id != b[i].id || a[i].state != b[i].state) return false;
     }
     return true;
   }

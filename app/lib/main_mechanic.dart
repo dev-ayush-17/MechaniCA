@@ -3,15 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'composition/providers.dart';
+import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/data/adapters/firebase_auth_service.dart';
 import 'features/auth/domain/account_api.dart';
 import 'features/mechanic_onboarding/presentation/mechanic_session_ticker.dart';
 import 'l10n/app_localizations.dart';
 import 'navigation/mechanic_route_names.dart';
 import 'navigation/mechanic_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final config = AppConfig.fromEnvironment();
+  await initFirebaseIfConfigured(config, isMechanic: true);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

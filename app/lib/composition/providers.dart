@@ -34,6 +34,7 @@ import '../features/auth/data/fake_session_store.dart';
 import '../features/auth/data/http_account_api.dart';
 import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
+import '../features/auth/presentation/auth_controller.dart';
 import '../features/booking/data/fake_booking_api.dart';
 import '../features/booking/data/http_booking_api.dart';
 import '../features/booking/domain/booking.dart';
@@ -214,16 +215,19 @@ final authServiceProvider = Provider<AuthService>((ref) {
         clock: ref.watch(clockProvider),
         store: SharedPrefsFakeSessionStore(ref.watch(loggerProvider)),
       ),
-    AuthProviderKind.firebase =>
-      FirebaseAuthService(config: config, clock: ref.watch(clockProvider)),
+    AuthProviderKind.firebase => FirebaseAuthService(
+        config: config,
+        clock: ref.watch(clockProvider),
+        isMechanic: ref.watch(accountIntentProvider) == AccountIntent.mechanic,
+      ),
   };
 });
 
 final restClientProvider = Provider<RestClient>((ref) {
   final config = ref.watch(appConfigProvider);
   final dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   ));
   return RestClient(dio, baseUrl: config.apiBaseUrl);
 });

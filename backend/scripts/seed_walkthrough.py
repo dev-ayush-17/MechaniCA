@@ -4,7 +4,8 @@ Run from backend/ with the gitignored .env pointing at the Admin SDK credentials
 
     .venv\\Scripts\\python scripts/seed_walkthrough.py
 
-Sign-in (mechanic app, OTP 123456):
+Sign-in with fake OTP 123456 only while PROVIDER_AUTH=fake (dev).
+Real SMS uses scripts/seed_staging_mechanic.py, which writes the Auth uid.
 
     +91 98000 00001  Ravi Kumar
     +91 98000 00002  Amit Singh
