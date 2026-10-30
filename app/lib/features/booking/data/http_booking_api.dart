@@ -112,6 +112,20 @@ class HttpBookingApi implements BookingApi {
   }
 
   @override
+  Future<Result<Booking>> get(String bookingId) async {
+    try {
+      final token = await _token();
+      final body = await _client.getBookingV1BookingsBookingIdGet(
+        bookingId: bookingId,
+        authorization: token == null ? null : 'Bearer $token',
+      );
+      return Ok(_fromOut(body));
+    } on DioException catch (e) {
+      return Err(failureFromDio(e));
+    }
+  }
+
+  @override
   Future<Result<List<Booking>>> listMine() async {
     try {
       final token = await _token();
@@ -140,6 +154,12 @@ class HttpBookingApi implements BookingApi {
       addressId: body.addressId,
       scheduledStart: body.scheduledStart,
       paymentMethod: body.paymentMethod,
+      mechanicId: body.mechanicId,
+      mechanicName: body.mechanicDisplayName,
+      mechanicRatingAvg: body.mechanicRatingAvg,
+      mechanicRatingCount: body.mechanicRatingCount,
+      dispatchAttempt: body.dispatchAttempt,
+      failureReason: body.failureReason,
     );
   }
 }

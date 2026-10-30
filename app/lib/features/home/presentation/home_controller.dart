@@ -9,7 +9,9 @@ class HomeController extends StateNotifier<AsyncValue<List<Booking>>> {
   final BookingApi _api;
 
   Future<void> load() async {
-    state = const AsyncLoading();
+    if (!state.hasValue) {
+      state = const AsyncLoading();
+    }
     final result = await _api.listMine();
     state = result.when(
       onOk: AsyncData.new,

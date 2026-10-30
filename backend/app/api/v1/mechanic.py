@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Annotated
 
@@ -14,6 +15,7 @@ from app.api.deps import (
     set_mechanic_availability_dep,
     sign_upload_dep,
     submit_mechanic_application_dep,
+    sweep_expired_offers_dep,
 )
 from app.api.errors import error_responses
 from app.application.create_mechanic_draft import CreateMechanicDraft
@@ -25,9 +27,12 @@ from app.application.submit_mechanic_application import (
     ServiceAreaInput,
     SubmitMechanicApplication,
 )
+from app.application.sweep_jobs import SweepExpiredOffers
 from app.domain.mechanic import DocumentKind, Mechanic
 from app.domain.user import Principal
 from app.ports.mechanic_repository import MechanicRepository
+
+_LOG = logging.getLogger("mechupp.mechanic")
 
 router = APIRouter(
     prefix="/v1/mechanic",
@@ -151,13 +156,23 @@ async def submit_application(
     return MechanicOut.of(mechanic)
 
 
+async def _match_waiting(sweep: SweepExpiredOffers) -> None:
+    try:
+        await sweep.execute()
+    except Exception as exc:
+        _LOG.warning("dispatch_sweep_failed", extra={"fields": {"error": type(exc).__name__}})
+
+
 @router.post("/availability", response_model=MechanicOut)
 async def set_availability(
     body: AvailabilityRequest,
     principal: Annotated[Principal, Depends(require_mechanic_dep)],
     use_case: Annotated[SetMechanicAvailability, Depends(set_mechanic_availability_dep)],
+    sweep: Annotated[SweepExpiredOffers, Depends(sweep_expired_offers_dep)],
 ) -> MechanicOut:
     mechanic = await use_case.execute(principal, online=body.online)
+    if mechanic.online:
+        await _match_waiting(sweep)
     return MechanicOut.of(mechanic)
 
 
@@ -165,8 +180,10 @@ async def set_availability(
 async def heartbeat(
     principal: Annotated[Principal, Depends(require_mechanic_dep)],
     use_case: Annotated[MechanicHeartbeat, Depends(mechanic_heartbeat_dep)],
+    sweep: Annotated[SweepExpiredOffers, Depends(sweep_expired_offers_dep)],
 ) -> MechanicOut:
     mechanic = await use_case.execute(principal)
+    await _match_waiting(sweep)
     return MechanicOut.of(mechanic)
 
 

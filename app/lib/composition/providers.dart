@@ -34,6 +34,7 @@ import '../features/auth/data/fake_session_store.dart';
 import '../features/auth/data/http_account_api.dart';
 import '../features/auth/domain/account_api.dart';
 import '../features/auth/domain/auth_service.dart';
+import '../features/auth/presentation/auth_controller.dart';
 import '../features/booking/data/fake_booking_api.dart';
 import '../features/booking/data/http_booking_api.dart';
 import '../features/booking/domain/booking.dart';
@@ -88,7 +89,9 @@ import '../features/job_chat/data/url_launcher_dialer.dart' show Dialer, UrlLaun
 import '../features/job_chat/domain/chat_service.dart';
 import '../features/job_chat/domain/telephony_port.dart';
 import '../features/notifications/data/fake_notification_inbox.dart';
-import '../features/notifications/data/fake_push_permission.dart';
+import '../features/location/data/geolocator_device_location.dart';
+import '../features/location/domain/device_location.dart';
+import '../features/notifications/data/os_push_permission.dart';
 import '../features/notifications/data/http_notification_inbox.dart';
 import '../features/notifications/domain/inbox_notification.dart';
 import '../features/notifications/domain/notification_inbox.dart';
@@ -111,6 +114,7 @@ import '../features/payments/data/http_payment_api.dart';
 import '../features/payments/domain/earnings.dart';
 import '../features/payments/domain/earnings_api.dart';
 import '../features/payments/domain/payment_api.dart';
+import '../features/payments/domain/payment_checkout.dart';
 import '../features/wallet/data/fake_wallet_api.dart';
 import '../features/wallet/data/http_wallet_api.dart';
 import '../features/wallet/domain/wallet_api.dart';
@@ -168,16 +172,14 @@ final mapsServiceProvider = Provider<MapsService>((ref) {
 
 final trackingLinkApiProvider = Provider<TrackingLinkApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeTrackingLinkApi(),
-    AuthProviderKind.firebase => HttpTrackingLinkApi(
+  if (!config.useRemoteApi) return FakeTrackingLinkApi();
+  return HttpTrackingLinkApi(
         client: TrackingClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final trackingControllerProvider = StateNotifierProvider.autoDispose
@@ -213,16 +215,19 @@ final authServiceProvider = Provider<AuthService>((ref) {
         clock: ref.watch(clockProvider),
         store: SharedPrefsFakeSessionStore(ref.watch(loggerProvider)),
       ),
-    AuthProviderKind.firebase =>
-      FirebaseAuthService(config: config, clock: ref.watch(clockProvider)),
+    AuthProviderKind.firebase => FirebaseAuthService(
+        config: config,
+        clock: ref.watch(clockProvider),
+        isMechanic: ref.watch(accountIntentProvider) == AccountIntent.mechanic,
+      ),
   };
 });
 
 final restClientProvider = Provider<RestClient>((ref) {
   final config = ref.watch(appConfigProvider);
   final dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 15),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   ));
   return RestClient(dio, baseUrl: config.apiBaseUrl);
 });
@@ -244,9 +249,8 @@ final vehicleLocalStoreProvider = Provider<VehicleLocalStore>(
 
 final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeVehicleRepository(),
-    AuthProviderKind.firebase => OfflineVehicleRepository(
+  if (!config.useRemoteApi) return FakeVehicleRepository();
+  return OfflineVehicleRepository(
         local: ref.watch(vehicleLocalStoreProvider),
         remote: VehicleRemoteDataSource(
           client: VehiclesClient(
@@ -268,8 +272,7 @@ final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
           ),
         ),
         isOnline: () => ref.read(networkOnlineProvider),
-      ),
-  };
+      );
 });
 
 final vehiclesControllerProvider =
@@ -279,53 +282,45 @@ final vehiclesControllerProvider =
 
 final accountApiProvider = Provider<AccountApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeAccountApi(),
-    AuthProviderKind.firebase => HttpAccountApi(
+  if (!config.useRemoteApi) return FakeAccountApi();
+  return HttpAccountApi(
         client: ref.watch(restClientProvider),
         auth: ref.watch(authServiceProvider),
-      ),
-  };
+      );
 });
 
 final jobTransitionApiProvider = Provider<JobTransitionApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeJobTransitionApi(),
-    AuthProviderKind.firebase => HttpJobTransitionApi(
+  if (!config.useRemoteApi) return FakeJobTransitionApi();
+  return HttpJobTransitionApi(
         client: BookingsClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 });
 
 final offerApiProvider = Provider<OfferApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeOfferApi(),
-    AuthProviderKind.firebase => HttpOfferApi(
+  if (!config.useRemoteApi) return FakeOfferApi();
+  return HttpOfferApi(
         client: OffersClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 });
 
 final mechanicRepositoryProvider = Provider<MechanicRepository>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeMechanicRepository(),
-    AuthProviderKind.firebase => HttpMechanicRepository(
+  if (!config.useRemoteApi) return FakeMechanicRepository();
+  return HttpMechanicRepository(
         client: ref.watch(restClientProvider),
-      ),
-  };
+      );
 });
 
 final catalogLocalStoreProvider = Provider<CatalogLocalStore>(
@@ -334,32 +329,28 @@ final catalogLocalStoreProvider = Provider<CatalogLocalStore>(
 
 CatalogRepository _remoteCatalog(Ref ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeCatalogRepository(),
-    AuthProviderKind.firebase => HttpCatalogRepository(
+  if (!config.useRemoteApi) return FakeCatalogRepository();
+  return HttpCatalogRepository(
         client: CatalogClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 }
 
 QuoteApi _remoteQuoteApi(Ref ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeQuoteApi(catalog: _remoteCatalog(ref)),
-    AuthProviderKind.firebase => HttpQuoteApi(
+  if (!config.useRemoteApi) return FakeQuoteApi(catalog: _remoteCatalog(ref));
+  return HttpQuoteApi(
         client: QuotesClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 }
 
 final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
@@ -382,22 +373,18 @@ final quoteApiProvider = Provider<QuoteApi>((ref) {
 
 final partsProofRepositoryProvider = Provider<PartsProofRepository>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakePartsProofRepository(),
-    AuthProviderKind.firebase => HttpPartsProofRepository(
+  if (!config.useRemoteApi) return FakePartsProofRepository();
+  return HttpPartsProofRepository(
         client: ref.watch(restClientProvider),
-      ),
-  };
+      );
 });
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeReviewRepository(),
-    AuthProviderKind.firebase => HttpReviewRepository(
+  if (!config.useRemoteApi) return FakeReviewRepository();
+  return HttpReviewRepository(
         client: ref.watch(restClientProvider),
-      ),
-  };
+      );
 });
 
 final homeBookingsProvider =
@@ -407,32 +394,29 @@ final homeBookingsProvider =
 
 final bookingApiProvider = Provider<BookingApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeBookingApi(),
-    AuthProviderKind.firebase => HttpBookingApi(
+  if (!config.useRemoteApi) return FakeBookingApi();
+  return HttpBookingApi(
         client: BookingsClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 });
 
 final chatServiceProvider = Provider<ChatService>((ref) {
   final config = ref.watch(appConfigProvider);
-  final ChatService remote = switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeChatService(),
-    AuthProviderKind.firebase => HttpChatService(
-        client: MessagesClient(
-          Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
-          baseUrl: config.apiBaseUrl,
-        ),
-        token: () async =>
-            (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+  final ChatService remote = config.useRemoteApi
+      ? HttpChatService(
+          client: MessagesClient(
+            Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
+            baseUrl: config.apiBaseUrl,
+          ),
+          token: () async =>
+              (await ref.read(authServiceProvider).currentSession())?.idToken,
+        )
+      : FakeChatService();
   return OfflineChatService(
     remote: remote,
     isOnline: () => ref.read(networkOnlineProvider),
@@ -441,32 +425,28 @@ final chatServiceProvider = Provider<ChatService>((ref) {
 
 final telephonyPortProvider = Provider<TelephonyPort>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeTelephony(),
-    AuthProviderKind.firebase => HttpTelephony(
+  if (!config.useRemoteApi) return FakeTelephony();
+  return HttpTelephony(
         client: MessagesClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 });
 
 final notificationInboxProvider = Provider<NotificationInbox>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeNotificationInbox(),
-    AuthProviderKind.firebase => HttpNotificationInbox(
+  if (!config.useRemoteApi) return FakeNotificationInbox();
+  return HttpNotificationInbox(
         client: NotificationsClient(
           Dio(BaseOptions(baseUrl: config.apiBaseUrl)),
           baseUrl: config.apiBaseUrl,
         ),
         token: () async =>
             (await ref.read(authServiceProvider).currentSession())?.idToken,
-      ),
-  };
+      );
 });
 
 final dialerProvider = Provider<Dialer>((ref) => UrlLauncherDialer());
@@ -476,8 +456,11 @@ final notificationsControllerProvider = StateNotifierProvider<
   (ref) => NotificationsController(ref.watch(notificationInboxProvider)),
 );
 
+final deviceLocationProvider =
+    Provider<DeviceLocation>((ref) => GeolocatorDeviceLocation());
+
 final pushPermissionProvider =
-    Provider<PushPermission>((ref) => FakePushPermission());
+    Provider<PushPermission>((ref) => OsPushPermission());
 
 final pendingDeepLinkProvider = Provider<PendingDeepLinkStore>(
   (ref) => PendingDeepLinkStore(),
@@ -499,24 +482,26 @@ Future<String?> _idToken(Ref ref) async {
 
 final paymentApiProvider = Provider<PaymentApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakePaymentApi(),
-    AuthProviderKind.firebase => HttpPaymentApi(
+  if (!config.useRemoteApi) return FakePaymentApi();
+  return HttpPaymentApi(
         client: ref.watch(restClientProvider).payments,
         token: () => _idToken(ref),
-      ),
-  };
+      );
+});
+
+/// Cashfree SDK binds here later when [AppConfig.providerPayments] is cashfree.
+final paymentCheckoutProvider = Provider<PaymentCheckout>((ref) {
+  ref.watch(appConfigProvider).providerPayments;
+  return StubPaymentCheckout();
 });
 
 final walletApiProvider = Provider<WalletApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeWalletApi(),
-    AuthProviderKind.firebase => HttpWalletApi(
+  if (!config.useRemoteApi) return FakeWalletApi();
+  return HttpWalletApi(
         client: ref.watch(restClientProvider).wallet,
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final walletLedgerProvider =
@@ -526,13 +511,11 @@ final walletLedgerProvider =
 
 final couponApiProvider = Provider<CouponApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeCouponApi(),
-    AuthProviderKind.firebase => HttpCouponApi(
+  if (!config.useRemoteApi) return FakeCouponApi();
+  return HttpCouponApi(
         client: ref.watch(restClientProvider).coupons,
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final couponsProvider = FutureProvider<List<CouponOffer>>((ref) async {
@@ -545,13 +528,11 @@ final couponsProvider = FutureProvider<List<CouponOffer>>((ref) async {
 
 final earningsApiProvider = Provider<EarningsApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeEarningsApi(),
-    AuthProviderKind.firebase => HttpEarningsApi(
+  if (!config.useRemoteApi) return FakeEarningsApi();
+  return HttpEarningsApi(
         client: ref.watch(restClientProvider).mechanic,
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final earningsProvider = FutureProvider<EarningsList>((ref) async {
@@ -564,17 +545,15 @@ final earningsProvider = FutureProvider<EarningsList>((ref) async {
 
 final invoiceApiProvider = Provider<InvoiceApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeInvoiceApi(demoFallback: true),
-    AuthProviderKind.firebase => HttpInvoiceApi(
+  if (!config.useRemoteApi) return FakeInvoiceApi(demoFallback: true);
+  return HttpInvoiceApi(
         client: ref.watch(restClientProvider).invoices,
         dio: Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 15),
         )),
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final invoiceProvider =
@@ -598,13 +577,11 @@ final shareInvoicePdfProvider = Provider<ShareInvoicePdf>(
 
 final addressApiProvider = Provider<AddressApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeAddressApi(),
-    AuthProviderKind.firebase => HttpAddressApi(
+  if (!config.useRemoteApi) return FakeAddressApi();
+  return HttpAddressApi(
         client: ref.watch(restClientProvider).addresses,
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final addressesControllerProvider =
@@ -614,13 +591,11 @@ final addressesControllerProvider =
 
 final contactApiProvider = Provider<ContactApi>((ref) {
   final config = ref.watch(appConfigProvider);
-  return switch (config.providerAuth) {
-    AuthProviderKind.fake => FakeContactApi(),
-    AuthProviderKind.firebase => HttpContactApi(
+  if (!config.useRemoteApi) return FakeContactApi();
+  return HttpContactApi(
         client: ref.watch(restClientProvider).me,
         token: () => _idToken(ref),
-      ),
-  };
+      );
 });
 
 final contactsControllerProvider =

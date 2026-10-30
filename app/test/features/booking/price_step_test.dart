@@ -38,6 +38,9 @@ void main() {
     expect(find.text('₹49'), findsOneWidget);
     expect(find.text('₹116.64'), findsOneWidget);
     expect(find.text('₹764.64'), findsWidgets);
+    expect(find.text('How you\'ll pay after the visit'), findsOneWidget);
+    expect(find.text('Pay (demo)'), findsNothing);
+    expect(find.textContaining('Cashfree'), findsNothing);
   });
 
   testWidgets('confirm_shows_error_if_offline', (tester) async {
@@ -72,7 +75,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Pay ₹764.64'));
+    await tester.tap(find.text('Confirm ₹764.64'));
     await tester.pump();
 
     expect(find.text('Connect to book.'), findsOneWidget);

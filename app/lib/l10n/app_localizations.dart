@@ -63,7 +63,7 @@ import 'app_localizations_hi.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('hi'),
+    Locale('hi')
   ];
 
   /// Product name shown on the splash screen.
@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// Primary payment button when the amount is not shown.
   ///
   /// In en, this message translates to:
-  /// **'Pay'**
+  /// **'Pay (demo)'**
   String get pay;
 
   /// Primary pay button on a completed booking.
@@ -133,6 +133,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pay {amount}'**
   String payAmount(String amount);
+
+  /// Confirm the booking on the review step. Does not charge.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm {amount}'**
+  String confirmBooking(String amount);
+
+  /// Last wizard step name. Method only; no charge.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get bookingReviewStep;
+
+  /// Payment method chips heading on the review step.
+  ///
+  /// In en, this message translates to:
+  /// **'How you\'ll pay after the visit'**
+  String get payAfterVisitHint;
+
+  /// Explains that booking confirm is not a payment.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not charged until the mechanic completes the job.'**
+  String get noChargeUntilComplete;
+
+  /// Receipt row before the job is paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay after the visit'**
+  String get payAfterTheVisit;
 
   /// Opens live tracking from booking details.
   ///
@@ -294,9 +324,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

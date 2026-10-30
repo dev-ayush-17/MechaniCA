@@ -56,6 +56,7 @@ class CreatePayment:
     clock: Clock
     gst_bps: int
     scheduler: JobScheduler | None = None
+    demo_wallet_float: bool = False
 
     async def execute(
         self,
@@ -162,6 +163,22 @@ class CreatePayment:
             )
         saved = await self.payments.insert(payment)
         if method is PaymentMethod.WALLET:
+            if self.demo_wallet_float:
+                balance = await self.wallet.balance(principal.user_id)
+                shortfall = total - balance.paise
+                if shortfall > 0:
+                    await self.wallet.credit(
+                        principal.user_id,
+                        LedgerEntry(
+                            id=f"demo_float_{payment_id}",
+                            user_id=principal.user_id,
+                            booking_id=booking.id,
+                            direction=LedgerDirection.CREDIT,
+                            amount_paise=shortfall,
+                            reason=LedgerReason.ADJUSTMENT,
+                            created_at=now,
+                        ),
+                    )
             await self.wallet.debit(
                 principal.user_id,
                 LedgerEntry(

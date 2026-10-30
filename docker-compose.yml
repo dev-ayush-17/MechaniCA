@@ -1,0 +1,42 @@
+﻿# MechUpp Backend - Docker Compose
+# Usage:
+#   1. Copy backend/.env.example to backend/.env and fill in values
+#   2. Place your Firebase service-account JSON at backend/serviceAccount.json
+#   3. docker compose up --build
+#
+# The server starts at http://localhost:8080
+# OpenAPI docs: http://localhost:8080/docs
+
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: mechupp-backend:latest
+    container_name: mechupp-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/.env
+    volumes:
+      # Mount the service-account JSON at runtime (never baked into image)
+      - ./backend/serviceAccount.json:/srv/serviceAccount.json:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Uncomment to run the Firebase emulator alongside the API
+  # emulator:
+  #   image: andreysenov/firebase-tools:latest
+  #   container_name: mechupp-emulator
+  #   command: firebase emulators:start --project mechupp-staging
+  #   ports:
+  #     - "4000:4000"   # emulator UI
+  #     - "8088:8088"   # Firestore
+  #     - "9099:9099"   # Auth

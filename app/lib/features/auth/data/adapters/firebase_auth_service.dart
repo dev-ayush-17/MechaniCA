@@ -15,24 +15,44 @@ import '../../domain/auth_service.dart';
 /// Firebase initializes lazily on first use, so the fake binding never loads it.
 /// The SDK keeps the session in platform secure storage; we do not copy tokens.
 class FirebaseAuthService implements AuthService {
-  FirebaseAuthService({required AppConfig config, required Clock clock})
-      : _config = config,
-        _clock = clock;
+  FirebaseAuthService({
+    required AppConfig config,
+    required Clock clock,
+    bool isMechanic = false,
+  })  : _config = config,
+        _clock = clock,
+        _isMechanic = isMechanic;
 
   static const _emulatorAuthPort = 9099;
 
   final AppConfig _config;
   final Clock _clock;
+  final bool _isMechanic;
 
   fb.FirebaseAuth? _auth;
   String? _verificationId;
   int? _resendToken;
 
+  static FirebaseOptions getFirebaseOptions({bool isMechanic = false}) {
+    return FirebaseOptions(
+      apiKey: 'AIzaSyCFJCg2A2b7VF0xh4g4I3Y4M1Tf2Z4ZD0A',
+      appId: isMechanic
+          ? '1:187889936976:android:7344ab375cd174304a3f55'
+          : '1:187889936976:android:70ffb65d14db221d4a3f55',
+      messagingSenderId: '187889936976',
+      projectId: 'mechupp-staging',
+      databaseURL: 'https://mechupp-staging-default-rtdb.firebaseio.com',
+      storageBucket: 'mechupp-staging.firebasestorage.app',
+    );
+  }
+
   Future<fb.FirebaseAuth> _ensureAuth() async {
     final existing = _auth;
     if (existing != null) return existing;
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: getFirebaseOptions(isMechanic: _isMechanic),
+      );
     }
     final auth = fb.FirebaseAuth.instance;
     if (_config.useFirebaseEmulator && !_config.isProd) {
@@ -49,29 +69,36 @@ class FirebaseAuthService implements AuthService {
       auth = await _ensureAuth();
     } on FirebaseException catch (e) {
       return Err(mapFirebaseAuthError(e));
+    } catch (e) {
+      return Err(Unavailable(e.toString()));
     }
 
     final done = Completer<Result<void>>();
-    await auth.verifyPhoneNumber(
-      phoneNumber: phoneE164,
-      forceResendingToken: _resendToken,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (_) {
-        // Android may read the SMS itself. The user still types the code, which
-        // keeps one sign-in path.
-      },
-      verificationFailed: (e) {
-        if (!done.isCompleted) done.complete(Err(mapFirebaseAuthError(e)));
-      },
-      codeSent: (verificationId, resendToken) {
-        _verificationId = verificationId;
-        _resendToken = resendToken;
-        if (!done.isCompleted) done.complete(const Ok(null));
-      },
-      codeAutoRetrievalTimeout: (verificationId) =>
-          _verificationId ??= verificationId,
-    );
-    if (!done.isCompleted) done.complete(const Ok(null));
+    try {
+      await auth.verifyPhoneNumber(
+        phoneNumber: phoneE164,
+        forceResendingToken: _resendToken,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (_) {
+          // Android may read the SMS itself. The user still types the code, which
+          // keeps one sign-in path.
+        },
+        verificationFailed: (e) {
+          if (!done.isCompleted) done.complete(Err(mapFirebaseAuthError(e)));
+        },
+        codeSent: (verificationId, resendToken) {
+          _verificationId = verificationId;
+          _resendToken = resendToken;
+          if (!done.isCompleted) done.complete(const Ok(null));
+        },
+        codeAutoRetrievalTimeout: (verificationId) =>
+            _verificationId ??= verificationId,
+      );
+    } on FirebaseException catch (e) {
+      if (!done.isCompleted) done.complete(Err(mapFirebaseAuthError(e)));
+    } catch (e) {
+      if (!done.isCompleted) done.complete(Err(Unavailable(e.toString())));
+    }
     return done.future;
   }
 
@@ -94,6 +121,8 @@ class FirebaseAuthService implements AuthService {
       return Ok(await _toSession(user, forceRefresh: false));
     } on FirebaseException catch (e) {
       return Err(mapFirebaseAuthError(e));
+    } catch (e) {
+      return Err(Unavailable(e.toString()));
     }
   }
 
@@ -111,6 +140,8 @@ class FirebaseAuthService implements AuthService {
       return const Ok(null);
     } on FirebaseException catch (e) {
       return Err(mapFirebaseAuthError(e));
+    } catch (e) {
+      return Err(Unavailable(e.toString()));
     }
   }
 
@@ -121,7 +152,7 @@ class FirebaseAuthService implements AuthService {
       final user = auth.currentUser;
       if (user == null) return null;
       return _toSession(user, forceRefresh: forceRefresh);
-    } on FirebaseException {
+    } catch (_) {
       // Offline or misconfigured: treat as signed out and let the user retry.
       return null;
     }
@@ -154,7 +185,27 @@ AppFailure mapFirebaseAuthError(FirebaseException e) {
     'quota-exceeded' =>
       const RateLimited('Too many attempts. Try again later.'),
     'network-request-failed' => const Unavailable(),
-    'user-disabled' => const PermissionDenied('This account is disabled.'),
+    'operation-not-allowed' => Unavailable(
+        e.message?.isNotEmpty == true
+            ? e.message!
+            : 'Phone sign-in is not enabled for this project/region in Firebase Console.',
+      ),
     _ => const Unavailable('Sign-in is unavailable. Try again.'),
   };
 }
+
+/// Initializes Firebase lazily at startup if configured.
+Future<void> initFirebaseIfConfigured(AppConfig config, {bool isMechanic = false}) async {
+  if (config.providerAuth == AuthProviderKind.firebase) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: FirebaseAuthService.getFirebaseOptions(isMechanic: isMechanic),
+        );
+      }
+    } catch (e) {
+      debugPrint('initFirebaseIfConfigured warning: $e');
+    }
+  }
+}
+

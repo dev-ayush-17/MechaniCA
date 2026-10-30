@@ -3,15 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'composition/providers.dart';
+import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/data/adapters/firebase_auth_service.dart';
 import 'features/auth/domain/account_api.dart';
-import 'features/auth/presentation/auth_controller.dart';
+import 'features/mechanic_onboarding/presentation/mechanic_session_ticker.dart';
 import 'l10n/app_localizations.dart';
 import 'navigation/mechanic_route_names.dart';
 import 'navigation/mechanic_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final config = AppConfig.fromEnvironment();
+  await initFirebaseIfConfigured(config, isMechanic: true);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -23,18 +27,20 @@ void main() {
     ProviderScope(
       overrides: [
         accountIntentProvider.overrideWithValue(AccountIntent.mechanic),
-        postOtpRouteProvider.overrideWithValue(MechanicRouteNames.home),
+        postOtpRouteProvider.overrideWithValue(MechanicRouteNames.splash),
+        trackingRoleProvider.overrideWithValue('mechanic'),
       ],
       child: const MechUppMechanicApp(),
     ),
   );
 }
 
-class MechUppMechanicApp extends StatelessWidget {
+class MechUppMechanicApp extends ConsumerWidget {
   const MechUppMechanicApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(mechanicSessionTickerProvider);
     return MaterialApp.router(
       title: 'MechUpp Mechanic',
       debugShowCheckedModeBanner: false,

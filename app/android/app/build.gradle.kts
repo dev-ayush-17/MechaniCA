@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -23,6 +24,21 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+    }
+
+    flavorDimensions += "role"
+    productFlavors {
+        create("customer") {
+            dimension = "role"
+            applicationId = "com.mechupp.app"
+            manifestPlaceholders["appLabel"] = "MechUpp"
+        }
+        create("mechanic") {
+            dimension = "role"
+            applicationId = "com.mechupp.mechanic"
+            manifestPlaceholders["appLabel"] = "MechUpp Mechanic"
+        }
     }
 
     buildTypes {
@@ -30,6 +46,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

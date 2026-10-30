@@ -10,6 +10,13 @@ import '../../../widgets/shared/app_widgets.dart';
 
 class LocationPermissionScreen extends StatelessWidget {
   const LocationPermissionScreen({super.key});
+
+  Future<void> _allow(BuildContext context) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    await container.read(deviceLocationProvider).current();
+    if (context.mounted) context.go(RouteNames.notificationPermission);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,8 +53,7 @@ class LocationPermissionScreen extends StatelessWidget {
               const Spacer(),
               AppButton(
                   label: 'Allow Location',
-                  onPressed: () =>
-                      context.go(RouteNames.notificationPermission)),
+                  onPressed: () => _allow(context)),
               const SizedBox(height: 12),
               AppButton(
                 label: 'Maybe Later',

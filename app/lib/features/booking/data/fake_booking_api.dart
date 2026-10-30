@@ -4,13 +4,17 @@ import '../domain/booking.dart';
 import '../domain/booking_api.dart';
 
 class FakeBookingApi implements BookingApi {
-  FakeBookingApi({this.failCreateWith, List<Booking>? seed})
+  FakeBookingApi({this.failCreateWith, List<Booking>? seed, this.getDelay})
       : seeded = [...?seed];
 
   final AppFailure? failCreateWith;
+  final Duration? getDelay;
   final List<Booking> created = [];
   final List<String> cancelled = [];
   final List<Booking> seeded;
+  int getCalls = 0;
+  int inFlightGets = 0;
+  int maxInFlightGets = 0;
 
   @override
   Future<Result<Booking>> create({
@@ -78,5 +82,19 @@ class FakeBookingApi implements BookingApi {
   @override
   Future<Result<List<Booking>>> listMine() async {
     return Ok([...seeded, ...created]);
+  }
+
+  @override
+  Future<Result<Booking>> get(String bookingId) async {
+    getCalls += 1;
+    inFlightGets += 1;
+    if (inFlightGets > maxInFlightGets) maxInFlightGets = inFlightGets;
+    final delay = getDelay;
+    if (delay != null) await Future<void>.delayed(delay);
+    inFlightGets -= 1;
+    for (final item in [...seeded, ...created]) {
+      if (item.id == bookingId) return Ok(item);
+    }
+    return const Err(NotFound('We could not find that booking.'));
   }
 }

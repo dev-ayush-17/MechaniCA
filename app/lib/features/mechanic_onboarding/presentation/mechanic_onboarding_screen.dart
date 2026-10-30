@@ -21,8 +21,8 @@ class _MechanicOnboardingScreenState
     extends ConsumerState<MechanicOnboardingScreen> {
   final _nameCtrl = TextEditingController();
   final _yearsCtrl = TextEditingController(text: '0');
-  final _latCtrl = TextEditingController(text: '28.6139');
-  final _lngCtrl = TextEditingController(text: '77.2090');
+  final _latCtrl = TextEditingController(text: '25.5941');
+  final _lngCtrl = TextEditingController(text: '85.1376');
   final _radiusCtrl = TextEditingController(text: '10');
   bool _english = true;
   bool _hindi = true;

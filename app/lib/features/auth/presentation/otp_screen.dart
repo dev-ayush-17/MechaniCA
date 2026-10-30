@@ -54,8 +54,10 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final showDemoHint =
-        !kReleaseMode && ref.watch(appConfigProvider).env == AppEnv.dev;
+    final config = ref.watch(appConfigProvider);
+    final showDemoHint = !kReleaseMode &&
+        config.env == AppEnv.dev &&
+        config.providerAuth == AuthProviderKind.fake;
 
     final defaultPinTheme = PinTheme(
       width: 54,
@@ -77,7 +79,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
         ),
         title: const Text('Verify OTP'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +129,12 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                   children: [
                     const Icon(Icons.error_outline, color: AppColors.error, size: 16),
                     const SizedBox(width: 8),
-                    Text(authState.error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                    Expanded(
+                      child: Text(
+                        authState.error!,
+                        style: const TextStyle(color: AppColors.error, fontSize: 13),
+                      ),
+                    ),
                   ],
                 ),
               ),

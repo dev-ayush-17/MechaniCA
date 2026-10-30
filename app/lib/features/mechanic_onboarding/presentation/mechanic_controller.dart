@@ -49,6 +49,22 @@ class MechanicNotifier extends StateNotifier<MechanicState> {
     );
   }
 
+  Future<bool> heartbeat() async {
+    final token = await _readSession();
+    if (token == null) return false;
+    final result = await _repo.heartbeat(token);
+    return result.when(
+      onOk: (profile) {
+        state = MechanicState(profile: profile);
+        return true;
+      },
+      onErr: (f) {
+        state = MechanicState(profile: state.profile, error: f.message);
+        return false;
+      },
+    );
+  }
+
   Future<bool> setOnline(bool online) async {
     final token = await _readSession();
     if (token == null) return false;
