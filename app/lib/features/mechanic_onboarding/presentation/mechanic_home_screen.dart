@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../composition/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../models/booking_model.dart';
 import '../../../navigation/mechanic_route_names.dart';
 import '../../../widgets/shared/app_widgets.dart';
 import '../domain/mechanic_repository.dart';
 import 'mechanic_controller.dart';
+import 'mechanic_session_ticker.dart';
 
 class MechanicHomeScreen extends ConsumerStatefulWidget {
   const MechanicHomeScreen({super.key});
@@ -19,7 +22,11 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(() => ref.read(mechanicProvider.notifier).refresh());
+    Future<void>.microtask(() async {
+      await ref.read(authProvider.notifier).restore();
+      await ref.read(mechanicProvider.notifier).refresh();
+      await ref.read(homeBookingsProvider.notifier).load();
+    });
   }
 
   Future<void> _toggle(bool value) async {
@@ -28,6 +35,12 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
     if (!ok) {
       final err = ref.read(mechanicProvider).error;
       if (err != null) showAppSnackbar(context, err);
+      return;
+    }
+    if (value) {
+      await ref.read(mechanicProvider.notifier).heartbeat();
+      await ref.read(mechanicSessionTickerProvider.notifier).tick();
+      await ref.read(homeBookingsProvider.notifier).load();
     }
   }
 
@@ -41,13 +54,28 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final mechanic = ref.watch(mechanicProvider);
+    final ticker = ref.watch(mechanicSessionTickerProvider);
+    final bookings = ref.watch(homeBookingsProvider).whenOrNull(data: (list) => list) ?? [];
     final profile = mechanic.profile;
     final canOnline = profile?.canGoOnline ?? false;
+    final error = mechanic.error ?? ticker.pollError;
+    final active = bookings
+        .where(
+          (b) =>
+              b.status == BookingStatus.mechanicAssigned ||
+              b.status == BookingStatus.enRoute ||
+              b.status == BookingStatus.arrived ||
+              b.status == BookingStatus.inService,
+        )
+        .toList();
+    final name = profile == null || profile.displayName.isEmpty
+        ? 'Mechanic'
+        : profile.displayName;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Mechanic'),
+        title: const Text('Home'),
         actions: [
           if (profile != null &&
               profile.verificationStatus != VerificationStatus.pending &&
@@ -58,60 +86,110 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
             ),
         ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (mechanic.isLoading) const LinearProgressIndicator(),
+        children: [
+          if (mechanic.isLoading) const LinearProgressIndicator(),
+          Text(
+            'Hi, $name',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            profile == null
+                ? (error == null ? 'Loading profile…' : 'Could not load profile')
+                : _statusLabel(profile.verificationStatus),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 8),
+            Text(error, style: const TextStyle(color: AppColors.error)),
+          ],
+          if (profile?.rejectionReason != null) ...[
+            const SizedBox(height: 8),
             Text(
-              profile == null
-                  ? 'Loading profile…'
-                  : _statusLabel(profile.verificationStatus),
-              style: const TextStyle(
+              profile!.rejectionReason!,
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Go online'),
+            subtitle: Text(
+              canOnline
+                  ? 'Job offers appear while you are online.'
+                  : 'Available after admin verification.',
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            value: profile?.online ?? false,
+            onChanged: canOnline ? _toggle : null,
+          ),
+          if (ticker.pendingOfferId != null) ...[
+            const SizedBox(height: 8),
+            AppButton(
+              label: 'Open incoming job',
+              onPressed: () => context.push(
+                MechanicRouteNames.offerPath(ticker.pendingOfferId!),
+              ),
+            ),
+          ],
+          if (active.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text(
+              'Current job',
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (profile?.rejectionReason != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                profile!.rejectionReason!,
-                style: const TextStyle(color: AppColors.error),
-              ),
-            ],
-            const SizedBox(height: 24),
-            ListTile(
-              title: const Text('Earnings'),
-              subtitle: const Text(
-                'Recorded earnings. Bank payout is not live yet.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-              onTap: () => context.push(MechanicRouteNames.earnings),
-            ),
             const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => context.push(
-                MechanicRouteNames.partsProof,
-                extra: const {'bookingId': 'demo-booking', 'lineId': 'demo-line'},
+            for (final job in active)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  job.serviceName.isEmpty ? job.serviceCode : job.serviceName,
+                ),
+                subtitle: Text(
+                  job.status.label,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textTertiary,
+                ),
+                onTap: () => context.push(
+                  MechanicRouteNames.jobPath(job.id, status: job.status.name),
+                ),
               ),
-              child: const Text('Parts photos'),
-            ),
-            SwitchListTile(
-              title: const Text('Go online'),
-              subtitle: Text(
-                canOnline
-                    ? 'You will receive job offers when online.'
-                    : 'Available after admin verification.',
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-              value: profile?.online ?? false,
-              onChanged: canOnline ? _toggle : null,
-            ),
           ],
-        ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('All jobs'),
+            subtitle: const Text(
+              'Incoming offers, in-progress, and completed work.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            onTap: () => context.go(MechanicRouteNames.jobs),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Earnings'),
+            subtitle: const Text(
+              'Recorded earnings. Bank payout is not live yet.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            onTap: () => context.push(MechanicRouteNames.earnings),
+          ),
+        ],
       ),
     );
   }

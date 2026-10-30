@@ -30,12 +30,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     _routeAfterRestore();
   }
 
-  /// Shows the brand for 3 seconds while the stored session is restored, then
+  /// Shows the brand for 2 seconds while the stored session is restored, then
   /// opens home for a signed-in user and onboarding for everyone else.
   Future<void> _routeAfterRestore() async {
-    final restoring = ref.read(authProvider.notifier).restore();
-    await Future<void>.delayed(const Duration(seconds: 3));
-    final signedIn = await restoring;
+    bool signedIn = false;
+    try {
+      final restoring = ref.read(authProvider.notifier).restore();
+      await Future<void>.delayed(const Duration(seconds: 2));
+      signedIn = await restoring.timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+    } catch (_) {
+      signedIn = false;
+    }
     if (!mounted) return;
     context.go(signedIn ? RouteNames.home : RouteNames.onboarding);
   }

@@ -6,12 +6,53 @@ Living log. Update this at the end of every session.
 
 | Field | Value |
 | --- | --- |
-| Phase | Implementation |
-| Branch | `chore/m16-hardening` |
-| Milestone in progress | M16 hardening (this PR). MVP spec is implemented. |
-| Next milestone | None. Owner-only launch steps in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). |
-| Demo | Runs from `app/` with `flutter run`. Hindi ARB, a11y labels, chapter-16 rate limits, secret scan. |
-| Known broken | Nothing known. |
+| Phase | Wave 2 & On-Device Testing: Live Server Auto-Accept Active |
+| Branch | `feat/firebase-staging` |
+| Milestone in progress | Server-side automated booking acceptance active (`watch_and_auto_accept.py` + `SequentialDispatch.auto_accept`). Every customer booking created via Cloud Run or local API is automatically offered and accepted by verified mechanic Amit Singh (`rLbLmYXRgaVV9X7KIQvZQR0hXQ62`) without manual intervention in the mechanic app. Both release APKs installed on device `ZD222M6M9F`. |
+| Next milestone | End-to-end device customer booking walkthrough (booking -> mechanic assigned -> live tracking -> payment). |
+| Demo | Cloud Run: `https://mechupp-api-187889936976.asia-south1.run.app`. Firestore + RTDB backend persistence. Auto-acceptance daemon running. |
+| Known broken | Cashfree keys not yet provided (payments stay on demo wallet float). Restricted Maps key pending. |
+
+## Walkthrough hardening (2026-10-26)
+
+Customer details poll `GET /v1/bookings/{id}` (adaptive). Confirm no longer waits on the mock booking store. Wizard last step is Review; Pay (demo) stays on `completed`. Fake/Firebase sessions still persist (no MechaniCA JWT). Mechanic heartbeats while online on any screen; flavor overrides `trackingRole=mechanic`.
+
+Vendor flips (no rewire of use cases):
+
+| Concern | App `--dart-define` / `config/cloud.json` | API env |
+| --- | --- | --- |
+| Maps | `PROVIDER_MAPS=google` + `MAPS_API_KEY` | `MECHUPP_PROVIDER_MAPS=google` + key |
+| Payments | `PROVIDER_PAYMENTS=cashfree` then bind Cashfree SDK on `paymentCheckoutProvider` | `MECHUPP_PROVIDER_PAYMENTS=cashfree` + secrets |
+| Auth SMS | `PROVIDER_AUTH=firebase` + `google-services.json` | Firebase Admin |
+
+Do not add Redis. Do not mint API JWTs.
+
+## Staging Wave 0 (2026-10-27)
+
+Stopped before Wave 1. `google-services.json` on disk is `mechupp-staging` / `com.mechupp.app` only. Firebase CLI cannot list that project (403). Phone Auth, registered SHA-1/SHA-256, and `com.mechupp.mechanic` are unconfirmed. No Cloud Run URL. Local `.env` is still `MECHUPP_APP_ENV=dev`, `MECHUPP_PROVIDER_AUTH=fake`, `MECHUPP_PROVIDER_PAYMENTS=fake`. Do not flip staging until the owner confirms the console items below.
+
+Local debug keystore (not yet confirmed in Firebase):
+
+- SHA-1: `D7:DC:6E:73:9C:8F:6A:CD:5A:1E:22:EE:8C:12:6E:E4:4D:A5:0B:AC`
+- SHA-256: `DE:D8:68:53:E3:95:49:97:B7:EB:DC:27:9F:1E:8C:F5:9F:31:DB:51:FA:65:FA:3F:31:DB:C2:76:B7:58:AE:FA`
+
+## Walkthrough (2026-10-24)
+
+OTP is `123456`. Type the 10 digits; the login field adds `+91`.
+
+| Role | Number | Who |
+| --- | --- | --- |
+| Customer | `9811110000` | Any new customer |
+| Mechanic | `9800000001` | Ravi Kumar, seeded, verified, offline until Go online |
+| Spare mechanic | `9800000002` | Amit Singh, leave offline unless you want a second offer |
+
+1. From `backend/`: `.venv\Scripts\python scripts/seed_walkthrough.py` then `.venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000`.
+2. Debug APKs already built with that config: `app/build/app/outputs/flutter-apk/app-customer-debug.apk` and `app-mechanic-debug.apk`. With the phone plugged in: `adb install -r` each file. Or rebuild with `flutter run --flavor customer -t lib/main.dart -d ZD222M6M9F --dart-define-from-file=config/cloud.json` (and `--flavor mechanic -t lib/main_mechanic.dart` for the mechanic app).
+3. Customer app: OTP, then Profile → Edit Profile for the name, My Bikes to add a bike, Emergency Contacts if you want them. Book a service. On the address step tap **Use Patna service area**, then **Save this address**. Leave **As soon as possible**. Submit.
+4. Mechanic app, number `9800000001`, same OTP. Home / Jobs / Profile tabs. **Go online** (offers wait up to 10 minutes if you book first). Accept on Jobs or the incoming sheet. Start trip → Arrived → Start service → Complete.
+5. Customer booking details (polls every 3s): **Pay (demo)**. Receipt shows Paid. Home lists the job.
+
+Create stays “Finding a mechanic” until Accept. Maps, SMS, and Cashfree stay demo. Dispatch searches 5 km, then 8 km, then 12 km from the job, and the seeded mechanics sit on Patna center (`25.5941, 85.1376`). A GPS fix outside that 12 km circle will not match them. Dev wait is 10 minutes; going online re-runs dispatch for waiting jobs. If a job already shows Failed, book again.
 
 ## Completed
 

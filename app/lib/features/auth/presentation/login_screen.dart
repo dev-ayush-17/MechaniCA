@@ -24,12 +24,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  /// The field shows a +91 prefix. Ten digits become +91…; a full +E.164 is kept.
+  String? _toE164(String raw) {
+    final compact = raw.trim().replaceAll(RegExp(r'[\s-]'), '');
+    if (compact.startsWith('+')) {
+      return RegExp(r'^\+[1-9]\d{9,14}$').hasMatch(compact) ? compact : null;
+    }
+    final digits = compact.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 10) return '+91$digits';
+    if (digits.length == 12 && digits.startsWith('91')) return '+$digits';
+    return null;
+  }
+
   Future<void> _sendOtp() async {
-    if (!_formKey.currentState!.validate()) return;
+    final phone = _toE164(_phoneCtrl.text);
+    if (phone == null) return;
     final auth = ref.read(authProvider.notifier);
-    final sent = await auth.sendOtp(_phoneCtrl.text.trim());
+    final sent = await auth.sendOtp(phone);
     if (sent && mounted) {
-      context.push(RouteNames.otp, extra: _phoneCtrl.text.trim());
+      context.push(RouteNames.otp, extra: phone);
     }
   }
 
@@ -103,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       hint: '+91  9206 06199',
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
-                      onChanged: (v) => setState(() => _phoneValid = v.trim().length >= 10),
+                      onChanged: (v) => setState(() => _phoneValid = _toE164(v) != null),
                       prefix: const Padding(
                         padding: EdgeInsets.all(14),
                         child: Text('+91', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
@@ -141,7 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onTap: () async {
                         final success = await ref.read(authProvider.notifier).loginWithGoogle();
                         if (success && context.mounted) {
-                          context.go(RouteNames.locationPermission);
+                          context.go(ref.read(postOtpRouteProvider));
                         }
                       },
                       child: Container(

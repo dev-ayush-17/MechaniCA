@@ -16,6 +16,12 @@ class Booking {
     this.addressId = '',
     this.scheduledStart,
     this.paymentMethod = '',
+    this.mechanicId,
+    this.mechanicName,
+    this.mechanicRatingAvg,
+    this.mechanicRatingCount = 0,
+    this.dispatchAttempt = 0,
+    this.failureReason,
   });
 
   final String id;
@@ -32,6 +38,12 @@ class Booking {
   final String addressId;
   final DateTime? scheduledStart;
   final String paymentMethod;
+  final String? mechanicId;
+  final String? mechanicName;
+  final double? mechanicRatingAvg;
+  final int mechanicRatingCount;
+  final int dispatchAttempt;
+  final String? failureReason;
 }
 
 BookingStatus bookingStatusFromApi(String value) {

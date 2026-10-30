@@ -19,4 +19,6 @@ abstract class BookingApi {
   Future<Result<void>> openDispute(String bookingId, {required String reason});
 
   Future<Result<List<Booking>>> listMine();
+
+  Future<Result<Booking>> get(String bookingId);
 }

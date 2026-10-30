@@ -31,7 +31,7 @@ class SharedPrefsFakeSessionStore implements FakeSessionStore {
   SharedPrefsFakeSessionStore(this._logger);
 
   static const _key = 'debug_fake_session_phone';
-  static const _timeout = Duration(seconds: 2);
+  static const _timeout = Duration(seconds: 5);
 
   final Logger _logger;
 

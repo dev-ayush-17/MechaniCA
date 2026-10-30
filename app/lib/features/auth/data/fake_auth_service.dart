@@ -90,14 +90,14 @@ class FakeAuthService implements AuthService {
     return Ok(session);
   }
 
-  Session _sessionFor(String phoneE164) {
+  Session _sessionFor(String phoneE164, {String? role}) {
     final userId = 'fake_${phoneE164.replaceAll('+', '')}';
     return Session(
       userId: userId,
       // Same shape the backend FakeAuth accepts. Carries no secret.
       idToken: 'fake:$userId:$phoneE164',
       expiresAt: _clock.now().add(const Duration(hours: 1)),
-      role: 'customer',
+      role: role ?? _session?.role ?? 'customer',
     );
   }
 
@@ -119,7 +119,7 @@ class FakeAuthService implements AuthService {
       final phone = await _store.readPhone();
       if (phone != null) _session = _sessionFor(phone);
     } else if (forceRefresh) {
-      _session = _sessionFor(_phoneOf(_session!));
+      _session = _sessionFor(_phoneOf(_session!), role: _session!.role);
     }
     return _session;
   }

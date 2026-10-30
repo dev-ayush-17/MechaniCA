@@ -30,6 +30,9 @@ BookingOut _$BookingOutFromJson(Map<String, dynamic> json) => BookingOut(
       failureReason: json['failureReason'] as String?,
       cancelFeePaise: (json['cancelFeePaise'] as num?)?.toInt() ?? 0,
       dispatchAttempt: (json['dispatchAttempt'] as num?)?.toInt() ?? 0,
+      mechanicDisplayName: json['mechanicDisplayName'] as String?,
+      mechanicRatingAvg: (json['mechanicRatingAvg'] as num?)?.toDouble(),
+      mechanicRatingCount: (json['mechanicRatingCount'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$BookingOutToJson(BookingOut instance) =>
@@ -43,7 +46,10 @@ Map<String, dynamic> _$BookingOutToJson(BookingOut instance) =>
       'failureReason': instance.failureReason,
       'id': instance.id,
       'lines': instance.lines,
+      'mechanicDisplayName': instance.mechanicDisplayName,
       'mechanicId': instance.mechanicId,
+      'mechanicRatingAvg': instance.mechanicRatingAvg,
+      'mechanicRatingCount': instance.mechanicRatingCount,
       'mode': instance.mode,
       'paymentMethod': instance.paymentMethod,
       'scheduledStart': instance.scheduledStart?.toIso8601String(),

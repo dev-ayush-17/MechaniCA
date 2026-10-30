@@ -34,15 +34,17 @@ dependencies:
 
   # Platform
   url_launcher: 6.3.2
+  geolocator: 13.0.4 # device GPS for the service address and location permission
+  permission_handler: 11.4.0 # OS notification permission prompt
   image_picker: 1.2.3 # capture parts photos.
   share_plus: 11.0.0 # share the invoice file
   path_provider: 2.1.6
   retrofit: 4.10.0
   json_annotation: 4.12.0
   freezed_annotation: 3.1.0
-  firebase_core: 3.15.0
-  firebase_auth: 5.5.0
-  firebase_database: 11.3.8 # RTDB live location adapter (FR-TRK-004).
+  firebase_core: 3.15.2
+  firebase_auth: 5.7.0
+  firebase_database: 11.3.10 # RTDB live location adapter (FR-TRK-004).
   drift: 2.35.2
   drift_flutter: 0.3.1
   sqlite3_flutter_libs: 0.6.0+eol

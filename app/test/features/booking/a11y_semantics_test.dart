@@ -49,8 +49,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('Pay ₹764.64'), findsOneWidget);
-    expect(tester.widget<AppButton>(find.byType(AppButton)).label, 'Pay ₹764.64');
+    expect(find.bySemanticsLabel('Confirm ₹764.64'), findsOneWidget);
+    expect(tester.widget<AppButton>(find.byType(AppButton)).label, 'Confirm ₹764.64');
   });
 
   testWidgets('semantics_on_the_sos_control', (tester) async {
@@ -73,8 +73,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('₹764.64 का भुगतान करें'), findsOneWidget);
-    expect(find.bySemanticsLabel('₹764.64 का भुगतान करें'), findsOneWidget);
+    expect(find.text('₹764.64 की पुष्टि करें'), findsOneWidget);
+    expect(find.bySemanticsLabel('₹764.64 की पुष्टि करें'), findsOneWidget);
   });
 
   testWidgets('price_total_readable_at_1_6_text_scale', (tester) async {

@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-import firebase_admin
 from firebase_admin import db
 
 from app.domain.location import BookingGate, LocationPoint, LocationSnapshot, accept_point
@@ -13,12 +12,9 @@ from app.domain.location import BookingGate, LocationPoint, LocationSnapshot, ac
 
 class RtdbLocationTrackingService:
     def __init__(self, project_id: str, database_url: str) -> None:
-        try:
-            self._app = firebase_admin.get_app()
-        except ValueError:
-            self._app = firebase_admin.initialize_app(
-                options={"projectId": project_id, "databaseURL": database_url}
-            )
+        from app.adapters.firebase.admin_app import ensure_firebase
+
+        self._app = ensure_firebase(project_id, database_url=database_url)
 
     async def publish(self, booking_id: str, role: str, point: LocationPoint) -> None:
         current = await self.latest(booking_id) or LocationSnapshot()
