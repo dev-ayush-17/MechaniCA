@@ -203,14 +203,7 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
         ],
         if (booking.status == BookingStatus.completed) ...[
           const SizedBox(height: 12),
-          AppButton(
-            key: const ValueKey('pay-now'),
-            label: 'Pay (demo)',
-            onPressed: () => context.push(RouteNames.pay, extra: {
-              'bookingId': booking.id,
-              'method': 'wallet',
-            }),
-          ),
+          const _PayComingSoonBanner(),
         ],
         if (paid) ...[
           const SizedBox(height: 12),
@@ -218,6 +211,12 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
             label: 'View Invoice',
             icon: Icons.receipt_long_rounded,
             onPressed: () => context.push(RouteNames.invoice, extra: booking.id),
+          ),
+        ],
+        if (booking.status.canReportProblem) ...[
+          const SizedBox(height: 12),
+          ReportProblemButton(
+            onPressed: () => context.push(RouteNames.support),
           ),
         ],
       ],
@@ -288,6 +287,64 @@ class _BookingDetailsScreenState extends ConsumerState<BookingDetailsScreen> {
         children: [
           Expanded(child: Text(label, style: const TextStyle(color: AppColors.textSecondary))),
           Text(value, style: const TextStyle(color: Colors.white)),
+        ],
+      ),
+    );
+  }
+}
+
+class ReportProblemButton extends StatelessWidget {
+  const ReportProblemButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppButton(
+      label: 'Report a problem',
+      isOutlined: true,
+      icon: Icons.report_outlined,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _PayComingSoonBanner extends StatelessWidget {
+  const _PayComingSoonBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.lock_clock_outlined, color: AppColors.primaryRed, size: 24),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Online Payments \u2014 Coming Soon',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Pay cash directly to your mechanic after the service. Digital payments will be enabled shortly.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
